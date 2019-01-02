@@ -25,6 +25,7 @@ RUN set -ex \
     && pip3 install -r /usr/src/evalg/requirements.txt \
     && apk del .evalg-build-deps
 
+ENV FLASK_ENV=development
 # Install app
 ADD . /usr/src/evalg
 RUN pip3 install --editable /usr/src/evalg
