@@ -18,6 +18,7 @@ from evalg_common import request_id
 from evalg_common import cli as common_cli
 
 from evalg import default_config
+from evalg import default_election_template_config
 from evalg import cli
 
 DISTRIBUTION_NAME = 'evalg'
@@ -115,7 +116,7 @@ def create_app(config=None, flask_class=Flask):
     init_config(app, config,
                 environ_name=APP_CONFIG_ENVIRON_NAME,
                 default_file_name=APP_TEMPLATE_CONFIG_FILE_NAME,
-                default_config=default_config)
+                default_config=default_election_template_config)
 
     if app.config.get('NUMBER_OF_PROXIES', None):
         app.wsgi_app = ProxyFix(app.wsgi_app,
