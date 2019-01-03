@@ -234,7 +234,9 @@ def make_group(**kw):
 
 def make_group_from_template(template_name, ou, principals=()):
     """Create election with elections from template"""
-    current_app.logger.info('MAKE', template_name, ou)
+    current_app.logger.info('Make election group %s for %s',
+                            template_name,
+                            ou)
     from instance.evalg_template_config import election_templates
     import datetime
     from dateutil.relativedelta import relativedelta
