@@ -1,29 +1,20 @@
 import graphene
-from graphene.types.generic import GenericScalar
+
+import evalg.models.authorization
+import evalg.models.candidate
+import evalg.models.election
+import evalg.models.ou
+import evalg.models.pollbook
+import evalg.models.voter
 
 from evalg import db
+from evalg.metadata import announce_group
 from evalg.metadata import make_group_from_template
-from evalg.models.ou import OrganizationalUnit
-from evalg.models.election import (Election as ElectionModel,
-                                   ElectionGroup as ElectionGroupModel)
-from evalg.models.authorization import (PersonPrincipal,
-                                        GroupPrincipal,
-                                        ElectionGroupRole)
-from evalg.models.candidate import (Candidate as CandidateModel)
-from evalg.models.voter import Voter as VoterModel
-from evalg.models.voter import VoterStatus as VoterStatusModel
-from evalg.models.pollbook import PollBook as PollBookModel
-from evalg.metadata import (announce_group,
-                            unannounce_group,
-                            publish_group,
-                            unpublish_group)
-from evalg.graphql.entities import (Election,
-                                    ElectionGroup,
-                                    ElectionList,
-                                    Candidate,
-                                    Person,
-                                    PollBook,
-                                    Voter)
+from evalg.metadata import publish_group
+from evalg.metadata import unannounce_group
+from evalg.metadata import unpublish_group
+
+import evalg.graphql.entities
 
 
 class CreateNewElectionGroup(graphene.Mutation):
@@ -33,10 +24,11 @@ class CreateNewElectionGroup(graphene.Mutation):
         template_name = graphene.String()
 
     ok = graphene.Boolean()
-    election_group = graphene.Field(lambda: ElectionGroup)
+    election_group = graphene.Field(
+        lambda: evalg.graphql.entities.ElectionGroup)
 
     def mutate(self, info, ou_id, template, template_name):
-        ou = OrganizationalUnit.query.get(ou_id)
+        ou = evalg.models.ou.OrganizationalUnit.query.get(ou_id)
         election_group = make_group_from_template(template_name, ou)
         ok = True
         return CreateNewElectionGroup(election_group=election_group, ok=ok)
@@ -58,12 +50,12 @@ class UpdateBaseSettings(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = ElectionGroupModel.query.get(args.get('id'))
+        el_grp = evalg.models.electionElectionGroup.query.get(args.get('id'))
         el_grp.meta['candidate_rules']['candidate_gender'] =\
             args.get('has_gender_quota')
         db.session.add(el_grp)
         for e in args.get('elections'):
-            election = ElectionModel.query.get(e['id'])
+            election = evalg.models.election.Election.query.get(e['id'])
             election.meta['candidate_rules']['seats'] = e.seats
             election.meta['candidate_rules']['substitutes'] = e.substitutes
             election.active = e.active
@@ -89,13 +81,13 @@ class UpdateVotingPeriods(graphene.Mutation):
         elections = args.get('elections')
         if not args.get('has_multiple_times'):
             for e in elections:
-                election = ElectionModel.query.get(e['id'])
+                election = evalg.models.election.Election.query.get(e['id'])
                 election.start = elections[0].start
                 election.end = elections[0].end
                 db.session.add(election)
         else:
             for e in elections:
-                election = ElectionModel.query.get(e['id'])
+                election = evalg.models.election.Election.query.get(e['id'])
                 election.start = e.start
                 election.end = e.end
                 db.session.add(election)
@@ -111,10 +103,10 @@ class AddVoter(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        voter = VoterModel()
+        voter = evalg.models.voter.Voter()
         voter.person_id = kwargs.get('person_id')
         voter.pollbook_id = kwargs.get('pollbook_id')
-        voter.voter_status = VoterStatusModel.query.get('added')
+        voter.voter_status = evalg.models.voter.VoterStatus.query.get('added')
         db.session.add(voter)
         db.session.commit()
         return AddVoter(ok=True)
@@ -128,7 +120,7 @@ class UpdateVoterPollBook(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        voter = VoterModel.query.get(kwargs.get('id'))
+        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
         voter.pollbook_id = kwargs.get('pollbook_id')
         db.session.add(voter)
         db.session.commit()
@@ -142,7 +134,7 @@ class DeleteVoter(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        voter = VoterModel.query.get(kwargs.get('id'))
+        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
         db.session.delete(voter)
         db.session.commit()
         return DeleteVoter(ok=True)
@@ -155,11 +147,12 @@ class DeleteVotersInPollBook(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        pollbook = PollBookModel.query.get(kwargs.get('id'))
+        pollbook = evalg.models.pollbook.PollBook.query.get(kwargs.get('id'))
         for voter in pollbook.voters:
             db.session.delete(voter)
         db.session.commit()
         return DeleteVotersInPollBook(ok=True)
+
 
 class ElectionVoterInfoInput(graphene.InputObjectType):
     id = graphene.UUID(required=True)
@@ -178,7 +171,7 @@ class UpdateVoterInfo(graphene.Mutation):
     def mutate(self, info, **args):
         elections = args.get('elections')
         for e in elections:
-            election = ElectionModel.query.get(e['id'])
+            election = evalg.models.election.Election.query.get(e['id'])
             election.mandate_period_start = e.mandate_period_start
             election.mandate_period_end = e.mandate_period_end
             election.contact = e.contact
@@ -199,12 +192,15 @@ class AddAdmin(graphene.Mutation):
 
     def mutate(self, info, **args):
         if args.get('type') == 'person':
-            principal = PersonPrincipal(person_id=args.get('admin_id'))
+            principal = evalg.models.authorization.PersonPrincipal(
+                person_id=args.get('admin_id'))
         else:
-            principal = GroupPrincipal(group_id=args.get('admin_id'))
-        role = ElectionGroupRole(role='election-admin',
-                                 principal=principal,
-                                 group_id=args.get('el_grp_id'))
+            principal = evalg.models.authorization.GroupPrincipal(
+                group_id=args.get('admin_id'))
+        role = evalg.models.authorization.ElectionGroupRole(
+            role='election-admin',
+            principal=principal,
+            group_id=args.get('el_grp_id'))
         db.session.add(role)
         db.session.commit()
         return AddAdmin(ok=True)
@@ -217,7 +213,8 @@ class RemoveAdmin(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        role = ElectionGroupRole.query.get(args.get('grant_id'))
+        role = evalg.models.authorization.ElectionGroupRole.query.get(
+            args.get('grant_id'))
         db.session.delete(role)
         db.session.commit()
         return AddAdmin(ok=True)
@@ -234,10 +231,11 @@ class AddPrefElecCandidate(graphene.Mutation):
 
     def mutate(self, info, **args):
         meta = {'gender': args.get('gender')}
-        candidate = CandidateModel(name=args.get('name'),
-                                   meta=meta,
-                                   list_id=args.get('list_id'),
-                                   information_url=args.get('information_url'))
+        candidate = evalg.models.candidate.Candidate(
+            name=args.get('name'),
+            meta=meta,
+            list_id=args.get('list_id'),
+            information_url=args.get('information_url'))
         db.session.add(candidate)
         db.session.commit()
         return AddPrefElecCandidate(ok=True)
@@ -254,7 +252,7 @@ class UpdatePrefElecCandidate(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        candidate = CandidateModel.query.get(args.get('id'))
+        candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
         candidate.name = args.get('name')
         candidate.meta['gender'] = args.get('gender')
         candidate.list_id = args.get('list_id')
@@ -279,10 +277,11 @@ class AddTeamPrefElecCandidate(graphene.Mutation):
 
     def mutate(self, info, **args):
         meta = {'co_candidates': args.get('co_candidates')}
-        candidate = CandidateModel(name=args.get('name'),
-                                   meta=meta,
-                                   list_id=args.get('list_id'),
-                                   information_url=args.get('information_url'))
+        candidate = evalg.models.candidate.Candidate(
+            name=args.get('name'),
+            meta=meta,
+            list_id=args.get('list_id'),
+            information_url=args.get('information_url'))
         db.session.add(candidate)
         db.session.commit()
         return AddTeamPrefElecCandidate(ok=True)
@@ -299,7 +298,7 @@ class UpdateTeamPrefElecCandidate(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        candidate = CandidateModel.query.get(args.get('id'))
+        candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
         candidate.name = args.get('name')
         candidate.meta['co_candidates'] = args.get('co_candidates')
         candidate.list_id = args.get('list_id')
@@ -316,7 +315,7 @@ class DeleteCandidate(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        candidate = CandidateModel.query.get(args.get('id'))
+        candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
         db.session.delete(candidate)
         db.session.commit()
         return DeleteCandidate(ok=True)
@@ -329,7 +328,7 @@ class PublishElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = ElectionGroupModel.query.get(args.get('id'))
+        el_grp = evalg.models.election.Election.query.get(args.get('id'))
         publish_group(el_grp)
         return PublishElectionGroup(ok=True)
 
@@ -341,7 +340,7 @@ class UnpublishElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = ElectionGroupModel.query.get(args.get('id'))
+        el_grp = evalg.models.electtion.ElectionGroup.query.get(args.get('id'))
         unpublish_group(el_grp)
         return UnpublishElectionGroup(ok=True)
 
@@ -353,7 +352,7 @@ class AnnounceElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = ElectionGroupModel.query.get(args.get('id'))
+        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
         announce_group(el_grp)
         return AnnounceElectionGroup(ok=True)
 
@@ -365,7 +364,7 @@ class UnannounceElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = ElectionGroupModel.query.get(args.get('id'))
+        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
         unannounce_group(el_grp)
         return UnannounceElectionGroup(ok=True)
 
@@ -378,7 +377,7 @@ class CreateElectionGroupKey(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = ElectionGroupModel.query.get(args.get('id'))
+        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
         el_grp.public_key = args.get('key')
         db.session.add(el_grp)
         db.session.commit()
