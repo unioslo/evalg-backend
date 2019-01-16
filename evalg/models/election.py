@@ -1,24 +1,36 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" Models for elections. """
-
+"""
+Database models for elections.
+"""
 import uuid
-from datetime import datetime
-from evalg import db
-from evalg.models import Base
+import datetime
+
 from sqlalchemy.sql import select, func, case, and_
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy_json import NestedMutableJson, MutableJson
-from sqlalchemy_utils import UUIDType, URLType
 from evalg.models.ou import OrganizationalUnit
 from flask import current_app
 
+import evalg.models
+from evalg import db
+from evalg.database.types import MutableJson
+from evalg.database.types import NestedMutableJson
+from evalg.database.types import URLType
+from evalg.database.types import UUIDType
 
-class AbstractElection(Base):
+
+# TODO: Use timezone with all timestamps?
+
+
+class AbstractElection(evalg.models.Base):
     """ Base model for elections and election groups. """
+
     __abstract__ = True
 
-    id = db.Column(UUIDType, default=uuid.uuid4, primary_key=True)
+    id = db.Column(
+        UUIDType,
+        default=uuid.uuid4,
+        primary_key=True)
+    """ Election id """
+
     name = db.Column(MutableJson)
     """ Translated name """
 
@@ -44,9 +56,14 @@ class AbstractElection(Base):
 
 
 class ElectionGroup(AbstractElection):
-    ou_id = db.Column(UUIDType, db.ForeignKey('organizational_unit.id'),
-                      nullable=False)
+
+    ou_id = db.Column(
+        UUIDType,
+        db.ForeignKey('organizational_unit.id'),
+        nullable=False)
+
     ou = db.relationship(OrganizationalUnit)
+
     elections = db.relationship('Election')
     """ Organizational unit. """
 
@@ -67,7 +84,7 @@ class ElectionGroup(AbstractElection):
 
     def announce(self):
         """ Mark as announced. """
-        self.announced_at = datetime.utcnow()
+        self.announced_at = datetime.datetime.utcnow()
 
     def unannounce(self):
         """ Mark as unannounced. """
@@ -79,7 +96,7 @@ class ElectionGroup(AbstractElection):
 
     def publish(self):
         """ Mark as published. """
-        self.published_at = datetime.utcnow()
+        self.published_at = datetime.datetime.utcnow()
 
     def unpublish(self):
         """ Mark as unpublished. """
@@ -91,7 +108,7 @@ class ElectionGroup(AbstractElection):
 
     def cancel(self):
         """ Mark as cancelled. """
-        self.cancelled_at = datetime.utcnow()
+        self.cancelled_at = datetime.datetime.utcnow()
 
     @hybrid_property
     def cancelled(self):
@@ -99,7 +116,7 @@ class ElectionGroup(AbstractElection):
 
     def delete(self):
         """ Mark as deleted. """
-        self.deleted_at = datetime.utcnow()
+        self.deleted_at = datetime.datetime.utcnow()
 
     @hybrid_property
     def deleted(self):
@@ -122,19 +139,33 @@ class ElectionGroup(AbstractElection):
 
 class Election(AbstractElection):
     """ Election. """
+
     sequence = db.Column(db.Text)
     """ Some ID for the UI """
 
     start = db.Column(db.DateTime)
+
     end = db.Column(db.DateTime)
+
     information_url = db.Column(URLType)
+
     contact = db.Column(db.Text)
+
     mandate_period_start = db.Column(db.DateTime)
+
     mandate_period_end = db.Column(db.DateTime)
-    group_id = db.Column(UUIDType, db.ForeignKey('election_group.id'))
-    election_group = db.relationship('ElectionGroup', back_populates='elections',
-                            lazy='joined')
+
+    group_id = db.Column(
+        UUIDType,
+        db.ForeignKey('election_group.id'))
+
+    election_group = db.relationship(
+        'ElectionGroup',
+        back_populates='elections',
+        lazy='joined')
+
     lists = db.relationship('ElectionList')
+
     pollbooks = db.relationship('PollBook')
 
     active = db.Column(db.Boolean, default=False)
@@ -176,9 +207,9 @@ class Election(AbstractElection):
         if self.election_group.cancelled_at:
             return 'cancelled'
         if self.election_group.published_at:
-            if self.end <= datetime.utcnow():
+            if self.end <= datetime.datetime.utcnow():
                 return 'closed'
-            if self.start < datetime.utcnow():
+            if self.start < datetime.datetime.utcnow():
                 return 'ongoing'
             return 'published'
         if self.election_group.announced_at:

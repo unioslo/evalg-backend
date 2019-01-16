@@ -1,5 +1,6 @@
 import graphene
 
+import evalg
 import evalg.models.authorization
 import evalg.models.candidate
 import evalg.models.election
@@ -13,8 +14,7 @@ from evalg.metadata import make_group_from_template
 from evalg.metadata import publish_group
 from evalg.metadata import unannounce_group
 from evalg.metadata import unpublish_group
-
-import evalg.graphql.entities
+from . import entities
 
 
 class CreateNewElectionGroup(graphene.Mutation):
@@ -24,8 +24,8 @@ class CreateNewElectionGroup(graphene.Mutation):
         template_name = graphene.String()
 
     ok = graphene.Boolean()
-    election_group = graphene.Field(
-        lambda: evalg.graphql.entities.ElectionGroup)
+
+    election_group = graphene.Field(lambda: entities.ElectionGroup)
 
     def mutate(self, info, ou_id, template, template_name):
         ou = evalg.models.ou.OrganizationalUnit.query.get(ou_id)

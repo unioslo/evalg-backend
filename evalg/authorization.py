@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Business logic for authz."""
-
 
 from functools import wraps
 from evalg import db
@@ -23,6 +21,7 @@ from .apierror import ApiError
 
 class PermissionDenied(ApiError):
     code = 401
+
 
 all_perms = set(all_permissions.keys())
 _cp = check_perms
@@ -141,6 +140,7 @@ def list_election_group_roles(group):
     return ElectionGroupRole.query.filter(
         ElectionGroupRole.group_id == group.id)
 
+
 def make_election_group_role(election_group_id, role,
                              person_id=None, group_id=None):
     principal = None
@@ -165,10 +165,12 @@ def make_election_group_role(election_group_id, role,
     db.session.add(el_grp_role)
     db.session.commit()
 
+
 def delete_election_group_role(role_id):
     role = ElectionGroupRole.query.get(role_id)
     db.session.delete(role)
     db.session.commit()
+
 
 def get_principal(principal_id):
     return Principal.query.get(principal_id)

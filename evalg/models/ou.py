@@ -1,24 +1,46 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" Models for organizational units. """
+"""
+Database models for organizational units
+"""
 
 import uuid
+
+import evalg.models
 from evalg import db
-from evalg.models import Base
-from sqlalchemy_utils import UUIDType, JSONType
+from evalg.database.types import JSONType
+from evalg.database.types import UUIDType
 
 
-class OrganizationalUnit(Base):
+class OrganizationalUnit(evalg.models.Base):
     """ Organizational unit. """
-    id = db.Column(UUIDType, default=uuid.uuid4, primary_key=True)
-    name = db.Column(JSONType, nullable=False)
-    external_id = db.Column(db.Text, nullable=False, unique=True)
-    deleted = db.Column(db.Boolean, default=False)
+
+    id = db.Column(
+        UUIDType,
+        default=uuid.uuid4,
+        primary_key=True)
+
+    name = db.Column(
+        JSONType,
+        nullable=False)
+
+    external_id = db.Column(
+        db.Text,
+        nullable=False,
+        unique=True)
+
+    deleted = db.Column(
+        db.Boolean,
+        default=False)
+
     tag = db.Column(db.String)
-    parent = db.relationship('OrganizationalUnit',
-                             backref='children',
-                             remote_side=id)
-    parent_id = db.Column(UUIDType(), db.ForeignKey('organizational_unit.id'))
+
+    parent = db.relationship(
+        'OrganizationalUnit',
+        backref='children',
+        remote_side=id)
+
+    parent_id = db.Column(
+        UUIDType(),
+        db.ForeignKey('organizational_unit.id'))
 
     def isunder(self, other, acceptsame=True):
         """ Checks if self is a sub ou of other. """

@@ -1,10 +1,5 @@
 from graphene import String, Field, List, Boolean
-from graphene.types.generic import GenericScalar
 from graphene_sqlalchemy import SQLAlchemyObjectType
-from graphene_sqlalchemy.converter import (convert_sqlalchemy_type,
-                                           get_column_doc,
-                                           is_column_nullable)
-from sqlalchemy_utils import URLType, JSONType, UUIDType
 
 import evalg.models.authorization
 import evalg.models.candidate
@@ -17,24 +12,6 @@ import evalg.models.voter
 from evalg.metadata import group_announcement_blockers
 from evalg.metadata import group_publication_blockers
 from evalg.utils import convert_json
-
-
-@convert_sqlalchemy_type.register(URLType)
-def convert_url_to_string(type, column, registry=None):
-    return String(description=get_column_doc(column),
-                  required=not(is_column_nullable(column)))
-
-
-@convert_sqlalchemy_type.register(JSONType)
-def convert_json_to_generic_scalar(type, column, registry=None):
-    return GenericScalar(description=get_column_doc(column),
-                         required=not(is_column_nullable(column)))
-
-
-@convert_sqlalchemy_type.register(UUIDType)
-def convert_uuid_type_to_string(type, column, registry=None):
-    return String(description=get_column_doc(column),
-                  required=not(is_column_nullable(column)))
 
 
 class Candidate(SQLAlchemyObjectType):

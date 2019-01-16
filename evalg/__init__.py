@@ -55,7 +55,7 @@ APP_TEMPLATE_CONFIG_FILE_NAME = 'evalg_template_config.py'
 APP_INSTANCE_PATH_ENVIRON_NAME = 'EVALG_INSTANCE_PATH'
 """Name of environment variable used to set the instance_path."""
 
-db = HackSQLAlchemy()
+db = SQLAlchemy()
 """Database."""
 
 ma = Marshmallow()
