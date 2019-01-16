@@ -31,7 +31,7 @@ default_config = {
     },
     'formatters': {
         'default': {
-            'class': f'{__name__}.SafeFormatter',
+            'class': '{}.SafeFormatter'.format(__name__),
             'datefmt': '%Y-%m-%d %H:%M:%S',
             'format': ('%(asctime)s - %(request_id).8s - '
                        '%(levelname)s - %(name)s - %(message)s'),
@@ -109,6 +109,7 @@ if has_jsonlogger:
     class SafeJsonFormatter(
             SafeFormatter,
             pythonjsonlogger.jsonlogger.JsonFormatter):
+        """ A log formatter that formats SafeRecords as a JSON string. """
         pass
 
 
