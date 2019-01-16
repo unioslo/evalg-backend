@@ -110,7 +110,7 @@ def create_app(config=None, flask_class=Flask):
 
     # Setup logging
     init_logging(app)
-    request_id.init_app(app)
+    request_id.RequestId(app)
 
     # Setup db
     db.init_app(app)
