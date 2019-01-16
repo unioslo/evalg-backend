@@ -1,9 +1,11 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" eValg command line interface. """
-import click
+"""
+Commands for interacting with the evalg database.
 
-from flask.cli import with_appcontext
+This module extend the existing flask cli with custom commands for interacting
+with the evalg database.
+"""
+import click
+import flask.cli
 
 
 def save_object(obj):
@@ -80,7 +82,7 @@ def shell_context():
 
 @click.command('populate-tables',
                short_help='Populate tables with example data.')
-@with_appcontext
+@flask.cli.with_appcontext
 def populate_tables():
     """ Use flask_fixtures to populate tables. """
     import flask_fixtures
@@ -91,15 +93,21 @@ def populate_tables():
 @click.command('recreate-tables',
                short_help='Recreate tables with db.drop_all() and '
                'db.create_all()')
-@with_appcontext
+@flask.cli.with_appcontext
 def recreate_tables():
     from evalg import db
     db.drop_all()
     db.create_all()
 
 
+commands = tuple((
+    populate_tables,
+    recreate_tables,
+))
+
+
 def init_app(app):
-    """ Add commands and context. """
+    """ Add commands to flask application cli. """
     app.shell_context_processor(shell_context)
-    app.cli.add_command(populate_tables)
-    app.cli.add_command(recreate_tables)
+    for command in commands:
+        app.cli.add_command(command)
