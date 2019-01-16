@@ -1,37 +1,23 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""Module for bootstrapping the ballotbox application."""
-
-import os
+"""
+Module for bootstrapping the ballotbox application.
+"""
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.contrib.fixers import ProxyFix
-import pkg_resources
 
-from evalg_common.configuration import init_config
-from evalg_common.logging import init_logging
-from evalg_common import request_id
+from evalg import request_id
+from evalg import version
+from evalg.config import init_config
+from evalg.logging import init_logging
 
 from ballotbox import default_config
 from ballotbox import api
 
-DISTRIBUTION_NAME = 'ballotbox'
 
+__version__ = version.get_distribution().version
 
-def get_distribution():
-    """Get the distribution object for this single module dist."""
-    try:
-        return pkg_resources.get_distribution(DISTRIBUTION_NAME)
-    except pkg_resources.DistributionNotFound:
-        return pkg_resources.Distribution(
-            project_name=DISTRIBUTION_NAME,
-            version='0.0.0',
-            location=os.path.dirname(__file__))
-
-
-__version__ = get_distribution().version
 
 APP_CONFIG_ENVIRON_NAME = 'BALLOTBOX_CONFIG'
 """

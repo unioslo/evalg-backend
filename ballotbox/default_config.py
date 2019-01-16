@@ -36,7 +36,7 @@ LOGGING = {
     },
     'filters': {
         'request_id': {
-            '()': 'evalg_common.request_id.RequestIdFilter'
+            '()': 'evalg.request_id.RequestIdFilter'
         }
     }
 }

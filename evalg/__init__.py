@@ -1,25 +1,23 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""Module for bootstrapping the eValg application."""
+"""
+Module for bootstrapping the eValg application.
+"""
 import os
 
 from flask import Flask, json
-from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
-from flask_migrate import Migrate
 from flask_apispec.extension import FlaskApiSpec
 from flask_cors import CORS
+from flask_marshmallow import Marshmallow
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.contrib.fixers import ProxyFix
 
-from evalg_common.configuration import init_config
-from evalg_common.logging import init_logging
-from evalg_common import request_id
-from evalg_common import cli as common_cli
-
+from . import cli
 from . import default_config
 from . import default_election_template_config
-from . import cli
+from . import request_id
 from . import version
+from .config import init_config
+from .logging import init_logging
 
 
 __version__ = version.get_distribution().version
@@ -91,7 +89,6 @@ def create_app(config=None, flask_class=Flask):
                       instance_relative_config=True)
 
     # Setup CLI
-    common_cli.init_app(app)
     cli.init_app(app)
 
     init_config(app, config,

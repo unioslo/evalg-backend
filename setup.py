@@ -28,8 +28,7 @@ def get_textfile(filename):
 def get_packages():
     """List of (sub)packages to install."""
     return setuptools.find_packages('.',
-                                    include=('evalg_common', 'evalg_common.*',
-                                             'evalg', 'evalg.*',
+                                    include=('evalg', 'evalg.*',
                                              'ballotbox', 'ballotbox.*'))
 
 
