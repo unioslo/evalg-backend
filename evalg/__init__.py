@@ -10,32 +10,19 @@ from flask_migrate import Migrate
 from flask_apispec.extension import FlaskApiSpec
 from flask_cors import CORS
 from werkzeug.contrib.fixers import ProxyFix
-import pkg_resources
 
 from evalg_common.configuration import init_config
 from evalg_common.logging import init_logging
 from evalg_common import request_id
 from evalg_common import cli as common_cli
 
-from evalg import default_config
-from evalg import default_election_template_config
-from evalg import cli
-
-DISTRIBUTION_NAME = 'evalg'
-
-
-def get_distribution():
-    """Get the distribution object for this single module dist."""
-    try:
-        return pkg_resources.get_distribution(DISTRIBUTION_NAME)
-    except pkg_resources.DistributionNotFound:
-        return pkg_resources.Distribution(
-            project_name=DISTRIBUTION_NAME,
-            version='0.0.0',
-            location=os.path.dirname(__file__))
+from . import default_config
+from . import default_election_template_config
+from . import cli
+from . import version
 
 
-__version__ = get_distribution().version
+__version__ = version.get_distribution().version
 
 
 class HackSQLAlchemy(SQLAlchemy):
@@ -68,7 +55,7 @@ APP_TEMPLATE_CONFIG_FILE_NAME = 'evalg_template_config.py'
 APP_INSTANCE_PATH_ENVIRON_NAME = 'EVALG_INSTANCE_PATH'
 """Name of environment variable used to set the instance_path."""
 
-db = HackSQLAlchemy()
+db = SQLAlchemy()
 """Database."""
 
 ma = Marshmallow()
@@ -93,14 +80,15 @@ def create_app(config=None, flask_class=Flask):
     """
 
     # Load a custom instance_path if set
-    instance_path = os.environ.get(APP_INSTANCE_PATH_ENVIRON_NAME, default=None)
+    instance_path = os.environ.get(
+        APP_INSTANCE_PATH_ENVIRON_NAME,
+        default=None)
 
     # Setup Flask app
     app = flask_class(__name__,
                       static_folder=None,
                       instance_path=instance_path,
                       instance_relative_config=True)
-
 
     # Setup CLI
     common_cli.init_app(app)
