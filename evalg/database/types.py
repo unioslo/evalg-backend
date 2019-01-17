@@ -13,7 +13,7 @@ import sqlalchemy_utils.types.json
 from graphene.types.generic import GenericScalar
 from graphene_sqlalchemy.converter import convert_sqlalchemy_type
 from graphene_sqlalchemy.converter import convert_column_to_string
-from graphene_sqlalchemy.converter import convert_json_to_string
+# from graphene_sqlalchemy.converter import convert_json_to_string
 from graphene_sqlalchemy.converter import get_column_doc
 from graphene_sqlalchemy.converter import is_column_nullable
 from sqlalchemy_json import MutableJson
@@ -40,13 +40,6 @@ class UuidType(sqlalchemy_utils.UUIDType):
 
 class JsonType(sqlalchemy_utils.types.json.JSONType):
     """ Column type for JSON data. """
-
-    def __repr__(self):
-        return sqlalchemy.util.generic_repr(self)
-
-
-class IpAddressType(sqlalchemy_utils.types.ip_address.IPAddressType):
-    """ Column type for ip addresses. """
 
     def __repr__(self):
         return sqlalchemy.util.generic_repr(self)
