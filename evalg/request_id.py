@@ -1,45 +1,80 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" Request ID tools. """
+""" Utilities for processing and logging a request id. """
 import logging
 import uuid
-from flask import request, has_request_context
+
+from flask import _request_ctx_stack
+from flask import current_app
+from flask import has_request_context
+from flask import request
+
+logger = logging.getLogger(__name__)
+request_id_key = __name__ + ':request_id'
 
 
 def generate_request_id():
-    """ Generates a random request UUID. """
+    """ Generate a random request uuid. """
     return str(uuid.uuid4())
 
 
+def set_request_id(request_id):
+    """ Set request_id in request context. """
+    ctx = _request_ctx_stack.top
+    setattr(ctx, request_id_key, request_id)
+
+
 def get_request_id():
-    """ Gets the current request ID. """
-    return request.headers.get('X-Request-ID', 'no-id')
+    """ Get request_id from request context. """
+    ctx = _request_ctx_stack.top
+    return getattr(ctx, request_id_key, None)
 
 
-def init_app(app):
-    """ Sets header name and adds middleware. """
-    app.config.setdefault('REQUEST_ID_HEADER', 'X-Request-ID')
-    app.wsgi_app = RequestIDMiddleware(app.wsgi_app,
-                                       app.config['REQUEST_ID_HEADER'])
+class RequestId(object):
+    """ Update request context with a request_id. """
 
+    CONFIG_REQUEST_HEADER_KEY = 'REQUEST_ID_HEADER'
+    CONFIG_REQUEST_HEADER_DEFAULT = 'X-Request-Id'
+    CONFIG_RESPONSE_HEADER_KEY = 'RESPONSE_ID_HEADER'
+    CONFIG_RESPONSE_HEADER_DEFAULT = 'X-Request-Id'
 
-class RequestIDMiddleware(object):
-    def __init__(self, app, request_id_header):
-        self.app = app
-        self.request_id_header = request_id_header
+    def __init__(self, app=None):
+        if app is not None:
+            self.init_app(app)
 
-    def __call__(self, environ, start_response):
-        request_id = generate_request_id()
-        environ["HTTP_X_REQUEST_ID"] = request_id
+    @property
+    def _request_header(self):
+        return current_app.config[self.CONFIG_REQUEST_HEADER_KEY]
 
-        def new_start_response(status, headers, exc_info=None):
-            headers.append(('X-Request-ID', request_id))
-            return start_response(status, headers, exc_info)
-        return self.app(environ, new_start_response)
+    @property
+    def _response_header(self):
+        return current_app.config[self.CONFIG_RESPONSE_HEADER_KEY]
+
+    def init_app(self, app):
+        app.config.setdefault(self.CONFIG_REQUEST_HEADER_KEY,
+                              self.CONFIG_REQUEST_HEADER_DEFAULT)
+        app.config.setdefault(self.CONFIG_RESPONSE_HEADER_KEY,
+                              self.CONFIG_RESPONSE_HEADER_DEFAULT)
+
+        @app.before_request
+        def update_context_with_id():
+            request_id = (request.headers.get(self._request_header)
+                          or generate_request_id())
+            set_request_id(request_id)
+            logger.debug("request=%r", request)
+
+        @app.after_request
+        def update_response_with_id(resp):
+            resp.headers[self._response_header] = get_request_id()
+            logger.debug("response=%r", resp)
+            return resp
 
 
 class RequestIdFilter(logging.Filter):
+    """ Logging filter that adds the request id to log records. """
+
     def filter(self, record):
-        """ Logging filter that adds the request ID to the log record. """
-        record.request_id = get_request_id() if has_request_context() else ''
+        if has_request_context():
+            request_id = get_request_id()
+        else:
+            request_id = None
+        record.request_id = request_id
         return True

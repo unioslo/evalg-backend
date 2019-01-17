@@ -11,7 +11,7 @@ LOGGING = {
     'version': 1,
     'loggers': {
         '': {
-            'handlers': ['stream_stderr_simple','file_json'],
+            'handlers': ['stream_stderr_simple', 'file_json'],
             'level': 'DEBUG',
         },
         'ballotbox': {
@@ -20,16 +20,25 @@ LOGGING = {
         },
     },
     'formatters': {
-        'json': {
-            'datefmt': '%Y-%m-%dT%H:%M:%S%z',
-            'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-            'format': '%(asctime)s %(created)s %(relativeCreated)s %(msecs)s %(process)s %(processName)s %(thread)s %(threadName)s %(pathname)s %(filename)s %(lineno)s %(module)s %(funcName)s %(name)s %(levelname)s %(levelno)s %(exc_info)s %(exc_text)s %(stack_info)s %(request_id)s %(msg)s %(args)s %(message)s'
-        },
         'simple': {
+            'class': 'evalg.logging.SafeFormatter',
             'datefmt': '%Y-%m-%d %H:%M:%S',
-            'class': 'logging.Formatter',
-            'format': '%(asctime)s - %(request_id).8s - %(levelname)s - %(name)s - %(message)s'
-        }
+            'format': (
+                '%(asctime)s - %(request_id).8s - %(levelname)s - %(name)s -'
+                ' %(message)s'
+            ),
+        },
+        'json': {
+            'class': 'evalg.logging.SafeJsonFormatter',
+            'datefmt': '%Y-%m-%dT%H:%M:%S%z',
+            'format': (
+                '%(asctime)s %(name)s %(levelname)s %(levelno)s %(message)s '
+                '%(process)s %(processName)s %(thread)s %(threadName)s '
+                '%(pathname)s %(filename)s %(lineno)s %(module)s %(funcName)s '
+                '%(exc_info)s %(exc_text)s %(stack_info)s %(msecs)s '
+                '%(request_id)s'
+            ),
+        },
     },
     'handlers': {
         'null': {
