@@ -1,11 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """ Models for voters. """
 
 import uuid
 
 from evalg import db
-from evalg.database.types import UUIDType
+from evalg.database.types import UuidType
 from evalg.models import Base
 
 
@@ -28,21 +26,21 @@ class Voter(Base):
     """ Voter / census member model."""
 
     id = db.Column(
-        UUIDType,
+        UuidType,
         primary_key=True,
         default=uuid.uuid4)
 
     tag = db.Column(db.UnicodeText)
 
     person_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('person.id'),
         nullable=False)
 
     person = db.relationship('Person')
 
     pollbook_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('poll_book.id'),
         nullable=False)
 

@@ -6,20 +6,20 @@ import uuid
 
 import evalg.models
 from evalg import db
-from evalg.database.types import JSONType
-from evalg.database.types import UUIDType
+from evalg.database.types import JsonType
+from evalg.database.types import UuidType
 
 
 class OrganizationalUnit(evalg.models.Base):
     """ Organizational unit. """
 
     id = db.Column(
-        UUIDType,
+        UuidType,
         default=uuid.uuid4,
         primary_key=True)
 
     name = db.Column(
-        JSONType,
+        JsonType,
         nullable=False)
 
     external_id = db.Column(
@@ -39,7 +39,7 @@ class OrganizationalUnit(evalg.models.Base):
         remote_side=id)
 
     parent_id = db.Column(
-        UUIDType(),
+        UuidType(),
         db.ForeignKey('organizational_unit.id'))
 
     def isunder(self, other, acceptsame=True):

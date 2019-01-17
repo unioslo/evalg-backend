@@ -7,14 +7,14 @@ import uuid
 import evalg.models
 from evalg import db
 from evalg.database.types import NestedMutableJson
-from evalg.database.types import UUIDType
+from evalg.database.types import UuidType
 
 
 class PollBook(evalg.models.Base):
     """ Poll book / census. """
 
     id = db.Column(
-        UUIDType,
+        UuidType,
         primary_key=True,
         default=uuid.uuid4)
 
@@ -31,7 +31,7 @@ class PollBook(evalg.models.Base):
         default=0)
 
     election_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('election.id'),
         nullable=False)
 
