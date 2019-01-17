@@ -50,7 +50,7 @@ class UpdateBaseSettings(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = evalg.models.electionElectionGroup.query.get(args.get('id'))
+        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
         el_grp.meta['candidate_rules']['candidate_gender'] =\
             args.get('has_gender_quota')
         db.session.add(el_grp)
