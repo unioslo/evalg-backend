@@ -8,14 +8,14 @@ import uuid
 
 import evalg.models
 from evalg import db
-from evalg.database.types import UUIDType
+from evalg.database.types import UuidType
 
 
 class Group(evalg.models.Base):
     """ Group of persons. """
 
     id = db.Column(
-        UUIDType,
+        UuidType,
         primary_key=True,
         default=uuid.uuid4)
 
@@ -64,7 +64,7 @@ class GroupExternalID(evalg.models.Base):
     __tablename__ = 'group_external_id'
 
     group_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('group.id'),
         nullable=False)
 

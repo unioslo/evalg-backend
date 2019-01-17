@@ -16,8 +16,8 @@ import uuid
 import evalg.models
 import evalg.models.ou
 from evalg import db
-from evalg.database.types import UUIDType
-from evalg.database.types import JSONType
+from evalg.database.types import UuidType
+from evalg.database.types import JsonType
 
 
 Column = db.Column
@@ -36,7 +36,7 @@ class Principal(evalg.models.Base):
     """
 
     principal_id = Column(
-        UUIDType,
+        UuidType,
         default=uuid.uuid4,
         primary_key=True)
 
@@ -58,13 +58,13 @@ class PersonPrincipal(Principal):
     """ Security principal based on a person/user entity. """
 
     principal_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('principal.principal_id'),
         default=uuid.uuid4,
         primary_key=True)
 
     person_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('person.id'),
         nullable=False)
 
@@ -82,13 +82,13 @@ class GroupPrincipal(Principal):
     """ Security principal based on membership in a group. """
 
     principal_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('principal.principal_id'),
         default=uuid.uuid4,
         primary_key=True)
 
     group_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('group.id'),
         nullable=False)
 
@@ -120,7 +120,7 @@ class Role(evalg.models.Base):
     """ Roles granted to a principal. """
 
     grant_id = Column(
-        UUIDType,
+        UuidType,
         default=uuid.uuid4,
         primary_key=True)
 
@@ -138,7 +138,7 @@ class Role(evalg.models.Base):
         foreign_keys=(role, role_type))
 
     principal_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('principal.principal_id'),
         nullable=False)
 
@@ -169,7 +169,7 @@ class RoleList(evalg.models.Base):
     role_class = Role
 
     name = Column(
-        JSONType,
+        JsonType,
         nullable=False)
 
     perms = relationship(
@@ -191,7 +191,7 @@ class OuRole(Role):
     """ Roles granted to principal on OU. """
 
     grant_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('role.grant_id'),
         default=uuid.uuid4,
         primary_key=True)
@@ -202,14 +202,14 @@ class OuRole(Role):
         nullable=False)
 
     ou_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('organizational_unit.id'),
         nullable=False)
 
     ou = relationship(evalg.models.ou.OrganizationalUnit)
 
     principal_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('principal.principal_id'),
         nullable=False)
 
@@ -253,7 +253,7 @@ class ElectionRole(Role):
     """ Roles granted on election. """
 
     grant_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('role.grant_id'),
         default=uuid.uuid4,
         primary_key=True)
@@ -264,7 +264,7 @@ class ElectionRole(Role):
         nullable=False)
 
     election_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('election.id'),
         nullable=False)
 
@@ -274,7 +274,7 @@ class ElectionRole(Role):
         lazy='joined')
 
     principal_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('principal.principal_id'),
         nullable=False)
 
@@ -321,7 +321,7 @@ class ElectionGroupRole(Role):
     """ Roles granted on election. """
 
     grant_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('role.grant_id'),
         default=uuid.uuid4,
         primary_key=True)
@@ -332,7 +332,7 @@ class ElectionGroupRole(Role):
         nullable=False)
 
     group_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('election_group.id'))
 
     group = relationship(
@@ -341,7 +341,7 @@ class ElectionGroupRole(Role):
         lazy='joined')
 
     principal_id = Column(
-        UUIDType,
+        UuidType,
         ForeignKey('principal.principal_id'),
         nullable=False)
 

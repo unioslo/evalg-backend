@@ -13,8 +13,8 @@ import evalg.models
 from evalg import db
 from evalg.database.types import MutableJson
 from evalg.database.types import NestedMutableJson
-from evalg.database.types import URLType
-from evalg.database.types import UUIDType
+from evalg.database.types import UrlType
+from evalg.database.types import UuidType
 
 
 # TODO: Use timezone with all timestamps?
@@ -26,7 +26,7 @@ class AbstractElection(evalg.models.Base):
     __abstract__ = True
 
     id = db.Column(
-        UUIDType,
+        UuidType,
         default=uuid.uuid4,
         primary_key=True)
     """ Election id """
@@ -58,7 +58,7 @@ class AbstractElection(evalg.models.Base):
 class ElectionGroup(AbstractElection):
 
     ou_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('organizational_unit.id'),
         nullable=False)
 
@@ -147,7 +147,7 @@ class Election(AbstractElection):
 
     end = db.Column(db.DateTime)
 
-    information_url = db.Column(URLType)
+    information_url = db.Column(UrlType)
 
     contact = db.Column(db.Text)
 
@@ -156,7 +156,7 @@ class Election(AbstractElection):
     mandate_period_end = db.Column(db.DateTime)
 
     group_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('election_group.id'))
 
     election_group = db.relationship(

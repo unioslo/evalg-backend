@@ -7,19 +7,19 @@ import uuid
 import evalg.models
 from evalg import db
 from evalg.database.types import NestedMutableJson
-from evalg.database.types import URLType
-from evalg.database.types import UUIDType
+from evalg.database.types import UrlType
+from evalg.database.types import UuidType
 
 
 class Candidate(evalg.models.Base):
 
     id = db.Column(
-        UUIDType,
+        UuidType,
         primary_key=True,
         default=uuid.uuid4)
 
     list_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('election_list.id'),
         nullable=False)
 
@@ -34,7 +34,7 @@ class Candidate(evalg.models.Base):
 
     meta = db.Column(NestedMutableJson)
 
-    information_url = db.Column(URLType)
+    information_url = db.Column(UrlType)
 
     priority = db.Column(
         db.Integer,

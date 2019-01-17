@@ -9,15 +9,15 @@ import uuid
 import evalg.models
 from evalg import db
 from evalg.database.types import NestedMutableJson
-from evalg.database.types import URLType
-from evalg.database.types import UUIDType
+from evalg.database.types import UrlType
+from evalg.database.types import UuidType
 
 
 class ElectionList(evalg.models.Base):
     """ List of electable candidates in an election. """
 
     id = db.Column(
-        UUIDType,
+        UuidType,
         primary_key=True,
         default=uuid.uuid4)
 
@@ -25,10 +25,10 @@ class ElectionList(evalg.models.Base):
 
     description = db.Column(NestedMutableJson)
 
-    information_url = db.Column(URLType)
+    information_url = db.Column(UrlType)
 
     election_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('election.id'),
         nullable=False)
 

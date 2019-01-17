@@ -7,14 +7,14 @@ import uuid
 
 import evalg.models
 from evalg import db
-from evalg.database.types import UUIDType
+from evalg.database.types import UuidType
 
 
 class Person(evalg.models.Base):
     """ Person. """
 
     id = db.Column(
-        UUIDType,
+        UuidType,
         primary_key=True,
         default=uuid.uuid4)
 
@@ -83,7 +83,7 @@ class PersonExternalID(evalg.models.Base):
     __tablename__ = 'person_external_id'
 
     person_id = db.Column(
-        UUIDType,
+        UuidType,
         db.ForeignKey('person.id'),
         nullable=False)
 
