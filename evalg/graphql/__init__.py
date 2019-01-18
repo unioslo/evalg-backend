@@ -8,6 +8,11 @@ from . import entities
 from . import mutations
 from . import queries
 
+    census_file_types = graphene.List(graphene.String)
+
+    def resolve_census_file_types(self, info, **kwargs):
+       return CensusFileParser.get_supported_file_types()
+
 
 schema = graphene.Schema(
     query=queries.ElectionQuery,
