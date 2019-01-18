@@ -2,19 +2,19 @@
 Database models for users
 """
 
-import datetime
 import uuid
 
+import evalg.database.types
 import evalg.models
 from evalg import db
-from evalg.database.types import UuidType
+from evalg.utils import utcnow
 
 
 class Person(evalg.models.Base):
     """ Person. """
 
     id = db.Column(
-        UuidType,
+        evalg.database.types.UuidType,
         primary_key=True,
         default=uuid.uuid4)
 
@@ -39,8 +39,8 @@ class Person(evalg.models.Base):
         nullable=False)
 
     last_update = db.Column(
-        db.DateTime,
-        default=datetime.datetime.now)
+        evalg.database.types.UtcDateTime,
+        default=utcnow)
 
     # National Identity Number
     nin = db.Column(
@@ -83,7 +83,7 @@ class PersonExternalID(evalg.models.Base):
     __tablename__ = 'person_external_id'
 
     person_id = db.Column(
-        UuidType,
+        evalg.database.types.UuidType,
         db.ForeignKey('person.id'),
         nullable=False)
 

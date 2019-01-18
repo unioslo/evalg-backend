@@ -156,8 +156,8 @@ class DeleteVotersInPollBook(graphene.Mutation):
 
 class ElectionVoterInfoInput(graphene.InputObjectType):
     id = graphene.UUID(required=True)
-    mandate_period_start = graphene.DateTime(required=True)
-    mandate_period_end = graphene.DateTime(required=True)
+    mandate_period_start = graphene.Date(required=True)
+    mandate_period_end = graphene.Date(required=True)
     contact = graphene.String()
     information_url = graphene.String()
 

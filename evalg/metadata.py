@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Functional API for handling election metadata."""
+import datetime
 
 from flask import current_app
 from functools import wraps
@@ -232,6 +233,11 @@ def make_group(**kw):
     return ElectionGroup(**kw)
 
 
+default_start_time = datetime.time(7, 0)
+default_end_time = datetime.time(11, 0)
+default_duration = datetime.timedelta(days=7)
+
+
 def make_group_from_template(template_name, ou, principals=()):
     """Create election with elections from template"""
     current_app.logger.info('Make election group %s for %s',
@@ -252,7 +258,7 @@ def make_group_from_template(template_name, ou, principals=()):
     elections = template['settings']['elections']
     metadata = template['settings']['rule_set']
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
 
     def candidate_type(e):
         return metadata['candidate-type']
@@ -264,11 +270,12 @@ def make_group_from_template(template_name, ou, principals=()):
     def default_start():
         return datetime.datetime.combine(
             now.date(),
-            datetime.time(8, 0))
+            default_start_time).replace(tzinfo=datetime.timezone.utc)
 
     def default_end():
         return datetime.datetime.combine(
-            (now + datetime.timedelta(days=7)).date(), datetime.time(12, 0))
+            (now + default_duration).date(),
+            default_end_time).replace(tzinfo=datetime.timezone.utc)
 
     def mandate_period_start(e):
         start = e['mandate_period'].get('start', '01-01')

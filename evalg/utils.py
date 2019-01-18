@@ -1,3 +1,4 @@
+import datetime
 import re
 
 under_pat = re.compile(r'_([a-z])')
@@ -21,3 +22,7 @@ def convert_json_internal(data, convert):
         return [convert_json_internal(x, convert) for x in data]
     else:
         return data
+
+
+def utcnow():
+    return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)

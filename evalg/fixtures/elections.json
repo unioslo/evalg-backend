@@ -93,8 +93,8 @@
     "records": [
       {
         "id": "7625e92b-c31c-4289-bd8e-dac7e60833ce",
-        "start": "2018-08-30T08:00:00",
-        "end": "2018-09-06T12:00:00",
+        "start": "2018-08-30T08:00:00Z",
+        "end": "2018-09-06T12:00:00Z",
         "name": {
           "nb": "Studentparlament ved Universitetet for Hacking",
           "nn": "Studentparlament ved Universitetet for Hacking",
@@ -103,15 +103,15 @@
         "description": null,
         "information_url": null,
         "contact": null,
-        "mandate_period_start": "2019-07-01T00:00:00",
-        "mandate_period_end": "2020-07-01T00:00:00",
+        "mandate_period_start": "2019-07-01",
+        "mandate_period_end": "2020-07-01",
         "mandate_type": null,
         "group_id": "729bf1a5-6f68-4ed5-bdc2-8cf51ccf5389"
       },
       {
         "id": "7c0cd9eb-ffbe-4b14-8f17-abc5171f90bf",
-        "start": "2018-08-29T08:00:00",
-        "end": "2018-09-05T12:00:00",
+        "start": "2018-08-29T08:00:00Z",
+        "end": "2018-09-05T12:00:00Z",
         "active": true,
         "name": {
           "nb": "Rektor ved Universitetet for Hacking",
@@ -121,16 +121,16 @@
         "description": null,
         "information_url": null,
         "contact": null,
-        "mandate_period_start": "2019-01-01T00:00:00",
-        "mandate_period_end": "2023-01-01T00:00:00",
+        "mandate_period_start": "2019-01-01",
+        "mandate_period_end": "2023-01-01",
         "mandate_type": null,
         "group_id": "aafef259-39ac-478d-909b-e72c0ce2d397"
       },
       {
         "id": "cb832894-5cda-418a-9310-1f47551ce893",
         "active": true,
-        "start": "2018-08-29T08:00:00",
-        "end": "2018-09-05T12:00:00",
+        "start": "2018-08-29T08:00:00Z",
+        "end": "2018-09-05T12:00:00Z",
         "name": {
           "nb": "Vitenskapelig ansatte",
           "nn": "Vitskapeleg tilsette",
@@ -157,16 +157,16 @@
         "description": null,
         "information_url": null,
         "contact": null,
-        "mandate_period_start": "2019-01-01T00:00:00",
-        "mandate_period_end": "2023-01-01T00:00:00",
+        "mandate_period_start": "2019-01-01",
+        "mandate_period_end": "2023-01-01",
         "mandate_type": null,
         "group_id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09"
       },
       {
         "id": "f30bfd8e-27c2-43b3-af99-d0bdc8649d82",
         "active": true,
-        "start": "2018-08-29T08:00:00",
-        "end": "2018-09-05T12:00:00",
+        "start": "2018-08-29T08:00:00Z",
+        "end": "2018-09-05T12:00:00Z",
         "name": {
           "nb": "Midlertidig vitenskapelige ansatte",
           "nn": "Mellombels vitskapeleg tilsette",
@@ -193,16 +193,16 @@
         "description": null,
         "information_url": null,
         "contact": null,
-        "mandate_period_start": "2019-01-01T00:00:00",
-        "mandate_period_end": "2020-01-01T00:00:00",
+        "mandate_period_start": "2019-01-01",
+        "mandate_period_end": "2020-01-01",
         "mandate_type": null,
         "group_id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09"
       },
       {
         "id": "ed174958-4bd8-434e-b7a1-76ac6fe60918",
         "active": true,
-        "start": "2018-08-29T08:00:00",
-        "end": "2018-09-05T12:00:00",
+        "start": "2018-08-29T08:00:00Z",
+        "end": "2018-09-05T12:00:00Z",
         "name": {
           "nb": "Teknisk/administrativt ansatte",
           "nn": "Teknisk/administrativt tilsette",
@@ -229,16 +229,16 @@
         "description": null,
         "information_url": null,
         "contact": null,
-        "mandate_period_start": "2019-01-01T00:00:00",
-        "mandate_period_end": "2023-01-01T00:00:00",
+        "mandate_period_start": "2019-01-01",
+        "mandate_period_end": "2023-01-01",
         "mandate_type": null,
         "group_id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09"
       },
       {
         "id": "a3f0e207-3ca1-4781-a4ea-8d42446a415c",
         "active": true,
-        "start": "2018-08-29T08:00:00",
-        "end": "2018-09-05T12:00:00",
+        "start": "2018-08-29T08:00:00Z",
+        "end": "2018-09-05T12:00:00Z",
         "name": {
           "nb": "Studenter",
           "nn": "Studentar",
@@ -265,8 +265,8 @@
         "description": null,
         "information_url": null,
         "contact": null,
-        "mandate_period_start": "2019-01-01T00:00:00",
-        "mandate_period_end": "2020-01-01T00:00:00",
+        "mandate_period_start": "2019-01-01",
+        "mandate_period_end": "2020-01-01",
         "mandate_type": null,
         "group_id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09"
       }

@@ -2,20 +2,22 @@
 Database models for groups of users.
 """
 
-import datetime
 import uuid
 
+# from sqlalchemy.orm import relationship
+# from sqlalchemy.schema import Column
 
+import evalg.database.types
 import evalg.models
 from evalg import db
-from evalg.database.types import UuidType
+from evalg.utils import utcnow
 
 
 class Group(evalg.models.Base):
     """ Group of persons. """
 
     id = db.Column(
-        UuidType,
+        evalg.database.types.UuidType,
         primary_key=True,
         default=uuid.uuid4)
 
@@ -28,8 +30,8 @@ class Group(evalg.models.Base):
         nullable=False)
 
     last_update = db.Column(
-        db.DateTime,
-        default=datetime.datetime.now)
+        evalg.database.types.UtcDateTime,
+        default=utcnow)
 
     principals = db.relationship('GroupPrincipal')
 
@@ -64,7 +66,7 @@ class GroupExternalID(evalg.models.Base):
     __tablename__ = 'group_external_id'
 
     group_id = db.Column(
-        UuidType,
+        evalg.database.types.UuidType,
         db.ForeignKey('group.id'),
         nullable=False)
 
