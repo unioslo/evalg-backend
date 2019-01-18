@@ -3,12 +3,12 @@ Module for bootstrapping the eValg application.
 """
 import os
 
+import flask_sqlalchemy
 from flask import Flask, json
 from flask_apispec.extension import FlaskApiSpec
 from flask_cors import CORS
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.contrib.fixers import ProxyFix
 
 from . import cli
@@ -23,17 +23,19 @@ from .logging import init_logging
 __version__ = version.get_distribution().version
 
 
-class HackSQLAlchemy(SQLAlchemy):
+class SQLAlchemy(flask_sqlalchemy.SQLAlchemy):
     """
-    Ugly way to get SQLAlchemy engine to pass the Flask JSON serializer
-    to `create_engine`.
-
-    See https://github.com/mitsuhiko/flask-sqlalchemy/pull/67/files
+    Patch flask_sqlalchemy with custom params for ``create_engine()``.
     """
 
     def apply_driver_hacks(self, app, info, options):
-        options.update(json_serializer=json.dumps)
-        super(HackSQLAlchemy, self).apply_driver_hacks(app, info, options)
+        if info.drivername == 'postgres':
+            # We need our custom json module to be used for postgres, because
+            # the engine does the json serialization.
+            # Note that any change here must be co-ordinated with
+            # 'evalg.database.types'
+            options.update(json_serializer=json.dumps)
+        super(SQLAlchemy, self).apply_driver_hacks(app, info, options)
 
 
 APP_CONFIG_ENVIRON_NAME = 'EVALG_CONFIG'
