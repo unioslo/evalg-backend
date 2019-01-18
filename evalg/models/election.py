@@ -176,7 +176,7 @@ class Election(AbstractElection):
 
     @hybrid_property
     def announced_at(self):
-        return self.group.announced_at
+        return self.election_group.announced_at
 
     @announced_at.expression
     def announced_at(cls):
@@ -185,16 +185,16 @@ class Election(AbstractElection):
 
     @hybrid_property
     def published_at(self):
-        return self.group.published_at
+        return self.election_group.published_at
 
     @published_at.expression
-    def announced_at(cls):
+    def published_at(cls):
         return select([ElectionGroup.published_at]).where(
             cls.group_id == ElectionGroup.id).as_scalar()
 
     @hybrid_property
     def cancelled_at(self):
-        return self.group.cancelled_at
+        return self.election_group.cancelled_at
 
     @cancelled_at.expression
     def cancelled_at(cls):
@@ -230,11 +230,11 @@ class Election(AbstractElection):
 
     @property
     def ou_id(self):
-        return self.group.ou_id
+        return self.election_group.ou_id
 
     @property
     def ou(self):
-        return self.group.ou
+        return self.election_group.ou
 
     @property
     def list_ids(self):
