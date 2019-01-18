@@ -2,22 +2,16 @@
 Database models for elections.
 """
 import uuid
-import datetime
 
 from sqlalchemy.sql import select, func, case, and_
 from sqlalchemy.ext.hybrid import hybrid_property
 from evalg.models.ou import OrganizationalUnit
 from flask import current_app
 
+import evalg.database.types
 import evalg.models
 from evalg import db
-from evalg.database.types import MutableJson
-from evalg.database.types import NestedMutableJson
-from evalg.database.types import UrlType
-from evalg.database.types import UuidType
-
-
-# TODO: Use timezone with all timestamps?
+from evalg.utils import utcnow
 
 
 class AbstractElection(evalg.models.Base):
@@ -26,15 +20,15 @@ class AbstractElection(evalg.models.Base):
     __abstract__ = True
 
     id = db.Column(
-        UuidType,
+        evalg.database.types.UuidType,
         default=uuid.uuid4,
         primary_key=True)
     """ Election id """
 
-    name = db.Column(MutableJson)
+    name = db.Column(evalg.database.types.MutableJson)
     """ Translated name """
 
-    description = db.Column(MutableJson)
+    description = db.Column(evalg.database.types.MutableJson)
     """ Translated text """
 
     type = db.Column(db.UnicodeText)
@@ -43,10 +37,10 @@ class AbstractElection(evalg.models.Base):
     candidate_type = db.Column(db.Text)
     """ single | single-team | party-list """
 
-    mandate_type = db.Column(MutableJson)
+    mandate_type = db.Column(evalg.database.types.MutableJson)
     """ Translated HR type """
 
-    meta = db.Column(NestedMutableJson)
+    meta = db.Column(evalg.database.types.NestedMutableJson)
     """ Template metadata """
 
     @property
@@ -58,7 +52,7 @@ class AbstractElection(evalg.models.Base):
 class ElectionGroup(AbstractElection):
 
     ou_id = db.Column(
-        UuidType,
+        evalg.database.types.UuidType,
         db.ForeignKey('organizational_unit.id'),
         nullable=False)
 
@@ -70,21 +64,21 @@ class ElectionGroup(AbstractElection):
     public_key = db.Column(db.Text)
     """ Public election key """
 
-    announced_at = db.Column(db.DateTime)
+    announced_at = db.Column(evalg.database.types.UtcDateTime)
     """ Announced if set """
 
-    published_at = db.Column(db.DateTime)
+    published_at = db.Column(evalg.database.types.UtcDateTime)
     """ Published if set """
 
-    cancelled_at = db.Column(db.DateTime)
+    cancelled_at = db.Column(evalg.database.types.UtcDateTime)
     """ Cancelled if set """
 
-    deleted_at = db.Column(db.DateTime)
+    deleted_at = db.Column(evalg.database.types.UtcDateTime)
     """ Deleted if set """
 
     def announce(self):
         """ Mark as announced. """
-        self.announced_at = datetime.datetime.utcnow()
+        self.announced_at = utcnow()
 
     def unannounce(self):
         """ Mark as unannounced. """
@@ -96,7 +90,7 @@ class ElectionGroup(AbstractElection):
 
     def publish(self):
         """ Mark as published. """
-        self.published_at = datetime.datetime.utcnow()
+        self.published_at = utcnow()
 
     def unpublish(self):
         """ Mark as unpublished. """
@@ -108,7 +102,7 @@ class ElectionGroup(AbstractElection):
 
     def cancel(self):
         """ Mark as cancelled. """
-        self.cancelled_at = datetime.datetime.utcnow()
+        self.cancelled_at = utcnow()
 
     @hybrid_property
     def cancelled(self):
@@ -116,7 +110,7 @@ class ElectionGroup(AbstractElection):
 
     def delete(self):
         """ Mark as deleted. """
-        self.deleted_at = datetime.datetime.utcnow()
+        self.deleted_at = utcnow()
 
     @hybrid_property
     def deleted(self):
@@ -143,20 +137,20 @@ class Election(AbstractElection):
     sequence = db.Column(db.Text)
     """ Some ID for the UI """
 
-    start = db.Column(db.DateTime)
+    start = db.Column(evalg.database.types.UtcDateTime)
 
-    end = db.Column(db.DateTime)
+    end = db.Column(evalg.database.types.UtcDateTime)
 
-    information_url = db.Column(UrlType)
+    information_url = db.Column(evalg.database.types.UrlType)
 
     contact = db.Column(db.Text)
 
-    mandate_period_start = db.Column(db.DateTime)
+    mandate_period_start = db.Column(db.Date)
 
-    mandate_period_end = db.Column(db.DateTime)
+    mandate_period_end = db.Column(db.Date)
 
     group_id = db.Column(
-        UuidType,
+        evalg.database.types.UuidType,
         db.ForeignKey('election_group.id'))
 
     election_group = db.relationship(
@@ -207,9 +201,9 @@ class Election(AbstractElection):
         if self.election_group.cancelled_at:
             return 'cancelled'
         if self.election_group.published_at:
-            if self.end <= datetime.datetime.utcnow():
+            if self.end <= utcnow():
                 return 'closed'
-            if self.start < datetime.datetime.utcnow():
+            if self.start < utcnow():
                 return 'ongoing'
             return 'published'
         if self.election_group.announced_at:
@@ -218,6 +212,15 @@ class Election(AbstractElection):
 
     @status.expression
     def status(cls):
+        # TODO: func.now - utc?
+        # doing:
+        # >>> with app.app_context():
+        # ...     conn = evalg.db.get_engine().connect()
+        # ... s = evalg.db.select([func.now()])
+        # ... conn.execute(s).fetchall()
+        #  gives us a localized datetime object -- if func.now() is tz-aware,
+        #  how does that affect the comparison when start and end are naive (in
+        #  the database).
         return case([
             (cls.cancelled_at.isnot(None), 'cancelled'),
             (and_(cls.published_at.isnot(None),

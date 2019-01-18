@@ -4,8 +4,10 @@ Custom SQLAlchemy column types.
 All types should produce an executable ``repr()``, for compatibility
 with alembic.
 """
+import datetime
 
 import flask.json
+import sqlalchemy.types
 import sqlalchemy.util
 import sqlalchemy_utils
 import sqlalchemy_utils.types.json
@@ -20,7 +22,20 @@ from sqlalchemy_json import MutableJson
 from sqlalchemy_json import NestedMutableJson
 
 
-# Monkey patch sqlalchemy_json serializer
+# Monkey patch sqlalchemy_utils serializer.  Note that sqlalchemy_json inherits
+# from the data type from sqlalchemy_utils - so setting serializer there takes
+# care of both instances.
+#
+# TODO:
+# 1. This patching should maybe be done differently -- maybe override the
+#    JsonType-method for serializing to the db?
+# 2. We might want to implement our own Json serializer to deal with custom
+#    data types. The flask one simply extends the stdlib json module with
+#    support for serializing datetime.datatime and uuid.UUID
+# 3. Note that JsonType only use the json-implementation for serializing to
+#    json-strings for all db-engines *but* postgres -- if using postgres, json
+#    serialization is delegated to the engine, so we'll have to make sure to
+#    use the same serializer there...
 sqlalchemy_utils.types.json.json = flask.json
 
 
@@ -45,6 +60,39 @@ class JsonType(sqlalchemy_utils.types.json.JSONType):
         return sqlalchemy.util.generic_repr(self)
 
 
+class UtcDateTime(sqlalchemy.types.TypeDecorator):
+    """
+    A DateTime type that normalizes all datetimes to UTC.
+
+    The object ensures that:
+        - datetime objects added to the database are converted to utc
+        - no naive datetimes are written to the database
+    """
+
+    impl = sqlalchemy.types.DateTime
+
+    def __init__(self):
+        super(UtcDateTime, self).__init__(timezone=True)
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if not value.tzinfo:
+            # We refuse to add datetimes without timezone info.  If the
+            # datetime is UTC, it should be explicitly marked with tzinfo.
+            raise ValueError("UtcDateTime got a naive datetime object")
+        return value.astimezone(datetime.timezone.utc)
+
+    def process_result_value(self, value, dialect):
+        """ normalize datetimes to the python3 builtin utc tz. """
+        if value is not None:
+            value = value.astimezone(datetime.datetime.utc)
+        return value
+
+    def __repr__(self):
+        return sqlalchemy.util.generic_repr(self)
+
+
 @convert_sqlalchemy_type.register(JsonType)
 @convert_sqlalchemy_type.register(MutableJson)
 @convert_sqlalchemy_type.register(NestedMutableJson)
@@ -55,6 +103,7 @@ def convert_json_to_generic_scalar(type, column, registry=None):
 
 
 # Graphene compatibility:
+convert_sqlalchemy_type.register(UtcDateTime)(convert_column_to_string)
 convert_sqlalchemy_type.register(UrlType)(convert_column_to_string)
 convert_sqlalchemy_type.register(UuidType)(convert_column_to_string)
 
