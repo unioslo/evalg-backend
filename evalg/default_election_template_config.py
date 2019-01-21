@@ -106,7 +106,10 @@ election_types = {
         'elections': [{
             'sequence': 'all',
             'name': None,
-            'mandate_period': {'length': '4 y', 'start': '01-01'},
+            'mandate_period': {
+                'start': '--01-01',
+                'duration': 'P4Y',
+            },
             'voter_groups': [
                 {
                     'name': grp_names['academic_staff'],
@@ -129,7 +132,10 @@ election_types = {
         'elections': [
             {
                 'sequence': 'permanent_academic_staff',
-                'mandate_period': {'length': '4 y', 'start': '01-01'},
+                'mandate_period': {
+                    'start': '--01-01',
+                    'duration': 'P4Y',
+                },
                 'name': grp_names['academic_staff'],
                 'voter_groups': [{
                     'name': grp_names['academic_staff'],
@@ -138,7 +144,10 @@ election_types = {
             },
             {
                 'sequence': 'temp_academic_staff',
-                'mandate_period': {'length': '1 y', 'start': '01-01'},
+                'mandate_period': {
+                    'start': '--01-01',
+                    'duration': 'P1Y',
+                },
                 'name': grp_names['tmp_academic_staff'],
                 'voter_groups': [{
                     'name': grp_names['tmp_academic_staff'],
@@ -147,7 +156,10 @@ election_types = {
             },
             {
                 'sequence': 'tech_adm_staff',
-                'mandate_period': {'length': '4 y', 'start': '01-01'},
+                'mandate_period': {
+                    'start': '--01-01',
+                    'duration': 'P4Y',
+                },
                 'name': grp_names['tech_adm_staff'],
                 'voter_groups': [{
                     'name': grp_names['tech_adm_staff'],
@@ -156,7 +168,10 @@ election_types = {
             },
             {
                 'sequence': 'students',
-                'mandate_period': {'length': '1 y', 'start': '01-01'},
+                'mandate_period': {
+                    'start': '--01-01',
+                    'duration': 'P1Y',
+                },
                 'name': grp_names['students'],
                 'voter_groups': [
                     {
@@ -173,7 +188,10 @@ election_types = {
         'elections': [{
             'sequence': 'all',
             'name': None,
-            'mandate_period': {'length': '1 y', 'start': '07-01'},
+            'mandate_period': {
+                'start': '--07-01',
+                'duration': 'P1Y',
+            },
             'voter_groups': [
                 {
                     'name': grp_names['students'],
