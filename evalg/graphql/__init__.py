@@ -1,126 +1,40 @@
-""" evalg graphql api. """
+"""
+The evalg graphql APIs.
+"""
 import graphene
 from flask_graphql import GraphQLView
 from graphene.types.generic import GenericScalar
-from graphene import Argument
+from graphene_sqlalchemy.converter import convert_sqlalchemy_type
+from graphene_sqlalchemy.converter import convert_column_to_string
+from graphene_sqlalchemy.converter import get_column_doc
+from graphene_sqlalchemy.converter import is_column_nullable
 
-from evalg.election_templates import election_template_builder
-from evalg.utils import convert_json
-from evalg.group import search_group
-from evalg.person import search_person
-
+import evalg.database.types
 from . import entities
 from . import mutations
+from . import queries
 
 
-class Query(graphene.ObjectType):
-    elections = graphene.List(entities.Election)
+# Configure custom conversions
 
-    def resolve_elections(self, info):
-        return entities.Election.get_query(info).all()
+@convert_sqlalchemy_type.register(evalg.database.types.JsonType)
+@convert_sqlalchemy_type.register(evalg.database.types.MutableJson)
+@convert_sqlalchemy_type.register(evalg.database.types.NestedMutableJson)
+def convert_json_to_generic_scalar(type, column, registry=None):
+    return GenericScalar(
+        description=get_column_doc(column),
+        required=not(is_column_nullable(column)))
 
-    election = graphene.Field(
-        entities.Election,
-        id=Argument(graphene.UUID, required=True))
 
-    def resolve_election(self, info, **args):
-        return entities.Election.get_query(info).get(args.get('id'))
-
-    election_groups = graphene.List(entities.ElectionGroup)
-
-    def resolve_election_groups(self, info):
-        return entities.ElectionGroup.get_query(info).all()
-
-    election_group = graphene.Field(
-        entities.ElectionGroup,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_election_group(self, info, **args):
-        return entities.ElectionGroup.get_query(info).get(args.get('id'))
-
-    election_lists = graphene.List(entities.ElectionList)
-
-    def resolve_election_lists(self, info, **args):
-        return entities.ElectionList.get_query.all()
-
-    election_list = graphene.Field(
-        entities.ElectionList,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_election_list(self, info, **args):
-        return entities.ElectionList.get_query(info).get(args.get('id'))
-
-    candidates = graphene.List(entities.Candidate)
-
-    def resolve_candidates(self, info):
-        return entities.Candidate.get_query(info).all()
-
-    candidate = graphene.Field(
-        entities.Candidate,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_candidate(self, info, **args):
-        return entities.Candidate.get_query(info).get(args.get('id'))
-
-    persons = graphene.List(entities.Person)
-
-    def resolve_persons(self, info):
-        return entities.Person.get_query(info).all()
-
-    person = graphene.Field(
-        entities.Person,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_person(self, info, **args):
-        return entities.Person.get_query(info).get(args.get('id'))
-
-    pollbooks = graphene.List(entities.PollBook)
-
-    def resolve_pollbooks(self, info):
-        return entities.PollBook.get_query(info).all()
-
-    pollbook = graphene.Field(
-        entities.PollBook,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_pollbook(self, info, **args):
-        return entities.PollBook.get_query(info).get(args.get('id'))
-
-    voters = graphene.List(entities.Voter)
-
-    def resolve_voters(self, info):
-        return entities.Voter.get_query(info).all()
-
-    voter = graphene.Field(
-        entities.Voter,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_voter(self, info, **args):
-        return entities.Voter.get_query(info).get(args.get('id'))
-
-    election_template = graphene.Field(GenericScalar)
-
-    def resolve_election_template(self, info, **args):
-        template = election_template_builder()
-        return convert_json(template)
-
-    search_persons = graphene.List(
-        entities.Person,
-        val=Argument(graphene.String, required=True))
-
-    def resolve_search_persons(self, info, **args):
-        return search_person(args.get('val'))
-
-    search_groups = graphene.List(
-        entities.Group,
-        val=Argument(graphene.String, required=True))
-
-    def resolve_search_groups(self, info, **args):
-        return search_group(args.get('val'))
+@convert_sqlalchemy_type.register(evalg.database.types.UtcDateTime)
+@convert_sqlalchemy_type.register(evalg.database.types.UrlType)
+@convert_sqlalchemy_type.register(evalg.database.types.UuidType)
+def convert_custom_to_string(*args, **kwargs):
+    return convert_column_to_string(*args, **kwargs)
 
 
 schema = graphene.Schema(
-    query=Query,
+    query=queries.ElectionQuery,
     mutation=mutations.Mutations,
     types=[entities.ElectionGroup])
 

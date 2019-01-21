@@ -11,12 +11,6 @@ import sqlalchemy.types
 import sqlalchemy.util
 import sqlalchemy_utils
 import sqlalchemy_utils.types.json
-
-from graphene.types.generic import GenericScalar
-from graphene_sqlalchemy.converter import convert_sqlalchemy_type
-from graphene_sqlalchemy.converter import convert_column_to_string
-from graphene_sqlalchemy.converter import get_column_doc
-from graphene_sqlalchemy.converter import is_column_nullable
 from sqlalchemy_json import MutableJson
 from sqlalchemy_json import NestedMutableJson
 
@@ -90,21 +84,6 @@ class UtcDateTime(sqlalchemy.types.TypeDecorator):
 
     def __repr__(self):
         return sqlalchemy.util.generic_repr(self)
-
-
-@convert_sqlalchemy_type.register(JsonType)
-@convert_sqlalchemy_type.register(MutableJson)
-@convert_sqlalchemy_type.register(NestedMutableJson)
-def convert_json_to_generic_scalar(type, column, registry=None):
-    return GenericScalar(
-        description=get_column_doc(column),
-        required=not(is_column_nullable(column)))
-
-
-# Graphene compatibility:
-convert_sqlalchemy_type.register(UtcDateTime)(convert_column_to_string)
-convert_sqlalchemy_type.register(UrlType)(convert_column_to_string)
-convert_sqlalchemy_type.register(UuidType)(convert_column_to_string)
 
 
 __all__ = [
