@@ -6,13 +6,13 @@
         "id": "d74e9652-a5e4-412b-9e9b-c41459e956bc",
         "dp_group_id": "our-dataporten-group-id",
         "name": "wh-valgstyre",
-        "last_update": "2017-01-01"
+        "last_update": "2017-01-01 08:00:00Z"
       },
       {
         "id": "8c408673-27d5-410e-ba9d-b33471850477",
         "dp_group_id": "our-dataporten-group-id",
         "name": "bh-valgstyre",
-        "last_update": "2017-01-01"
+        "last_update": "2017-01-01 08:00:00Z"
       }
     ]
   }

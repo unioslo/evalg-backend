@@ -1,4 +1,5 @@
 alembic
+aniso8601
 apispec==0.39.0
 blinker
 click
@@ -19,6 +20,7 @@ marshmallow-sqlalchemy
 psycopg2
 python-dateutil
 python-json-logger
+pytz
 setuptools
 sqlalchemy==1.2.15
 sqlalchemy-json
