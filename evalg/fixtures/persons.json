@@ -9,7 +9,7 @@
           "feide_id": "my-feide-id",
           "first_name": "Zaphod",
           "last_name": "Beeblebrox",
-          "last_update": "2017-01-01",
+          "last_update": "2017-01-01 08:00:00Z",
           "nin": "0101101234",
           "username": "zaphod"
       },
@@ -20,7 +20,7 @@
         "feide_id": "my-feide-id",
         "first_name": "Arthur",
         "last_name": "Dent",
-        "last_update": "2017-01-01",
+        "last_update": "2017-01-01 08:00:00Z",
         "nin": "0101101235",
         "username": "arthur"
       },
@@ -31,7 +31,7 @@
         "feide_id": "my-feide-id",
         "first_name": "Ford",
         "last_name": "Prefect",
-        "last_update": "2017-01-01",
+        "last_update": "2017-01-01 08:00:00Z",
         "nin": "0101101236",
         "username": "ford"
       },
@@ -42,7 +42,7 @@
         "feide_id": "my-feide-id",
         "first_name": "Deep",
         "last_name": "Thought",
-        "last_update": "2017-01-01",
+        "last_update": "2017-01-01 08:00:00Z",
         "nin": "0101101237",
         "username": "deep"
       },
@@ -53,7 +53,7 @@
         "feide_id": "my-feide-id",
         "first_name": "Marvin",
         "last_name": "The Paranoid Android",
-        "last_update": "2017-01-01",
+        "last_update": "2017-01-01 08:00:00Z",
         "nin": "0101101238",
         "username": "marvin"
       },
@@ -64,7 +64,7 @@
         "feide_id": "my-feide-id",
         "first_name": "Elvis",
         "last_name": "Presley",
-        "last_update": "2017-01-01",
+        "last_update": "2017-01-01 08:00:00Z",
         "nin": "0101101239",
         "username": "elvis"
       }
