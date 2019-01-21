@@ -4,6 +4,7 @@
 """Functional API for handling election metadata."""
 import datetime
 
+import aniso8601
 from flask import current_app
 from functools import wraps
 from .models.election import ElectionGroup, Election
@@ -245,7 +246,6 @@ def make_group_from_template(template_name, ou, principals=()):
                             ou)
     from instance.evalg_template_config import election_templates
     import datetime
-    from dateutil.relativedelta import relativedelta
     import functools
 
     if current_app.config['AUTH_ENABLED'] and not \
@@ -278,29 +278,25 @@ def make_group_from_template(template_name, ou, principals=()):
             default_end_time).replace(tzinfo=datetime.timezone.utc)
 
     def mandate_period_start(e):
-        start = e['mandate_period'].get('start', '01-01')
-        lst = start.split('-')
-        month = int(lst[0], base=10)
-        if len(lst) == 1:
-            date = 1
-        elif len(lst) == 2:
-            date = int(lst[1], base=10)
-        year = now.year
-        ret = datetime.date(year, month, date)
-        if ret < now.date():
-            ret = datetime.date(year+1, month, date)
-        return ret
+        start = e['mandate_period'].get('start', '--01-01')
+
+        if start.startswith('--'):
+            # aniso8601 does not support extended year representation.
+            # Let's try to fix that:
+            start = str(now.year) + start[1:]
+
+        date = aniso8601.parse_date(start)
+        if date < now.date():
+            date = date.replace(year=(now.year + 1))
+        return date
 
     def mandate_period_end(e):
         start = mandate_period_start(e)
-        length = e['mandate_period'].get('length')
+        length = e['mandate_period'].get('duration')
         if length is None:
             return None
-        l = length.split()
-        size = int(l[0])
-        unit = l[1] if len(l) == 2 else 'y'
-        kw = dict(y='years', m='months', d='days')[unit]
-        return start + relativedelta(**{kw: size})
+        duration = aniso8601.parse_duration(length)
+        return start + duration
 
     grp_name = dict()
     for lang in name.keys():
