@@ -15,6 +15,7 @@ from evalg.metadata import publish_group
 from evalg.metadata import unannounce_group
 from evalg.metadata import unpublish_group
 from . import entities
+from . import types
 
 
 class CreateNewElectionGroup(graphene.Mutation):
@@ -66,8 +67,8 @@ class UpdateBaseSettings(graphene.Mutation):
 
 class ElectionVotingPeriodInput(graphene.InputObjectType):
     id = graphene.UUID(required=True)
-    start = graphene.DateTime(required=True)
-    end = graphene.DateTime(required=True)
+    start = types.DateTime(required=True)
+    end = types.DateTime(required=True)
 
 
 class UpdateVotingPeriods(graphene.Mutation):
@@ -156,8 +157,8 @@ class DeleteVotersInPollBook(graphene.Mutation):
 
 class ElectionVoterInfoInput(graphene.InputObjectType):
     id = graphene.UUID(required=True)
-    mandate_period_start = graphene.Date(required=True)
-    mandate_period_end = graphene.Date(required=True)
+    mandate_period_start = types.Date(required=True)
+    mandate_period_end = types.Date(required=True)
     contact = graphene.String()
     information_url = graphene.String()
 
