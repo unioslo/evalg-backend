@@ -15,7 +15,6 @@ import sqlalchemy_utils.types.json
 from graphene.types.generic import GenericScalar
 from graphene_sqlalchemy.converter import convert_sqlalchemy_type
 from graphene_sqlalchemy.converter import convert_column_to_string
-# from graphene_sqlalchemy.converter import convert_json_to_string
 from graphene_sqlalchemy.converter import get_column_doc
 from graphene_sqlalchemy.converter import is_column_nullable
 from sqlalchemy_json import MutableJson
@@ -86,7 +85,7 @@ class UtcDateTime(sqlalchemy.types.TypeDecorator):
     def process_result_value(self, value, dialect):
         """ normalize datetimes to the python3 builtin utc tz. """
         if value is not None:
-            value = value.astimezone(datetime.datetime.utc)
+            value = value.astimezone(datetime.timezone.utc)
         return value
 
     def __repr__(self):
