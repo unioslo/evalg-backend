@@ -13,6 +13,9 @@ from evalg.metadata import group_announcement_blockers
 from evalg.metadata import group_publication_blockers
 from evalg.utils import convert_json
 
+# Must simply be imported in order to make our conversions apply
+from . import converter  # noqa: F401
+
 
 class Candidate(SQLAlchemyObjectType):
     class Meta:
