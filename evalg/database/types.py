@@ -79,7 +79,7 @@ class UtcDateTime(sqlalchemy.types.TypeDecorator):
     def process_result_value(self, value, dialect):
         """ normalize datetimes to the python3 builtin utc tz. """
         if value is not None:
-            value = value.astimezone(datetime.datetime.utc)
+            value = value.astimezone(datetime.timezone.utc)
         return value
 
     def __repr__(self):
