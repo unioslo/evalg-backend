@@ -34,5 +34,7 @@ RUN pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/p
  && pip3 install evalg --no-cache-dir \
  && apk del .evalg-build-deps
 
+COPY evalg/migrations /usr/src/evalg/evalg/migrations
+
 # Set instance path
 ENV EVALG_CONFIG="/usr/local/var/evalg-instance"
