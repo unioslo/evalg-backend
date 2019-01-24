@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage ('Build evalg image') {
             steps {
-                sh "docker build \
+                sh "docker build --no-cache \
                     -t '${project}/valg-backend' \
                     -f Dockerfile-staging ."
                 sh "docker tag '${project}/valg-backend' '${project}/valg-backend:${image_version}'"
