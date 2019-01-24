@@ -244,9 +244,10 @@ def make_group_from_template(template_name, ou, principals=()):
     current_app.logger.info('Make election group %s for %s',
                             template_name,
                             ou)
-    from instance.evalg_template_config import election_templates
     import datetime
     import functools
+
+    election_templates = current_app.config.get('ELECTION_TEMPLATES')
 
     if current_app.config['AUTH_ENABLED'] and not \
             check_perms(principals, 'create-election', ou=ou):

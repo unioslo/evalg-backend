@@ -209,7 +209,7 @@ election_types = {
 # get the OU_name injected when generating a new election, as well as
 # a reference to the type of election.
 ###
-election_templates = {
+ELECTION_TEMPLATES = {
     'uio_principal': {
         'name': {
             'nb': 'Rektor ved {}',
