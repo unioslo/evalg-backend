@@ -329,7 +329,7 @@ class PublishElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = evalg.models.election.Election.query.get(args.get('id'))
+        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
         publish_group(el_grp)
         return PublishElectionGroup(ok=True)
 
@@ -341,7 +341,7 @@ class UnpublishElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = evalg.models.electtion.ElectionGroup.query.get(args.get('id'))
+        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
         unpublish_group(el_grp)
         return UnpublishElectionGroup(ok=True)
 
