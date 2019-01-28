@@ -39,11 +39,6 @@ class Group(evalg.models.Base):
         'GroupExternalID',
         back_populates='group')
 
-    def _get_repr_fields(self):
-        return tuple((
-            ('id', self.id),
-        ))
-
 
 class GroupExternalIDType(evalg.models.Base):
     """ Group external ID type. """
@@ -53,11 +48,6 @@ class GroupExternalIDType(evalg.models.Base):
         primary_key=True)
 
     description = db.Column(db.UnicodeText)
-
-    def _get_repr_fields(self):
-        return tuple((
-            ('code', self.code),
-        ))
 
 
 class GroupExternalID(evalg.models.Base):
@@ -84,10 +74,3 @@ class GroupExternalID(evalg.models.Base):
         back_populates='external_ids')
 
     id_type = db.relationship('GroupExternalIDType')  # no b.ref needed
-
-    def _get_repr_fields(self):
-        return tuple((
-            ('group_id', self.group_id),
-            ('type_code', self.type_code),
-            ('external_id', self.external_id),
-        ))

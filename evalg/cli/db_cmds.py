@@ -53,6 +53,7 @@ def wipe_db():
 def shell_context():
     """ Shell context. """
     from evalg import db, models
+    from evalg.database.formatting import pretty_format
     from pprint import pprint
     context = {
         'save': save_object,
@@ -66,6 +67,7 @@ def shell_context():
         'ElectionGroupRole': models.authorization.ElectionGroupRole,
         'Group': models.group.Group,
         'Person': models.person.Person,
+        'pretty': lambda *a, **kw: print(pretty_format(*a, **kw)),
         'Principal': models.authorization.Principal,
         'PersonPrincipal': models.authorization.PersonPrincipal,
         'GroupPrincipal': models.authorization.GroupPrincipal,

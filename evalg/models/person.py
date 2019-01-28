@@ -56,11 +56,6 @@ class Person(evalg.models.Base):
         'PersonExternalID',
         back_populates='person')
 
-    def _get_repr_fields(self):
-        return tuple((
-            ('id', self.id),
-        ))
-
 
 class PersonExternalIDType(evalg.models.Base):
     """ Person external ID type. """
@@ -70,11 +65,6 @@ class PersonExternalIDType(evalg.models.Base):
         primary_key=True)
 
     description = db.Column(db.UnicodeText)
-
-    def _get_repr_fields(self):
-        return tuple((
-            ('code', self.code),
-        ))
 
 
 class PersonExternalID(evalg.models.Base):
@@ -101,10 +91,3 @@ class PersonExternalID(evalg.models.Base):
         back_populates='external_ids')
 
     id_type = db.relationship('PersonExternalIDType')  # no b.ref needed
-
-    def _get_repr_fields(self):
-        return tuple((
-            ('person_id', self.person_id),
-            ('type_code', self.type_code),
-            ('external_id', self.external_id),
-        ))
