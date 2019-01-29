@@ -1,8 +1,10 @@
 import evalg
+import logging
 
 from flask import current_app
 from sqlalchemy import and_
 
+logger = logging.getLogger(__name__)
 
 def create_person(username=None, fnr=None, feide_id=None):
 
@@ -24,14 +26,14 @@ def create_person(username=None, fnr=None, feide_id=None):
 
     evalg.db.session.add(person)
     evalg.db.session.commit()
-    current_app.logger.info(f"Created person {username} - {person}")
+    logger.info("Created person %s ", username)
     return person
 
 def get_or_create_person(identifyer, id_type):
     
-    current_app.logger.info("Get person %s", identifyer)
+    logger.info("Get person %s", identifyer)
     if id_type == 'username':
-        current_app.logger.info("Get person, in username %s", identifyer)
+        logger.info("Get person, in username %s", identifyer)
         ret = evalg.models.person.Person.query.filter(
             evalg.models.person.Person.username == identifyer
         ).first()
