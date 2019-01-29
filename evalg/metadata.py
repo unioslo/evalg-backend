@@ -253,6 +253,7 @@ def make_group_from_template(template_name, ou, principals=()):
             check_perms(principals, 'create-election', ou=ou):
         current_app.logger.info('Testing %s', principals)
         raise PermissionDenied()
+
     template = election_templates[template_name]
     name = template['name']
     group_type = template['settings']['group_type']
