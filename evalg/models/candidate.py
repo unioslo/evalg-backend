@@ -47,8 +47,3 @@ class Candidate(evalg.models.Base):
     user_cumulated = db.Column(
         db.Boolean,
         default=False)
-
-    def _get_repr_fields(self):
-        return tuple((
-            ('id', self.id),
-        ))

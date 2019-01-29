@@ -18,11 +18,6 @@ class VoterStatus(Base):
 
     description = db.Column(db.UnicodeText)
 
-    def _get_repr_fields(self):
-        return tuple((
-            ('code', self.code),
-        ))
-
 
 class Voter(Base):
     """ Voter / census member model."""
@@ -57,9 +52,6 @@ class Voter(Base):
 
     voter_status = db.relationship('VoterStatus')  # no bakref needed
 
-    __table_args__ = (UniqueConstraint('person_id', 'pollbook_id', name='_person_pollbook_uc'),)
-
-    def _get_repr_fields(self):
-        return tuple((
-            ('id', self.id),
-        ))
+    __table_args__ = (
+        UniqueConstraint('person_id', 'pollbook_id', name='_person_pollbook_uc'),
+    )

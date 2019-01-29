@@ -38,8 +38,3 @@ class ElectionList(evalg.models.Base):
         lazy='joined')
 
     candidates = db.relationship('Candidate')
-
-    def _get_repr_fields(self):
-        return tuple((
-            ('id', self.id),
-        ))

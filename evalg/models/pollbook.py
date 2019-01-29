@@ -41,8 +41,3 @@ class PollBook(evalg.models.Base):
         lazy='joined')
 
     voters = db.relationship('Voter')
-
-    def _get_repr_fields(self):
-        return tuple((
-            ('id', self.id),
-        ))
