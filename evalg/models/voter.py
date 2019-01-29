@@ -6,6 +6,8 @@ from evalg import db
 from evalg.database.types import UuidType
 from evalg.models import Base
 
+from sqlalchemy.schema import UniqueConstraint
+
 
 class VoterStatus(Base):
     """ Voter / census member status code model. """
@@ -49,3 +51,7 @@ class Voter(Base):
         nullable=False)
 
     voter_status = db.relationship('VoterStatus')  # no bakref needed
+
+    __table_args__ = (
+        UniqueConstraint('person_id', 'pollbook_id', name='_person_pollbook_uc'),
+    )

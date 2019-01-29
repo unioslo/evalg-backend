@@ -141,7 +141,8 @@ def init_app(app):
                    pollbook,
                    person,
                    group,
-                   authz)
+                   authz,
+                   upload_census_file)
     election.init_app(app)
     election_list.init_app(app)
     ou.init_app(app)
@@ -152,3 +153,4 @@ def init_app(app):
     person.init_app(app)
     group.init_app(app)
     authz.init_app(app)
+    upload_census_file.init_app(app)

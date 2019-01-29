@@ -22,21 +22,24 @@ class Person(evalg.models.Base):
         db.UnicodeText,
         index=True)
 
+    display_name = db.Column(
+        db.UnicodeText
+    )
+
     email = db.Column(
         db.UnicodeText,
         index=True)
 
     feide_id = db.Column(
         db.UnicodeText,
-        index=True)
+        index=True,
+        unique=True)
 
     first_name = db.Column(
-        db.UnicodeText,
-        nullable=False)
+        db.UnicodeText)
 
     last_name = db.Column(
-        db.UnicodeText,
-        nullable=False)
+        db.UnicodeText)
 
     last_update = db.Column(
         evalg.database.types.UtcDateTime,
@@ -46,9 +49,11 @@ class Person(evalg.models.Base):
     nin = db.Column(
         db.UnicodeText,
         index=True,
-        nullable=False)
+        unique=True)
 
-    username = db.Column(db.UnicodeText)
+    username = db.Column(
+        db.UnicodeText,
+        unique=True)
 
     principals = db.relationship('PersonPrincipal')
 
