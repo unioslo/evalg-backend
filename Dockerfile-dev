@@ -1,4 +1,4 @@
-FROM library/python:3-alpine
+FROM library/python:3.6-alpine
 
 MAINTAINER USITINT <uav-int@usit.uio.no>
 
