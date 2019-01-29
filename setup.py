@@ -15,7 +15,6 @@ def get_requirements(filename):
     with open(filename, mode='rt', encoding='utf-8') as f:
         requirements = iter(pkg_resources.parse_requirements(f))
         for requirement in requirements:
-            print(repr(requirement))
             yield str(requirement)
 
 
