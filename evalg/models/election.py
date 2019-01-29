@@ -43,11 +43,6 @@ class AbstractElection(evalg.models.Base):
     meta = db.Column(evalg.database.types.NestedMutableJson)
     """ Template metadata """
 
-    @property
-    def tz(self):
-        return 'UTC'
-        return current_app.config['TZ']
-
 
 class ElectionGroup(AbstractElection):
 
