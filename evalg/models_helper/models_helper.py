@@ -4,15 +4,6 @@ from flask import current_app
 from sqlalchemy import and_
 
 
-#        self.pollbook = pollbook
-#        self.parsing_results = {
-#            "added_ok": 0,
-#            "added_failed": 0,
-#            "already_added": 0,
-#            "status": "",
-#        }
-#        self.persons = []
-
 def create_person(username=None, fnr=None, feide_id=None):
 
     person = evalg.models.person.Person()
