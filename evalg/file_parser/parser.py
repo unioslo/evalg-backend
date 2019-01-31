@@ -1,5 +1,11 @@
 import abc
+import csv
+from io import StringIO
+import logging
 
+from pprint import pprint
+
+logger = logging.getLogger(__name__)
 
 class CensusFileParser(metaclass=abc.ABCMeta):
     def __init__(self, census_file):
@@ -31,8 +37,13 @@ class CensusFileParser(metaclass=abc.ABCMeta):
         }
 
         if census_file.mimetype in supported_mime_types:
-            return supported_mime_types[census_file.mimetype](
+            parser = supported_mime_types[census_file.mimetype](
                 census_file)
+
+            if parser.id_type is None:
+                # No supported id type in file
+                return None
+            return parser
         return None
 
 
@@ -40,7 +51,7 @@ class PlainTextParser(CensusFileParser):
 
     def __init__(self, census_file):
         super().__init__(census_file)
-        content = self.census_file.stream.read().decode("utf-8")
+        content = self.census_file.read().decode('utf-8')
         self.fields = [x for x in content.split("\n") if x]
         self._id_type = self.find_identifier_type()
 
@@ -56,17 +67,39 @@ class PlainTextParser(CensusFileParser):
         # Check if fnr
         try:
             [int(x) for x in self.fields]
-            if len(set([len(x) for x in self.fields]) - set([10, 11])) == 0:
-                return "fnr"
         except ValueError:
             pass
+        else:
+            if len(set([len(x) for x in self.fields]) - set([10, 11])) == 0:
+                return "fnr"
+            else:
+                # File contains invalid fnrs
+                return None
+
         # Check if Feide ID
         if all(["@" in x for x in self.fields]):
             return "feide_id"
         if all([' ' not in x for x in self.fields]):
+
+            if any(["@" in x for x in self.fields]):
+                # Probably a feide id mixed in with usernames
+                return None
+
+            for x in self.fields:
+                try:
+                    int(x)
+                except ValueError:
+                    pass
+                else:
+                    # Found "username" with only numbers
+                    # Probably a fnr
+                    return None
+
             # Assume username
             return "username"
-        raise TypeError
+
+        # No id type found
+        return None
 
     def parse(self):
 
@@ -91,3 +124,28 @@ class PlainTextParser(CensusFileParser):
         elif self.id_type == "username":
             for username in self.fields:
                 yield username
+
+class CvsParser(CensusFileParser):
+
+    def __init__(self, census_file):
+        super().__init__(census_file)
+        self.csvfile = StringIO(self.census_file.stream.read().decode("utf-8"))
+
+
+
+        self.id_type = 'username'
+
+    @classmethod
+    def get_mime_type(cls):
+        return "text/cvs"
+
+    @property
+    def id_type(self):
+        return self._id_type
+
+    def parse(self):
+
+
+
+
+        pass
