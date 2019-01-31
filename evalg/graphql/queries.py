@@ -1,3 +1,4 @@
+from flask import g
 import graphene
 from graphene.types.generic import GenericScalar
 
@@ -12,6 +13,12 @@ Argument = graphene.Argument
 
 
 class ElectionQuery(graphene.ObjectType):
+
+    viewer = graphene.Field(entities.Viewer)
+
+    def resolve_viewer(self, info):
+        return g.user
+
     elections = graphene.List(entities.Election)
 
     def resolve_elections(self, info):

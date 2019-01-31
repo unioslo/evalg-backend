@@ -1,7 +1,6 @@
-from flask import current_app
+from flask import current_app, g
 from graphql import GraphQLError
 from time import time as timer
-
 
 def timing_middleware(next, root, info, **args):
     if root is None:
@@ -20,10 +19,9 @@ def timing_middleware(next, root, info, **args):
 
 def auth_middleware(next, root, info, **args):
     if root is None:
-        token_header = info.context.headers.get('Authorization')
-        if token_header is None:
-            raise GraphQLError('No Authorization header found.')
-        token = token_header.split(' ')[1]
+        # TBD: should we accept anonymous requests?
+        info.context.user = g.user
+
         # Look up user info here, then do a check on each type of query
         # and see if the user has proper authorization
         if info.field_name == 'electionList':

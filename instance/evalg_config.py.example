@@ -6,6 +6,48 @@ DEBUG = False
 
 SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:secret@localhost/postgres'
 
+TRUSTED_PROXIES = (
+    # Loopback
+    '127.0.0.0/8',
+    '::1',
+    # Feide Gatekeeper
+    '158.36.86.32/27',
+    '2001:700:0:4030::/61',
+)
+
+# setting this to False disables all authentication middleware
+AUTH_ENABLED = True
+# can be 'feide' or 'mock'
+AUTH_METHOD = 'mock'
+# when mocking, pretend the gatekeeper authenticated this user
+AUTH_MOCK_LOGIN_AS = 'abababab-abab-abab-abab-abababababab'
+
+FEIDE_BASIC_REQUIRE = True
+FEIDE_BASIC_REALM = None
+FEIDE_BASIC_USERS = [
+    ('dataporten', 'secret'),
+]
+
+FEIDE_MOCK_DATA = {
+    'client_id': 'fafafafa-fafa-fafa-fafa-fafafafafafa',
+    'users': {
+        'abababab-abab-abab-abab-abababababab': {
+            'id': 'abababab-abab-abab-abab-abababababab',
+            'sec': {
+                'feide': ('testesen@example.com', ),
+                'nin': ('01011012343', ),
+                # 'uuid': ('some-uuid', ),  # historical merged primary keys
+            },
+            'feide_data': {
+                'givenName': 'Test',
+                'sn': 'Testesen',
+                'displayName': 'Test Testesen',
+                'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
+            }
+        },
+    },
+}
+
 LOGGER_NAME = 'evalg'
 
 LOGGING = {
@@ -13,7 +55,7 @@ LOGGING = {
     'version': 1,
     'loggers': {
         '': {
-            'handlers': ['stream_stderr_simple', 'file_json'],
+            'handlers': ['stream_stderr_simple'],
             'level': 'DEBUG',
         },
     },

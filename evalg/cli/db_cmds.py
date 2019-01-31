@@ -6,7 +6,24 @@ with the evalg database.
 """
 import click
 import flask.cli
+from flask import current_app
 
+def start_request(*args, **kwargs):
+    """
+    Make a request context.
+
+    http://flask.pocoo.org/docs/1.0/api/#flask.Flask.test_request_context
+    """
+    ctx = current_app.test_request_context(*args, **kwargs)
+    ctx.push()
+    current_app.preprocess_request()
+
+def end_request(response=None):
+    """
+    End a request context with a response.
+    """
+    app.process_response(response or current_app.response_class())
+    ctx.pop()
 
 def save_object(obj):
     from evalg import db
@@ -53,11 +70,14 @@ def wipe_db():
 def shell_context():
     """ Shell context. """
     from evalg import db, models
+    from evalg.authentication import user
     from evalg.database.formatting import pretty_format
     from pprint import pprint
     context = {
         'save': save_object,
         'show_query': show_query,
+        'start_request': start_request,
+        'end_request': end_request,
         'db': db,
         'Candidate': models.candidate.Candidate,
         'Election': models.election.Election,
@@ -67,6 +87,7 @@ def shell_context():
         'ElectionGroupRole': models.authorization.ElectionGroupRole,
         'Group': models.group.Group,
         'Person': models.person.Person,
+        'PersonExternalId': models.person.PersonExternalId,
         'pretty': lambda *a, **kw: print(pretty_format(*a, **kw)),
         'PollBook': models.pollbook.PollBook,
         'Principal': models.authorization.Principal,
@@ -75,7 +96,9 @@ def shell_context():
         'Role': models.authorization.Role,
         'OU': models.ou.OrganizationalUnit,
         'Voter': models.voter.Voter,
-        'wipe_db': wipe_db
+        'user': user,
+        'g': g,
+        'wipe_db': wipe_db,
     }
     print('\nShell context:')
     pprint(context)
@@ -99,7 +122,9 @@ def populate_tables():
 @flask.cli.with_appcontext
 def recreate_tables():
     from evalg import db
+    print('Doing db.drop_all()')
     db.drop_all()
+    print('Doing db.create_all()')
     db.create_all()
 
 
