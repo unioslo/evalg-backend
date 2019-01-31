@@ -13,11 +13,10 @@ Basic idea:
 
 import uuid
 
-import evalg.models
-import evalg.models.ou
 from evalg import db
-from evalg.database.types import UuidType
 from evalg.database.types import JsonType
+from evalg.database.types import UuidType
+from .base import ModelBase
 
 
 Column = db.Column
@@ -27,7 +26,7 @@ UniqueConstraint = db.UniqueConstraint
 relationship = db.relationship
 
 
-class Principal(evalg.models.Base):
+class Principal(ModelBase):
     """
     Security principal.
 
@@ -102,7 +101,7 @@ class GroupPrincipal(Principal):
     }
 
 
-class RolePermission(evalg.models.Base):
+class RolePermission(ModelBase):
     """ Permissions granted by role. """
 
     code = Column(
@@ -116,7 +115,7 @@ class RolePermission(evalg.models.Base):
         primary_key=True)
 
 
-class Role(evalg.models.Base):
+class Role(ModelBase):
     """ Roles granted to a principal. """
 
     grant_id = Column(
@@ -155,7 +154,7 @@ class Role(evalg.models.Base):
         return perm in (x.code for x in self.trait.perms)
 
 
-class RoleList(evalg.models.Base):
+class RoleList(ModelBase):
     """ List of roles in system. """
 
     role = Column(
@@ -206,7 +205,7 @@ class OuRole(Role):
         ForeignKey('organizational_unit.id'),
         nullable=False)
 
-    ou = relationship(evalg.models.ou.OrganizationalUnit)
+    ou = relationship('OrganizationalUnit')
 
     principal_id = Column(
         UuidType,
@@ -363,7 +362,7 @@ class ElectionGroupRole(Role):
         return super().supports(perm, **kw)
 
 
-class Permission(evalg.models.Base):
+class Permission(ModelBase):
     """Permission."""
 
     code = Column(

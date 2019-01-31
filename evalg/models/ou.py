@@ -4,13 +4,13 @@ Database models for organizational units
 
 import uuid
 
-import evalg.models
 from evalg import db
 from evalg.database.types import JsonType
 from evalg.database.types import UuidType
+from .base import ModelBase
 
 
-class OrganizationalUnit(evalg.models.Base):
+class OrganizationalUnit(ModelBase):
     """ Organizational unit. """
 
     id = db.Column(

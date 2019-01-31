@@ -5,12 +5,12 @@ Database models for users
 import uuid
 
 import evalg.database.types
-import evalg.models
 from evalg import db
 from evalg.utils import utcnow
+from .base import ModelBase
 
 
-class Person(evalg.models.Base):
+class Person(ModelBase):
     """ Person. """
 
     id = db.Column(
@@ -62,7 +62,7 @@ class Person(evalg.models.Base):
         back_populates='person')
 
 
-class PersonExternalIDType(evalg.models.Base):
+class PersonExternalIDType(ModelBase):
     """ Person external ID type. """
 
     code = db.Column(
@@ -72,7 +72,7 @@ class PersonExternalIDType(evalg.models.Base):
     description = db.Column(db.UnicodeText)
 
 
-class PersonExternalID(evalg.models.Base):
+class PersonExternalID(ModelBase):
     """ Person external ID. """
 
     __tablename__ = 'person_external_id'

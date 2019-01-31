@@ -1,18 +1,31 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" Models and related tools and functionality. """
-import datetime
-import uuid
+"""
+evalg database models
 
-from evalg import db
-from evalg.database.formatting import PrimaryKeyRepr
+All models should be based on py:class:`evalg.models.base.ModelBase`.
+"""
 
+from . import authorization
+from . import base
+from . import candidate
+from . import election_list
+from . import election
+from . import group
+from . import ou
+from . import person
+from . import pollbook
+from . import voter
 
-_model_repr = PrimaryKeyRepr(maxstring=50, maxother=50)
-
-
-class Base(db.Model):
-    __abstract__ = True
-
-    def __repr__(self):
-        return _model_repr.repr(self)
+__all__ = [
+    'authorization',
+    'ballot',
+    'base',
+    'candidate',
+    'election_list',
+    'election',
+    'group',
+    'ou',
+    'person',
+    'pollbook',
+    'voter',
+    'votes',
+]

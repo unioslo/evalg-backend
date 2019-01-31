@@ -6,14 +6,14 @@ Database models for election lists.
 
 import uuid
 
-import evalg.models
 from evalg import db
 from evalg.database.types import NestedMutableJson
 from evalg.database.types import UrlType
 from evalg.database.types import UuidType
+from .base import ModelBase
 
 
-class ElectionList(evalg.models.Base):
+class ElectionList(ModelBase):
     """ List of electable candidates in an election. """
 
     id = db.Column(

@@ -4,14 +4,14 @@ Database models for election candidates.
 
 import uuid
 
-import evalg.models
 from evalg import db
 from evalg.database.types import NestedMutableJson
 from evalg.database.types import UrlType
 from evalg.database.types import UuidType
+from .base import ModelBase
 
 
-class Candidate(evalg.models.Base):
+class Candidate(ModelBase):
 
     id = db.Column(
         UuidType,
