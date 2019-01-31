@@ -17,7 +17,6 @@ from . import voter
 
 __all__ = [
     'authorization',
-    'ballot',
     'base',
     'candidate',
     'election_list',
@@ -27,5 +26,4 @@ __all__ = [
     'person',
     'pollbook',
     'voter',
-    'votes',
 ]
