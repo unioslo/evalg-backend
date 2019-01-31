@@ -4,69 +4,106 @@
     "records": [
       {
           "id": "98447aeb-81d7-4c39-b070-335087765e3c",
-          "dp_user_id": "my-dataporten-user-id",
-          "email": "e@example.org",
-          "feide_id": "zaphod@example.org",
+          "email": "zaphod@example.com",
           "first_name": "Zaphod",
           "last_name": "Beeblebrox",
-          "last_update": "2017-01-01 08:00:00Z",
-          "nin": "0101101234",
-          "username": "zaphod"
+          "display_name": "Zaphod Beeblebrox",
+          "last_update": "2017-01-01 08:00:00Z"
       },
       {
         "id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
-        "dp_user_id": "my-dataporten-user-id",
-        "email": "e@example.org",
-        "feide_id": "arthur@example.org",
+        "email": "arthur@example.com",
         "first_name": "Arthur",
         "last_name": "Dent",
-        "last_update": "2017-01-01 08:00:00Z",
-        "nin": "0101101235",
-        "username": "arthur"
+        "display_name": "Arthur Dent",
+        "last_update": "2017-01-01 08:00:00Z"
       },
       {
         "id": "d8b77f79-452f-4e24-98ce-e361bb5dfd16",
-        "dp_user_id": "my-dataporten-user-id",
-        "email": "e@example.org",
-        "feide_id": "ford@example.org",
+        "email": "ford@example.com",
         "first_name": "Ford",
         "last_name": "Prefect",
-        "last_update": "2017-01-01 08:00:00Z",
-        "nin": "0101101236",
-        "username": "ford"
+        "display_name": "Ford Prefect",
+        "last_update": "2017-01-01 08:00:00Z"
       },
       {
         "id": "85a36970-24b2-440f-94c2-b1b6729260ab",
-        "dp_user_id": "my-dataporten-user-id",
-        "email": "e@example.org",
-        "feide_id": "deep@example.org",
+        "email": "deep@example.com",
         "first_name": "Deep",
         "last_name": "Thought",
-        "last_update": "2017-01-01 08:00:00Z",
-        "nin": "0101101237",
-        "username": "deep"
+        "display_name": "Deep Thought",
+        "last_update": "2017-01-01 08:00:00Z"
       },
       {
         "id": "78936fb7-ca62-4341-a9a2-535d47435026",
-        "dp_user_id": "my-dataporten-user-id",
-        "email": "e@example.org",
-        "feide_id": "marvin@example.org",
+        "email": "marvin@example.com",
         "first_name": "Marvin",
         "last_name": "The Paranoid Android",
-        "last_update": "2017-01-01 08:00:00Z",
-        "nin": "0101101238",
-        "username": "marvin"
+        "display_name": "Marvin the Paranoid Android",
+        "last_update": "2017-01-01 08:00:00Z"
       },
       {
         "id": "dc8670dc-b57c-40fd-8084-cdb3146bcb0f",
-        "dp_user_id": "my-dataporten-user-id",
-        "email": "e@example.org",
-        "feide_id": "elvis@example.org",
+        "email": "elvis@example.com",
         "first_name": "Elvis",
         "last_name": "Presley",
-        "last_update": "2017-01-01 08:00:00Z",
-        "nin": "0101101239",
-        "username": "elvis"
+        "display_name": "Elvis Presley",
+        "last_update": "2017-01-01 08:00:00Z"
+      }
+    ]
+  },
+  {
+    "model": "evalg.models.person.PersonExternalId",
+    "records": [
+      {
+        "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
+        "id_type": "feide_id",
+        "external_id": "zaphod@example.com"
+      },
+      {
+        "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
+        "id_type": "uid",
+        "external_id": "zaphod"
+      },
+      {
+        "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
+        "id_type": "nin",
+        "external_id": "01011012341"
+      },
+      {
+        "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
+        "id_type": "dp_user_id",
+        "external_id": "fe141576-8ed0-4382-a2ef-3913b2f32ea6"
+      },
+      {
+        "person_id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
+        "id_type": "feide_id",
+        "external_id": "arthur@example.com"
+      },
+      {
+        "person_id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
+        "id_type": "uid",
+        "external_id": "arthur"
+      },
+      {
+        "person_id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
+        "id_type": "nin",
+        "external_id": "01011012342"
+      },
+      {
+        "person_id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
+        "id_type": "dp_user_id",
+        "external_id": "63a4a54b-890c-4a8c-b7db-166b29024da2"
+      },
+      {
+        "person_id": "d8b77f79-452f-4e24-98ce-e361bb5dfd16",
+        "id_type": "feide_id",
+        "external_id": "ford@example.com"
+      },
+      {
+        "person_id": "d8b77f79-452f-4e24-98ce-e361bb5dfd16",
+        "id_type": "uid",
+        "external_id": "ford"
       }
     ]
   }

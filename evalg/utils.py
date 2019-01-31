@@ -1,6 +1,8 @@
 import datetime
 import re
 
+from collections.abc import Iterable
+
 under_pat = re.compile(r'_([a-z])')
 
 
@@ -22,6 +24,10 @@ def convert_json_internal(data, convert):
         return [convert_json_internal(x, convert) for x in data]
     else:
         return data
+
+
+def iterable_but_not_str(obj):
+    return isinstance(obj, Iterable) and not isinstance(obj, (str, bytes, bytearray))
 
 
 def utcnow():
