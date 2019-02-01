@@ -11,7 +11,7 @@ from flask import g, current_app
 
 from evalg import db
 from evalg.models.person import Person, PersonExternalId
-from evalg.utils import utcnow
+from evalg.utils import utcnow, ContextAttribute
 
 
 logger = logging.getLogger(__name__)
@@ -34,23 +34,21 @@ class EvalgUser(object):
         'dp_user_id': 'dp_user_id',
     }
 
-    def __init__(self, gk_user, feide_api, app=None):
-        self.gk_user = gk_user
-        self.feide_api = feide_api
-        self._user_info = None
-        self._person = None
-        if app is not None:
-            self.init_app(app)
+    gk_user = ContextAttribute('gk_user')
+    feide_api = ContextAttribute('feide_api')
+    _feide_user_info = ContextAttribute('feide_user_info')
+    _person = ContextAttribute('person')
 
-    def init_app(self, app):
+    def init_app(self, app, gk_user, feide_api):
         @app.before_request
-        def set_user_in_app_context():
-            g.user = self
+        def init_authentication():
+            self.gk_user = gk_user
+            self.feide_api = feide_api
 
-    def get_user_info(self):
-        if self._user_info is None:
-            self._user_info = self.feide_api.get_user_info()
-        return self._user_info
+    def get_feide_user_info(self):
+        if self._feide_user_info is None:
+            self._feide_user_info = self.feide_api.get_user_info()
+        return self._feide_user_info
 
     def find_person(self):
         matches = PersonExternalId.find_ids(*self.flattened_dp_ids).all()
@@ -82,7 +80,7 @@ class EvalgUser(object):
 
     def update_person_data(self, person):
         diff = []
-        for attr, value in self.get_user_info().items():
+        for attr, value in self.get_feide_user_info().items():
             if attr not in self.FEIDE_ATTRIBUTE_MAP:
                 continue
             destination = self.FEIDE_ATTRIBUTE_MAP[attr]
@@ -98,6 +96,7 @@ class EvalgUser(object):
         # TODO: use evalg.person._update_person?
 
     def update_person_ids(self, person):
+        logger.info('person.id %r', person.id)
         keep = list()
         remove = list()
         existing_ids = set([(x.id_type, x.external_id) for x in person.external_ids])
@@ -108,7 +107,7 @@ class EvalgUser(object):
             for existing_id in person.external_ids:
                 if (existing_id.id_type, existing_id.external_id) in to_remove:
                     logger.info('Deleting external ID: %r', existing_id)
-                    db.session.delete(existing_id)
+                    person.external_ids.remove(existing_id)
         if to_add:
             for id_type, value in to_add:
                 new_id = PersonExternalId(
@@ -117,8 +116,9 @@ class EvalgUser(object):
                     external_id=value,
                 )
                 logger.info('Adding new external ID: %r', new_id)
-                db.session.add(new_id)
+                person.external_ids.append(new_id)
         db.session.flush()
+        logger.info(repr(person.external_ids))
 
     def set_person(self, person):
         too_old = utcnow() - datetime.timedelta(minutes=self.MAX_PERSON_DATA_AGE)

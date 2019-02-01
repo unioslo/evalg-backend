@@ -1,7 +1,7 @@
-from flask import g
 import graphene
 from graphene.types.generic import GenericScalar
 
+import evalg.authentication.user
 from evalg.election_templates import election_template_builder
 from evalg.group import search_group
 from evalg.person import search_person
@@ -17,7 +17,7 @@ class ElectionQuery(graphene.ObjectType):
     viewer = graphene.Field(entities.Viewer)
 
     def resolve_viewer(self, info):
-        return g.user
+        return evalg.authentication.user
 
     elections = graphene.List(entities.Election)
 

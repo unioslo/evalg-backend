@@ -1,6 +1,8 @@
-from flask import current_app, g
+from flask import current_app
 from graphql import GraphQLError
 from time import time as timer
+
+from evalg.authentication import user
 
 def timing_middleware(next, root, info, **args):
     if root is None:
@@ -20,7 +22,7 @@ def timing_middleware(next, root, info, **args):
 def auth_middleware(next, root, info, **args):
     if root is None:
         # TBD: should we accept anonymous requests?
-        info.context.user = g.user
+        info.context.user = user
 
         # Look up user info here, then do a check on each type of query
         # and see if the user has proper authorization

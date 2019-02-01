@@ -14,6 +14,7 @@ from flask_feide_gk import basic_auth
 from flask_feide_gk import client
 from flask_feide_gk import gatekeeper
 from flask_feide_gk import utils
+from flask_feide_gk import mock
 
 from evalg import db
 
@@ -28,14 +29,8 @@ creds = basic_auth.ConfigBackend()
 # basic auth middleware
 basic = basic_auth.BasicAuth(creds)
 
-# feide gatekeeper headers
-gk_user = None
-
-# feide api client
-feide_api = None
-
 # authenticated user
-user = None
+user = EvalgUser()
 
 
 def init_app(app):
@@ -45,10 +40,10 @@ def init_app(app):
         basic.init_app(app)
         gk_user = gatekeeper.GatekeeperData(basic)
         feide_api = client.DataportenApi(gatekeeper_user)
-    elif auth_method == 'mock':
-        gk_user = mock.MockGatekeeperData(basic)
-        feide_api = mock.MockDataportenApi(gk_user)
+    elif auth_method == 'feide_mock':
+        gk_user = mock.gatekeeper.MockGatekeeperData(basic)
+        feide_api = mock.client.MockDataportenApi(gk_user)
     else:
         raise NotImplementedError('Unknown AUTH_METHOD %r'.format(auth_method))
 
-    user = EvalgUser(gk_user, feide_api, app)
+    user.init_app(app, gk_user, feide_api)

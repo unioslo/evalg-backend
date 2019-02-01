@@ -6,7 +6,7 @@ click
 Flask==1.0.2
 flask-apispec
 flask-cors
-flask-feide-gatekeeper
+flask-feide-gatekeeper==0.0.4
 flask-fixtures
 flask-graphql
 flask-marshmallow

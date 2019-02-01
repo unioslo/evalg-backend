@@ -49,7 +49,8 @@ class Person(ModelBase):
 
     external_ids = db.relationship(
         'PersonExternalId',
-        back_populates='person')
+        back_populates='person',
+        cascade='all, delete-orphan')
 
 class PersonExternalId(ModelBase):
     """ Person external ID. """
