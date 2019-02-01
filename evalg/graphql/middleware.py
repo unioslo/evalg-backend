@@ -7,35 +7,57 @@ from graphql import GraphQLError
 logger = logging.getLogger(__name__)
 
 
+class Timer(object):
+    def __init__(self, field):
+        self.start = time.time()
+        self.field = field
+
+    def get_millis(self):
+        return round((time.time() - self.start) * 1000, 2)
+
+    def log_time(self, result_or_error):
+        logger.debug('promise for %s resolved in %d ms',
+                     self.field, self.get_millis())
+        return result_or_error
+
+
 def timing_middleware(next, root, info, **args):
+    """
+    Middleware component that logs the time it takes to resolve a promise.
+    """
     if root is None:
-        start = time.time()
-        return_value = next(root, info, **args)
-        duration = time.time() - start
-        current_app.logger.debug(
-            'Running query for: {field_name} - {duration} ms'.format(
-                field_name=info.field_name,
-                duration=round(duration * 1000, 2)
-            )
-        )
-        return return_value
+        timer = Timer(info.field_name)
+        return next(root, info, **args).then(timer.log_time,
+                                             timer.log_time)
     return next(root, info, **args)
 
 
-def log_on_fulfill(result):
-    logger.debug("promise fulfilled: %r", type(result))
-    return result
+class ResultLogger(object):
+    def __init__(self, field):
+        self.field = field
 
+    def log_promise(self, promise):
+        logger.debug("promise for %s: %r", self.field, promise)
 
-def log_on_reject(error):
-    logger.error("promise rejected: %s", error, exc_info=error)
-    return error
+    def log_success(self, result):
+        logger.debug("promise fulfilled for %s", self.field)
+        return result
+
+    def log_error(self, error):
+        logger.error("promise rejected for %s: %s",
+                     self.field, error, exc_info=error)
+        return error
 
 
 def logging_middleware(next, root, info, **args):
+    """
+    Middleware component that logs the result from resolving a promise.
+    """
     if root is None:
-        promise = next(root, info, **args).then(log_on_fulfill, log_on_reject)
-        logger.debug("promise: %r", promise)
+        handler = ResultLogger(info.field_name)
+        promise = next(root, info, **args).then(handler.log_success,
+                                                handler.log_error)
+        handler.log_promise(promise)
         return promise
     else:
         return next(root, info, **args)
