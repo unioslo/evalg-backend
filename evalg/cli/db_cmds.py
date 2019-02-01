@@ -6,7 +6,7 @@ with the evalg database.
 """
 import click
 import flask.cli
-from flask import current_app
+from flask import current_app, g
 
 def start_request(*args, **kwargs):
     """
@@ -17,12 +17,13 @@ def start_request(*args, **kwargs):
     ctx = current_app.test_request_context(*args, **kwargs)
     ctx.push()
     current_app.preprocess_request()
+    return ctx
 
-def end_request(response=None):
+def end_request(ctx, response=None):
     """
     End a request context with a response.
     """
-    app.process_response(response or current_app.response_class())
+    current_app.process_response(response or current_app.response_class())
     ctx.pop()
 
 def save_object(obj):
