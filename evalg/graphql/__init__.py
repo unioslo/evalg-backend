@@ -1,6 +1,8 @@
 """
 The evalg graphql APIs.
 """
+import logging
+
 import graphene
 from flask_graphql import GraphQLView
 
@@ -8,7 +10,7 @@ from . import entities
 from . import mutations
 from . import queries
 
-
+logger = logging.getLogger(__name__)
 schema = graphene.Schema(
     query=queries.ElectionQuery,
     mutation=mutations.Mutations,
@@ -16,11 +18,14 @@ schema = graphene.Schema(
 
 
 def init_app(app):
-    from evalg.graphql.middleware import timing_middleware, auth_middleware
+    from evalg.graphql import middleware
 
-    middleware = [timing_middleware]
+    mw = [
+        middleware.logging_middleware,
+        middleware.timing_middleware,
+    ]
     if app.config.get('AUTH_ENABLED'):
-        middleware.append(auth_middleware)
+        mw.append(middleware.auth_middleware)
 
     app.add_url_rule(
         '/graphql',
@@ -29,5 +34,5 @@ def init_app(app):
             schema=schema,
             batch=True,
             graphiql=True,
-            middleware=middleware
+            middleware=mw
         ))
