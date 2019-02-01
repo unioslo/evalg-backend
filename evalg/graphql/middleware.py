@@ -48,8 +48,8 @@ class ResultLogger(object):
         return result
 
     def log_error(self, error):
-        logger.error("promise rejected for %s: %s",
-                     self.field, error, exc_info=error)
+        logger.error("promise rejected for %s on %s: %s",
+                     self.operation, self.field, error, exc_info=error)
         return error
 
 
