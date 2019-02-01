@@ -8,12 +8,12 @@ import uuid
 # from sqlalchemy.schema import Column
 
 import evalg.database.types
-import evalg.models
 from evalg import db
 from evalg.utils import utcnow
+from .base import ModelBase
 
 
-class Group(evalg.models.Base):
+class Group(ModelBase):
     """ Group of persons. """
 
     id = db.Column(
@@ -40,7 +40,7 @@ class Group(evalg.models.Base):
         back_populates='group')
 
 
-class GroupExternalIDType(evalg.models.Base):
+class GroupExternalIDType(ModelBase):
     """ Group external ID type. """
 
     code = db.Column(
@@ -50,7 +50,7 @@ class GroupExternalIDType(evalg.models.Base):
     description = db.Column(db.UnicodeText)
 
 
-class GroupExternalID(evalg.models.Base):
+class GroupExternalID(ModelBase):
     """ Group external ID. """
 
     __tablename__ = 'group_external_id'

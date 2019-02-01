@@ -5,16 +5,14 @@ import uuid
 
 from sqlalchemy.sql import select, func, case, and_
 from sqlalchemy.ext.hybrid import hybrid_property
-from evalg.models.ou import OrganizationalUnit
-from flask import current_app
 
 import evalg.database.types
-import evalg.models
 from evalg import db
 from evalg.utils import utcnow
+from .base import ModelBase
 
 
-class AbstractElection(evalg.models.Base):
+class AbstractElection(ModelBase):
     """ Base model for elections and election groups. """
 
     __abstract__ = True
@@ -51,7 +49,7 @@ class ElectionGroup(AbstractElection):
         db.ForeignKey('organizational_unit.id'),
         nullable=False)
 
-    ou = db.relationship(OrganizationalUnit)
+    ou = db.relationship('OrganizationalUnit')
 
     elections = db.relationship('Election')
     """ Organizational unit. """

@@ -1,17 +1,33 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" Models for poll books. """
+"""
+Database model for poll books.
+
+Each poll book is an electorial roll that lists a subset of the registered
+voters for a given election.
+
+An individual poll book contains a list of voters for a given election, and
+some parameters for how to count votes from these voters.
+
+An election may have multiple poll books. In that case, a person should only be
+represented as a voter in *one* of the poll books for that election.
+
+NOTE: There are no constraints that prevents a voter object from being
+represented in multiple poll books for a given election.
+"""
 
 import uuid
 
-import evalg.models
 from evalg import db
 from evalg.database.types import NestedMutableJson
 from evalg.database.types import UuidType
+from .base import ModelBase
 
 
-class PollBook(evalg.models.Base):
-    """ Poll book / census. """
+# TODO:
+# Either the module and references to poll books should be named poll_book(s),
+# or the class should be named Pollbook.
+
+
+class PollBook(ModelBase):
 
     id = db.Column(
         UuidType,

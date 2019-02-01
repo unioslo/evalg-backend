@@ -68,11 +68,12 @@ def shell_context():
         'Group': models.group.Group,
         'Person': models.person.Person,
         'pretty': lambda *a, **kw: print(pretty_format(*a, **kw)),
+        'PollBook': models.pollbook.PollBook,
         'Principal': models.authorization.Principal,
         'PersonPrincipal': models.authorization.PersonPrincipal,
         'GroupPrincipal': models.authorization.GroupPrincipal,
         'Role': models.authorization.Role,
-        'OU': models.election.OrganizationalUnit,
+        'OU': models.ou.OrganizationalUnit,
         'Voter': models.voter.Voter,
         'wipe_db': wipe_db
     }
