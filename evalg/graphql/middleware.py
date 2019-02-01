@@ -8,16 +8,17 @@ logger = logging.getLogger(__name__)
 
 
 class Timer(object):
-    def __init__(self, field):
+    def __init__(self, operation, field):
         self.start = time.time()
+        self.operation = operation
         self.field = field
 
     def get_millis(self):
         return round((time.time() - self.start) * 1000, 2)
 
     def log_time(self, result_or_error):
-        logger.debug('promise for %s resolved in %d ms',
-                     self.field, self.get_millis())
+        logger.debug('promise for %s on %s resolved in %d ms',
+                     self.operation, self.field, self.get_millis())
         return result_or_error
 
 
@@ -26,21 +27,24 @@ def timing_middleware(next, root, info, **args):
     Middleware component that logs the time it takes to resolve a promise.
     """
     if root is None:
-        timer = Timer(info.field_name)
+        timer = Timer(info.operation.operation, info.field_name)
         return next(root, info, **args).then(timer.log_time,
                                              timer.log_time)
     return next(root, info, **args)
 
 
 class ResultLogger(object):
-    def __init__(self, field):
+    def __init__(self, operation, field):
+        self.operation = operation
         self.field = field
 
     def log_promise(self, promise):
-        logger.debug("promise for %s: %r", self.field, promise)
+        logger.debug("promise for %s on %s: %r",
+                     self.operation, self.field, promise)
 
     def log_success(self, result):
-        logger.debug("promise fulfilled for %s", self.field)
+        logger.debug("promise fulfilled for %s on %s",
+                     self.operation, self.field)
         return result
 
     def log_error(self, error):
@@ -54,7 +58,7 @@ def logging_middleware(next, root, info, **args):
     Middleware component that logs the result from resolving a promise.
     """
     if root is None:
-        handler = ResultLogger(info.field_name)
+        handler = ResultLogger(info.operation.operation, info.field_name)
         promise = next(root, info, **args).then(handler.log_success,
                                                 handler.log_error)
         handler.log_promise(promise)
