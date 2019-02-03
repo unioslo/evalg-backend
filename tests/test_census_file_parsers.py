@@ -120,13 +120,13 @@ def test_plain_text_id_missmatch():
     assert parser is None
 
 
-def test_plain_text_space_in_usernames():
+def test_plain_text_non_posix_usernames():
     """
     Plain text file, one fnr per line.
 
     Parser should fail there are space in a username
     """
-    usernames = ['pederaas', 'martekir some string', 'larsh']
+    usernames = ['pederaas', 'martekir some string', 'larsh', '334', '334%$#', 'example@example.org']
     builder = EnvironBuilder(method='POST', data={
         'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
                  'usernames.txt')})

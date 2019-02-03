@@ -4,8 +4,6 @@ import io
 import logging
 import re
 
-from pprint import pprint
-
 
 class CensusFileParser(metaclass=abc.ABCMeta):
     def __init__(self, census_file):
@@ -87,17 +85,11 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 
     @classmethod
     def is_posix_username(cls, username):
-
-        pprint(username)
         valid_posix_username = '^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\\$)$'
-
         res = re.search(valid_posix_username, username)
-        print(res)
         if res:
-            pprint('True')
             return True
         else:
-            pprint('False')
             return False
 
     @classmethod
@@ -128,7 +120,6 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 
 
 class PlainTextParser(CensusFileParser):
-
     def __init__(self, census_file):
         super().__init__(census_file)
         content = self.census_file.read().decode('utf-8')
