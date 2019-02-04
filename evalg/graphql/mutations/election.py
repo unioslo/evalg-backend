@@ -1,3 +1,5 @@
+import logging
+
 import graphene
 
 import evalg
@@ -14,8 +16,11 @@ from evalg.metadata import make_group_from_template
 from evalg.metadata import publish_group
 from evalg.metadata import unannounce_group
 from evalg.metadata import unpublish_group
-from . import entities
-from . import types
+from .. import entities
+from .. import types
+
+
+logger = logging.getLogger(__name__)
 
 
 class CreateNewElectionGroup(graphene.Mutation):
@@ -385,7 +390,7 @@ class CreateElectionGroupKey(graphene.Mutation):
         return CreateElectionGroupKey(ok=True)
 
 
-class Mutations(graphene.ObjectType):
+class ElectionMutations(graphene.ObjectType):
     create_new_election_group = CreateNewElectionGroup.Field()
     update_base_settings = UpdateBaseSettings.Field()
     update_voting_periods = UpdateVotingPeriods.Field()
