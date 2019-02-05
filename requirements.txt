@@ -17,7 +17,7 @@ graphene-sqlalchemy
 gunicorn
 marshmallow==2.16.3
 marshmallow-sqlalchemy
-psycopg2
+psycopg2-binary
 python-json-logger
 pytz
 setuptools
