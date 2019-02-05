@@ -4,7 +4,6 @@ import datetime
 import logging
 
 import aniso8601
-import pytz
 from graphene.types import Scalar
 from graphql.language import ast
 
@@ -12,25 +11,17 @@ from graphql.language import ast
 logger = logging.getLogger(__name__)
 
 
-# TODO: This is a temporary hack -- we should only accept datetimes *with*
-# timezone data.
-default_timezone = pytz.timezone('Europe/Oslo')
-
-
 def _parse_date(datestr):
     """ Parse an ISO8601 date value. """
-    try:
-        # TODO: Temporary hack -- accept datetime strings
-        # We should require clients to send an ISO8601 date, without time or
-        # timezone data.
-        date = _parse_datetime(datestr).date()
-        logger.warning('got datetime (%s), expected date', repr(datestr))
-    except ValueError:
-        date = aniso8601.parse_date(datestr)
-    return date
+    return aniso8601.parse_date(datestr)
 
 
 def _parse_datetime(datestr):
+    """
+    Parse an ISO8601 datetime value, and require timezone.
+
+    The date and time separator may be 'T' or ' '.
+    """
     # Allow use of space as separator
     for parse in (
         lambda d: aniso8601.parse_datetime(d, delimiter='T'),
@@ -42,20 +33,16 @@ def _parse_datetime(datestr):
         except ValueError:
             continue
     else:
-        # for-loop completed
+        # for-loop completed without successful `parse()`
         raise ValueError("invalid datetime %r" % (datestr, ))
 
     if not date.tzinfo:
-        # TODO: Temporary hack -- apply timezone
-        # We should require all clients to include timezone
-        logger.warning('got datetime without timezone (%s), assuming %s',
-                       repr(datestr), str(default_timezone))
-        date = default_timezone.localize(date)
+        raise ValueError("missing timezone in datetime %r" % (datestr, ))
     return date
 
 
 class Date(Scalar):
-    """ A date type """
+    """ A graphql ISO8601 date type. """
 
     @staticmethod
     def serialize(dt):
@@ -74,7 +61,7 @@ class Date(Scalar):
 
 
 class DateTime(Scalar):
-    """ A datetime type. """
+    """ A graphql ISO8601 datetime type. """
 
     @staticmethod
     def serialize(dt):
