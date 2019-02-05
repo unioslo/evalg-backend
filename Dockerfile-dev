@@ -21,6 +21,8 @@ RUN set -ex \
             bash \
             postgresql-dev \
     && pip3 install -U pip \
+    && pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
+    && pip3 config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
     && pip3 install -r /usr/src/evalg/requirements-test.txt \
     && pip3 install -r /usr/src/evalg/requirements.txt \
     && apk del .evalg-build-deps

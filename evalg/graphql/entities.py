@@ -1,4 +1,4 @@
-from graphene import String, Field, List, Boolean
+from graphene import String, Field, List, Boolean, ObjectType
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 import evalg.models.authorization
@@ -9,6 +9,7 @@ import evalg.models.group
 import evalg.models.person
 import evalg.models.pollbook
 import evalg.models.voter
+from evalg.authentication import user
 from evalg.metadata import group_announcement_blockers
 from evalg.metadata import group_publication_blockers
 from evalg.utils import convert_json
@@ -114,3 +115,9 @@ class ElectionRoleList(SQLAlchemyObjectType):
 class ElectionGroupRole(SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.authorization.ElectionGroupRole
+
+class Viewer(ObjectType):
+    person = Field(Person)
+
+    def resolve_person(self, info):
+        return info.context.user.person

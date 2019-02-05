@@ -1,6 +1,7 @@
 import graphene
 from graphene.types.generic import GenericScalar
 
+import evalg.authentication.user
 from evalg.election_templates import election_template_builder
 from evalg.group import search_group
 from evalg.person import search_person
@@ -12,6 +13,12 @@ Argument = graphene.Argument
 
 
 class ElectionQuery(graphene.ObjectType):
+
+    viewer = graphene.Field(entities.Viewer)
+
+    def resolve_viewer(self, info):
+        return evalg.authentication.user
+
     elections = graphene.List(entities.Election)
 
     def resolve_elections(self, info):

@@ -9,7 +9,7 @@ from flask_apispec.extension import FlaskApiSpec
 from flask_cors import CORS
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
-from werkzeug.contrib.fixers import ProxyFix
+
 
 from . import cli
 from . import default_config
@@ -40,7 +40,7 @@ class SQLAlchemy(flask_sqlalchemy.SQLAlchemy):
 
 APP_CONFIG_ENVIRON_NAME = 'EVALG_CONFIG'
 """
-Name of an environmet variable to read config file name from.
+Name of an environment variable to read config file name from.
 
 This is a useful method to set a config file if the application is started
 through a third party application server like *gunicorn*.
@@ -105,11 +105,6 @@ def create_app(config=None, flask_class=Flask):
                 default_file_name=APP_TEMPLATE_CONFIG_FILE_NAME,
                 default_config=default_election_template_config)
 
-    if app.config.get('NUMBER_OF_PROXIES', None):
-        app.wsgi_app = ProxyFix(app.wsgi_app,
-                                num_proxies=app.config.get(
-                                    'NUMBER_OF_PROXIES'))
-
     # Setup logging
     init_logging(app)
     request_id.RequestId(app)
@@ -118,6 +113,15 @@ def create_app(config=None, flask_class=Flask):
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db, directory='evalg/migrations')
+
+    # Feide Gatekeeper: Add localhost and trusted proxy subnets to whitelist
+    from flask_feide_gk import proxyfix
+    proxies = app.config.get('TRUSTED_PROXIES', ('127.0.0.0/8', '::1'))
+    proxyfix.ProxyFix(proxies, app=app)
+
+    # Feide Gatekeeper: Require basic auth
+    from evalg import authentication
+    authentication.init_app(app)
 
     # Setup API
     docs.init_app(app)
@@ -137,5 +141,15 @@ def create_app(config=None, flask_class=Flask):
         response.headers['Pragma'] = 'no-cache'
         response.headers['Cache-Control'] = 'no-cache'
         return response
+
+    if app.config['AUTH_ENABLED'] and app.debug:
+        @app.before_request
+        def log_remote_addr():
+            from flask import current_app
+            from flask_feide_gk import utils
+            import flask
+            current_app.logger.info("client-ip: %r", flask.request.remote_addr)
+            current_app.logger.info("x-forwarded-for: %r",
+                        utils.get_multi_header('x-forwarded-for'))
 
     return app
