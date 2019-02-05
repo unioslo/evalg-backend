@@ -8,10 +8,11 @@ import functools
 import logging
 
 from flask import g, current_app
+from flask_feide_gk import ContextAttribute
 
 from evalg import db
 from evalg.models.person import Person, PersonExternalId
-from evalg.utils import utcnow, ContextAttribute
+from evalg.utils import utcnow
 
 
 logger = logging.getLogger(__name__)
