@@ -8,7 +8,7 @@ import functools
 import logging
 
 from flask import g, current_app
-from flask_feide_gk import ContextAttribute
+from flask_feide_gk.utils import ContextAttribute
 
 from evalg import db
 from evalg.models.person import Person, PersonExternalId
