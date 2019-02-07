@@ -309,8 +309,8 @@ board_leader_node = {
         },
         {
             'name': {
-                'nb': 'Dekanat',
-                'nn': 'Dekanat',
+                'nb': 'Dekan/dekanat',
+                'nn': 'Dekan/dekanat',
                 'en': 'Dean',
             },
             'settings': {
@@ -320,8 +320,8 @@ board_leader_node = {
         },
         {
             'name': {
-                'nb': 'Instituttledelse',
-                'nn': 'Instituttledelse',
+                'nb': 'Instituttleder/-ledelse',
+                'nn': 'Instituttleiar/-leiing',
                 'en': 'Institute leader',
             },
             'settings': {
