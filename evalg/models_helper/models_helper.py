@@ -15,11 +15,11 @@ def create_person(username=None, fnr=None, feide_id=None):
         person.last_name = username
     elif fnr:
         person.nin = fnr
-        person.first_name = "Fnr: "
+        person.first_name = "Fnr:"
         person.last_name = "{0}*****".format(fnr[0:6])
     elif feide_id:
         person.feide_id = feide_id
-        person.first_name = "Feide id"
+        person.first_name = "Feide id:"
         person.last_name = feide_id
     else:
         return None
