@@ -5,21 +5,21 @@ Each of these submodules implements one or more ObjectTypes, as well as
 resolvers and mutations.
 """
 
-from . import election_group
-from . import election
-from . import pollbook
 from . import candidates
-from . import person
+from . import election
+from . import election_group
 from . import group
+from . import person
+from . import pollbook
 from . import roles
 
 
 __all__ = [
-    'election_group',
-    'election',
-    'pollbook',
     'candidates',
-    'person',
+    'election',
+    'election_group',
     'group',
+    'person',
+    'pollbook',
     'roles',
 ]
