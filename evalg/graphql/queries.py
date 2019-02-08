@@ -1,124 +1,37 @@
+"""
+Queries for the evalg GraphQL API.
+"""
+
 import graphene
-from graphene.types.generic import GenericScalar
 
-import evalg.authentication.user
-from evalg.election_templates import election_template_builder
-from evalg.group import search_group
-from evalg.person import search_person
-from evalg.utils import convert_json
-from . import entities
-
-
-Argument = graphene.Argument
+from . import nodes
 
 
 class ElectionQuery(graphene.ObjectType):
 
-    viewer = graphene.Field(entities.Viewer)
+    # Elections and election groups
+    election_groups = nodes.election_group.list_election_groups_query
+    election_group = nodes.election_group.get_election_group_query
+    election_template = nodes.election_group.get_election_template_query
+    elections = nodes.election.list_elections_query
+    election = nodes.election.get_election_query
 
-    def resolve_viewer(self, info):
-        return evalg.authentication.user
+    # Candidates and candidate lists
+    # TODO: rename *election_list(s)* to *candidate_list(s)*?
+    election_lists = nodes.candidates.list_candidate_lists_query
+    election_list = nodes.candidates.get_candidate_list_query
+    candidates = nodes.candidates.list_candidates_query
+    candidate = nodes.candidates.get_candidate_query
 
-    elections = graphene.List(entities.Election)
+    # Pollbooks and registered voters
+    pollbooks = nodes.pollbook.list_pollbooks_query
+    pollbook = nodes.pollbook.get_pollbook_query
+    voters = nodes.pollbook.list_voters_query
+    voter = nodes.pollbook.get_voter_query
 
-    def resolve_elections(self, info):
-        return entities.Election.get_query(info).all()
-
-    election = graphene.Field(
-        entities.Election,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_election(self, info, **args):
-        return entities.Election.get_query(info).get(args.get('id'))
-
-    election_groups = graphene.List(entities.ElectionGroup)
-
-    def resolve_election_groups(self, info):
-        return entities.ElectionGroup.get_query(info).all()
-
-    election_group = graphene.Field(
-        entities.ElectionGroup,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_election_group(self, info, **args):
-        return entities.ElectionGroup.get_query(info).get(args.get('id'))
-
-    election_lists = graphene.List(entities.ElectionList)
-
-    def resolve_election_lists(self, info, **args):
-        return entities.ElectionList.get_query.all()
-
-    election_list = graphene.Field(
-        entities.ElectionList,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_election_list(self, info, **args):
-        return entities.ElectionList.get_query(info).get(args.get('id'))
-
-    candidates = graphene.List(entities.Candidate)
-
-    def resolve_candidates(self, info):
-        return entities.Candidate.get_query(info).all()
-
-    candidate = graphene.Field(
-        entities.Candidate,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_candidate(self, info, **args):
-        return entities.Candidate.get_query(info).get(args.get('id'))
-
-    persons = graphene.List(entities.Person)
-
-    def resolve_persons(self, info):
-        return entities.Person.get_query(info).all()
-
-    person = graphene.Field(
-        entities.Person,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_person(self, info, **args):
-        return entities.Person.get_query(info).get(args.get('id'))
-
-    pollbooks = graphene.List(entities.PollBook)
-
-    def resolve_pollbooks(self, info):
-        return entities.PollBook.get_query(info).all()
-
-    pollbook = graphene.Field(
-        entities.PollBook,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_pollbook(self, info, **args):
-        return entities.PollBook.get_query(info).get(args.get('id'))
-
-    voters = graphene.List(entities.Voter)
-
-    def resolve_voters(self, info):
-        return entities.Voter.get_query(info).all()
-
-    voter = graphene.Field(
-        entities.Voter,
-        id=Argument(graphene.UUID, required=True))
-
-    def resolve_voter(self, info, **args):
-        return entities.Voter.get_query(info).get(args.get('id'))
-
-    election_template = graphene.Field(GenericScalar)
-
-    def resolve_election_template(self, info, **args):
-        template = election_template_builder()
-        return convert_json(template)
-
-    search_persons = graphene.List(
-        entities.Person,
-        val=Argument(graphene.String, required=True))
-
-    def resolve_search_persons(self, info, **args):
-        return search_person(args.get('val'))
-
-    search_groups = graphene.List(
-        entities.Group,
-        val=Argument(graphene.String, required=True))
-
-    def resolve_search_groups(self, info, **args):
-        return search_group(args.get('val'))
+    # Users, persons and groups
+    persons = nodes.person.list_persons_query
+    person = nodes.person.get_person_query
+    search_person = nodes.person.search_persons_query
+    search_group = nodes.group.search_groups_query
+    viewer = nodes.person.get_current_viewer_query
