@@ -15,11 +15,11 @@ def create_person(username=None, fnr=None, feide_id=None):
         person.last_name = username
     elif fnr:
         person.nin = fnr
-        person.first_name = "User from"
-        person.last_name = "fnr"
+        person.first_name = "Fnr:"
+        person.last_name = "{0}*****".format(fnr[0:6])
     elif feide_id:
         person.feide_id = feide_id
-        person.first_name = "Feide id"
+        person.first_name = "Feide id:"
         person.last_name = feide_id
     else:
         return None
@@ -30,7 +30,7 @@ def create_person(username=None, fnr=None, feide_id=None):
     return person
 
 def get_or_create_person(identifyer, id_type):
-    
+
     logger.info("Get person %s", identifyer)
     if id_type == 'username':
         logger.info("Get person, in username %s", identifyer)
