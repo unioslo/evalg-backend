@@ -71,7 +71,7 @@ def logging_middleware(next, root, info, **args):
 def auth_middleware(next, root, info, **args):
     if root is None:
         # TBD: should we accept anonymous requests?
-        info.context.user = user
+        #info.context.user = user
 
         # Look up user info here, then do a check on each type of query
         # and see if the user has proper authorization

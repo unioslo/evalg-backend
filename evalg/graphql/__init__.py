@@ -8,6 +8,7 @@ import flask_graphql
 import graphene
 
 from evalg import db
+from evalg.authentication import user
 
 # We need to import our converters before any entities are defined.
 from . import converter  # noqa: F401
@@ -54,6 +55,7 @@ def init_app(app):
             context={
                 'session': db.session,
                 'request': flask.request,
+                'user': user,
             },
             graphiql=True,
             middleware=mw
