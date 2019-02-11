@@ -65,7 +65,7 @@ class Viewer(graphene.ObjectType):
     person = graphene.Field(Person)
 
     def resolve_person(self, info):
-        return info.context.user.person
+        return info.context['user'].person
 
 
 def resolve_viewer_from_context(_, info):
