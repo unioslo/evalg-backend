@@ -77,6 +77,7 @@ def run_setup():
         author='USIT, University of Oslo',
         author_email='bnt-int@usit.uio.no',
 
+        package_data={'evalg/fixtures': ['evalg/fixtures/*.json']},
         use_scm_version=True,
         packages=get_packages(),
         python_requires='~= 3.6',
