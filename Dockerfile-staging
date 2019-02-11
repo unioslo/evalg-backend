@@ -29,7 +29,6 @@ ENV https_proxy=""
 
 RUN pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
  && pip3 config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
- && pip3 install -U pip \
  && pip3 install setuptools_scm \
  && pip3 install evalg --no-cache-dir \
  && apk del .evalg-build-deps
