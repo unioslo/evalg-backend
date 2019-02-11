@@ -3,18 +3,36 @@ The evalg graphql APIs.
 """
 import logging
 
+import flask
+import flask_graphql
 import graphene
-from flask_graphql import GraphQLView
 
-from . import entities
+from evalg import db
+
+# We need to import our converters before any entities are defined.
+from . import converter  # noqa: F401
 from . import mutations
+from . import nodes
 from . import queries
 
 logger = logging.getLogger(__name__)
+
 schema = graphene.Schema(
     query=queries.ElectionQuery,
-    mutation=mutations.Mutations,
-    types=[entities.ElectionGroup])
+    mutation=mutations.ElectionMutations,
+    types=[nodes.election_group.ElectionGroup])
+
+
+class ProperView(flask_graphql.GraphQLView):
+
+    context = None
+
+    def __init__(self, context=context, **kwargs):
+        super(ProperView, self).__init__(**kwargs)
+        self.context = context
+
+    def get_context(self):
+        return self.context
 
 
 def init_app(app):
@@ -29,10 +47,14 @@ def init_app(app):
 
     app.add_url_rule(
         '/graphql',
-        view_func=GraphQLView.as_view(
+        view_func=ProperView.as_view(
             'graphql',
             schema=schema,
             batch=True,
+            context={
+                'session': db.session,
+                'request': flask.request,
+            },
             graphiql=True,
             middleware=mw
         ))
