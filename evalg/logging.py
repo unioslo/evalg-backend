@@ -21,7 +21,7 @@ default_config = {
             'level': 'DEBUG',
         },
         'evalg': {
-            'handlers': ['stream_stderr'],
+            'propagate': True,
             'level': 'DEBUG',
         },
         'watchdog': {
