@@ -21,8 +21,8 @@ class ElectionMutations(graphene.ObjectType):
         nodes.election_group.AnnounceElectionGroup.Field()
     unannounce_election_group = \
         nodes.election_group.UnannounceElectionGroup.Field()
-    create_election_group_key = \
-        nodes.election_group.CreateElectionGroupKey.Field()
+    set_election_group_key = \
+        nodes.election_group.SetElectionGroupKey.Field()
 
     # Election
     update_voting_periods = \
