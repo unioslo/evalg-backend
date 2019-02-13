@@ -205,7 +205,7 @@ class UnannounceElectionGroup(graphene.Mutation):
         return UnannounceElectionGroup(ok=True)
 
 
-class CreateElectionGroupKey(graphene.Mutation):
+class SetElectionGroupKey(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)
         key = graphene.String(required=True)
@@ -217,4 +217,4 @@ class CreateElectionGroupKey(graphene.Mutation):
         el_grp.public_key = args.get('key')
         db.session.add(el_grp)
         db.session.commit()
-        return CreateElectionGroupKey(ok=True)
+        return SetElectionGroupKey(ok=True)
