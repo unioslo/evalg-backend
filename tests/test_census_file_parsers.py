@@ -17,7 +17,7 @@ def test_plain_text_usernames():
 
     assert parser is not None
     assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'username'
+    assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
     assert len(result) == len(usernames)
     assert sorted(result) == sorted(usernames)
@@ -33,7 +33,7 @@ def test_plain_text_fnrs():
 
     assert parser is not None
     assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'fnr'
+    assert parser.id_type == 'nin'
     result = [x for x in parser.parse()]
     assert len(result) == len(fnrs)
     assert sorted(result) == sorted(fnrs)
@@ -54,7 +54,7 @@ def test_plain_text_fnrs_padding():
 
     assert parser is not None
     assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'fnr'
+    assert parser.id_type == 'nin'
     result = [x for x in parser.parse()]
     assert len(result) == len(fnrs_res)
     assert sorted(result) == sorted(fnrs_res)
@@ -146,7 +146,7 @@ def test_csv_fs_usernames_no_header():
     assert parser is not None
     assert isinstance(parser, cparser.CvsParser)
     assert not parser.has_fs_header
-    assert parser.id_type == 'username'
+    assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
     assert len(result) == len(usernames)
     assert sorted(result) == sorted(usernames)
@@ -165,7 +165,7 @@ def test_csv_fs_usernames_with_header():
     assert parser is not None
     assert isinstance(parser, cparser.CvsParser)
     assert parser.has_fs_header
-    assert parser.id_type == 'username'
+    assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
     assert len(result) == len(usernames_res)
     assert sorted(result) == sorted(usernames_res)
@@ -184,7 +184,7 @@ def test_csv_fs_usernames_with_header_as_text():
     assert parser is not None
     assert isinstance(parser, cparser.PlainTextParser)
     assert parser.has_fs_header
-    assert parser.id_type == 'username'
+    assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
     assert len(result) == len(usernames_res)
     assert sorted(result) == sorted(usernames_res)
@@ -210,7 +210,7 @@ def test_csv_fs_student_parlament_file():
     assert parser is not None
     assert isinstance(parser, cparser.CvsParser)
     assert parser.has_fs_header
-    assert parser.id_type == 'username'
+    assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
     assert len(result) == len(usernames_res)
     assert sorted(result) == sorted(usernames_res)
@@ -236,7 +236,7 @@ def test_csv_fs_student_parlament_file_missing_field():
     assert parser is not None
     assert isinstance(parser, cparser.CvsParser)
     assert parser.has_fs_header
-    assert parser.id_type == 'username'
+    assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
     assert len(result) == len(usernames_res)
     assert sorted(result) == sorted(usernames_res)
@@ -262,7 +262,7 @@ def test_csv_fs_student_parlament_file_as_txt():
     assert parser is not None
     assert isinstance(parser, cparser.PlainTextParser)
     assert parser.has_fs_header
-    assert parser.id_type == 'username'
+    assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
     assert len(result) == len(usernames_res)
     assert sorted(result) == sorted(usernames_res)

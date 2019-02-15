@@ -6,50 +6,42 @@ from sqlalchemy import and_
 
 logger = logging.getLogger(__name__)
 
-def create_person(username=None, fnr=None, feide_id=None):
-
+def create_person(identifier, id_type):
     person = evalg.models.person.Person()
-    if username:
-        person.username = username
-        person.first_name = "Username:"
-        person.last_name = username
-    elif fnr:
-        person.nin = fnr
-        person.first_name = "Fnr:"
-        person.last_name = "{0}*****".format(fnr[0:6])
-    elif feide_id:
-        person.feide_id = feide_id
-        person.first_name = "Feide id:"
-        person.last_name = feide_id
+    if id_type == 'uid':
+        person.display_name = 'Username: {0}'.format(identifier)
+    elif id_type == 'nin':
+        person.display_name = 'Fnr: {0}*****'.format(identifier[0:6])
+    elif id_type == 'feide_id':
+        person.display_name = 'Feide id: {0}'.format(identifier)
     else:
         return None
+
+    new_id = evalg.models.person.PersonExternalId(
+        person_id=person.id,
+        id_type=id_type,
+        external_id=identifier,
+    )
+    person.external_ids.append(new_id)
 
     evalg.db.session.add(person)
     evalg.db.session.commit()
-    logger.info("Created person %s ", username)
+    logger.info("Created person with id %s ", identifier)
     return person
 
-def get_or_create_person(identifyer, id_type):
 
-    logger.info("Get person %s", identifyer)
-    if id_type == 'username':
-        logger.info("Get person, in username %s", identifyer)
-        ret = evalg.models.person.Person.query.filter(
-            evalg.models.person.Person.username == identifyer
-        ).first()
-        return ret if ret else create_person(username=identifyer)
-    elif id_type == 'fnr':
-        ret = evalg.models.person.Person.query.filter(
-            evalg.models.person.Person.nin == identifyer
-        ).first()
-        return ret if ret else create_person(fnr=identifyer)
-    elif id_type == 'feide_id':
-        ret = evalg.models.person.Person.query.filter(
-            evalg.models.person.Person.feide_id == identifyer
-        ).first()
-        return ret if ret else create_person(feide_id=id_type)
-    else:
-        return None
+def get_or_create_person(identifier, id_type):
+    logger.info("Get person %s", identifier)
+    ret = evalg.models.person.PersonExternalId.query.filter(
+        and_(
+            evalg.models.person.PersonExternalId.external_id == identifier,
+            evalg.models.person.PersonExternalId.id_type == id_type,
+        )
+    ).first()
+
+    if ret:
+        return evalg.models.person.Person.get(ret.person_id)
+    return create_person(identifier, id_type)
 
 
 def add_voter(person, pollbook):
