@@ -38,10 +38,14 @@ FEIDE_MOCK_DATA = {
                 'nin': ('01011012343', ),
                 # 'uuid': ('some-uuid', ),  # historical merged primary keys
             },
-            'feide_data': {
-                'givenName': 'Test',
-                'sn': 'Testesen',
-                'displayName': 'Test Testesen',
+            'dp_user_info': {
+                'user': {
+                    'name': 'Test Testesen',
+                    'email': 'testesen@example.com',
+                },
+                'audience': 'mock',
+            },
+            'feide_user_info': {
                 'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
             }
         },
