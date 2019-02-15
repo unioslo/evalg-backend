@@ -39,7 +39,7 @@ def init_app(app):
         creds.init_app(app)
         basic.init_app(app)
         gk_user = gatekeeper.GatekeeperData(basic)
-        feide_api = client.DataportenApi(gatekeeper_user)
+        feide_api = client.DataportenApi(gk_user)
     elif auth_method == 'feide_mock':
         gk_user = mock.gatekeeper.MockGatekeeperData(basic)
         feide_api = mock.client.MockDataportenApi(gk_user)
