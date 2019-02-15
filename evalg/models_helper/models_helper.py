@@ -40,7 +40,7 @@ def get_or_create_person(identifier, id_type):
     ).first()
 
     if ret:
-        return evalg.models.person.Person.get(ret.person_id)
+        return evalg.models.person.Person.query.get(ret.person_id)
     return create_person(identifier, id_type)
 
 
