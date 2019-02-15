@@ -40,13 +40,13 @@ class CensusFileParser(metaclass=abc.ABCMeta):
             pass
         else:
             if len(set([len(x) for x in ids]) - set([10, 11])) == 0:
-                return 'fnr'
+                return 'nin'
             else:
                 # File contains invalid fnrs
                 return None
 
         if all(['@' in x for x in ids]):
-            if all([cls.is_posix_username(x.split('@')[0]) for x in ids]):
+            if all([cls.is_posix_uid(x.split('@')[0]) for x in ids]):
                 return 'feide_id'
             else:
                 return None
@@ -55,8 +55,8 @@ class CensusFileParser(metaclass=abc.ABCMeta):
             # Probably a feide id or email mixed in with usernames
             return None
 
-        if all([cls.is_posix_username(x) for x in ids]):
-            return 'username'
+        if all([cls.is_posix_uid(x) for x in ids]):
+            return 'uid'
 
         # No id type found
         return None
@@ -84,9 +84,9 @@ class CensusFileParser(metaclass=abc.ABCMeta):
         return fnr
 
     @classmethod
-    def is_posix_username(cls, username):
-        valid_posix_username = '^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\\$)$'
-        res = re.search(valid_posix_username, username)
+    def is_posix_uid(cls, uid):
+        valid_posix_uid = '^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\\$)$'
+        res = re.search(valid_posix_uid, uid)
         if res:
             return True
         else:
@@ -147,14 +147,14 @@ class PlainTextParser(CensusFileParser):
     def parse(self):
         if not self.id_type:
             return None
-        elif self.id_type == 'fnr':
+        elif self.id_type == 'nin':
             for fnr in self.fields:
                 fnr = self.check_and_rjust_fnr(fnr)
                 if fnr:
                     yield fnr
                 else:
                     continue
-        elif self.id_type == 'feide_id' or self.id_type == 'username':
+        elif self.id_type == 'feide_id' or self.id_type == 'uid':
             for x in self.fields:
                 yield x
         else:
@@ -189,14 +189,14 @@ class CvsParser(CensusFileParser):
 
         if not self._id_type:
             return None
-        elif self.id_type == 'fnr':
+        elif self.id_type == 'nin':
             for fnr in self.fields:
                 fnr = self.check_and_rjust_fnr(fnr)
                 if fnr:
                     yield fnr
                 else:
                     continue
-        elif self.id_type == 'username' or self.id_type == 'feide_id':
+        elif self.id_type == 'uid' or self.id_type == 'feide_id':
             for x in self.fields:
                 yield x
         else:
