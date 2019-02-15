@@ -25,17 +25,8 @@ class Person(ModelBase):
         db.UnicodeText,
         index=True)
 
-    first_name = db.Column(
-        db.UnicodeText,
-        nullable=False)
-
-    last_name = db.Column(
-        db.UnicodeText,
-        nullable=False)
-
     display_name = db.Column(
-        db.UnicodeText,
-        nullable=False)
+        db.UnicodeText)
 
     last_update = db.Column(
         evalg.database.types.UtcDateTime,

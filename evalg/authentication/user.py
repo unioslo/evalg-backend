@@ -20,12 +20,10 @@ logger = logging.getLogger(__name__)
 class EvalgUser(object):
     MAX_PERSON_DATA_AGE = 60  # in minutes
 
-    # map from Feide LDAP schema to Person model
-    FEIDE_ATTRIBUTE_MAP = {
-        'givenName': 'first_name',
-        'sn': 'last_name',
-        'displayName': 'display_name',
-        'mail': 'email',
+    # map from Dataporten user info endpoint schema to Person model
+    DP_ATTRIBUTE_MAP = {
+        'name': 'display_name',
+        'email': 'email',
     }
 
     # map from EvalgUser.ids to PersonExternalId.ID_TYPE_CHOICES
@@ -37,7 +35,7 @@ class EvalgUser(object):
 
     gk_user = ContextAttribute('gk_user')
     feide_api = ContextAttribute('feide_api')
-    _feide_user_info = ContextAttribute('feide_user_info')
+    _dp_user_info = ContextAttribute('dp_user_info')
     _person = ContextAttribute('person')
 
     def init_app(self, app, gk_user, feide_api):
@@ -46,12 +44,15 @@ class EvalgUser(object):
             self.gk_user = gk_user
             self.feide_api = feide_api
 
-    def get_feide_user_info(self):
-        if self._feide_user_info is None:
-            self._feide_user_info = self.feide_api.get_user_info()
-        return self._feide_user_info
+    def get_dp_user_info(self):
+        if self._dp_user_info is None:
+            self._dp_user_info = self.feide_api.get_user_info().get('user')
+        return self._dp_user_info
 
     def find_person(self):
+        if not self.gk_user.access_token:
+            logger.warning('No access token in headers')
+            return None
         matches = PersonExternalId.find_ids(*self.flattened_dp_ids).all()
         persons = set([x.person_id for x in matches])
         if not persons:
@@ -81,10 +82,11 @@ class EvalgUser(object):
 
     def update_person_data(self, person):
         diff = []
-        for attr, value in self.get_feide_user_info().items():
-            if attr not in self.FEIDE_ATTRIBUTE_MAP:
+        user_info = self.get_dp_user_info()
+        for attr, value in user_info.items():
+            if attr not in self.DP_ATTRIBUTE_MAP:
                 continue
-            destination = self.FEIDE_ATTRIBUTE_MAP[attr]
+            destination = self.DP_ATTRIBUTE_MAP[attr]
             if getattr(person, destination, None) != value:
                 diff.append(destination)
                 setattr(person, destination, value)
@@ -135,7 +137,11 @@ class EvalgUser(object):
     def person(self):
         if self._person is None:
             # TODO: try/except
-            self.set_person(self.find_person())
+            person = self.find_person()
+            if person is None:
+                logger.warning('User not logged in')
+                return None
+            self.set_person(person)
         return self._person
 
     @property
