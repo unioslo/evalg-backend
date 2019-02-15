@@ -59,19 +59,22 @@ def logging_middleware(next, root, info, **args):
     Middleware component that logs the result from resolving a promise.
     """
     if root is None:
-        handler = ResultLogger(info.operation.operation, info.field_name)
-        promise = next(root, info, **args).then(handler.log_success,
-                                                handler.log_error)
-        handler.log_promise(promise)
-        return promise
+        log_promise, log_success, log_error = True, True, True
     else:
-        return next(root, info, **args)
+        log_promise, log_success, log_error = False, False, True
+    handler = ResultLogger(info.operation.operation, info.field_name)
+    promise = next(root, info, **args).then(
+        handler.log_success if log_success else None,
+        handler.log_error if log_error else None)
+    if log_promise:
+        handler.log_promise(promise)
+    return promise
 
 
 def auth_middleware(next, root, info, **args):
     if root is None:
         # TBD: should we accept anonymous requests?
-        #info.context.user = user
+        # Logged in user available in info.context['user']
 
         # Look up user info here, then do a check on each type of query
         # and see if the user has proper authorization
