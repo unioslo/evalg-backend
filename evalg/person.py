@@ -46,8 +46,7 @@ def search_person(filter_string):
     split_filters = list(map(lambda f: '%' + f + '%', filter_lc.split(' ')))
     split_filters.append('%' + filter_lc + '%')
     return Person.query.filter(
-        or_(*[func.lower(Person.first_name).like(f) for f in split_filters]) |
-        or_(*[func.lower(Person.last_name).like(f) for f in split_filters])).all()
+        or_(*[func.lower(Person.display_name).like(f) for f in split_filters])).all()
 #        |
 #        func.lower(Person.username).like(filter_lc) |
 #        func.lower(Person.nin).like(filter_lc)).all()
