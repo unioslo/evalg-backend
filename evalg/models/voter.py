@@ -60,7 +60,12 @@ class Voter(ModelBase):
 
     voter_status = db.relationship('VoterStatus')  # no bakref needed
 
-    #votes = db.relationship('Vote')
+    votes = db.relationship('Vote')
+
+    reason = db.Column(
+        db.UnicodeText,
+        doc='reason why this voter should be included in the pollbook',
+        nullable=True)
 
     __table_args__ = (
         UniqueConstraint('person_id', 'pollbook_id', name='_person_pollbook_uc'),
