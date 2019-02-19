@@ -20,7 +20,7 @@ class ElectionVotePolicy(object):
 
     acceptable_voter_status = ('imported', 'added', 'approved')
 
-    def __init__(self, session, election):
+    def __init__(self, session):
         self.session = session
 
     @property
