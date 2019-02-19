@@ -39,6 +39,13 @@ class UrlType(sqlalchemy_utils.URLType):
         return sqlalchemy.util.generic_repr(self)
 
 
+class IpAddressType(sqlalchemy_utils.types.ip_address.IPAddressType):
+    """ Column type for ip addresses. """
+
+    def __repr__(self):
+        return sqlalchemy.util.generic_repr(self)
+
+
 class UuidType(sqlalchemy_utils.UUIDType):
     """ Column type for UUIDs. """
 

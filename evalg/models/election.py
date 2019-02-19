@@ -205,15 +205,6 @@ class Election(AbstractElection):
 
     @status.expression
     def status(cls):
-        # TODO: func.now - utc?
-        # doing:
-        # >>> with app.app_context():
-        # ...     conn = evalg.db.get_engine().connect()
-        # ... s = evalg.db.select([func.now()])
-        # ... conn.execute(s).fetchall()
-        #  gives us a localized datetime object -- if func.now() is tz-aware,
-        #  how does that affect the comparison when start and end are naive (in
-        #  the database).
         return case([
             (cls.cancelled_at.isnot(None), 'cancelled'),
             (and_(cls.published_at.isnot(None),
@@ -223,6 +214,18 @@ class Election(AbstractElection):
             (cls.published_at.isnot(None), 'published'),
             (cls.announced_at.isnot(None), 'announced')],
             else_='draft')
+
+    @hybrid_property
+    def is_ongoing(self):
+        """ check if an election is currently ongoing. """
+        return bool(self.election_group.published_at and self.start < utcnow())
+
+    @is_ongoing.expression
+    def is_ongoing(cls):
+        return case([
+            (and_(cls.published_at.isnot(None),
+                  cls.start < func.now()), True)],
+            else_=False)
 
     @property
     def ou_id(self):
