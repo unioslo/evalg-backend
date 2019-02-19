@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
-Database models for election lists.
+Database models for candidate lists.
 """
-
 import uuid
 
 from evalg import db

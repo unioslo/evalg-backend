@@ -13,6 +13,7 @@ from . import person
 from . import pollbook
 from . import roles
 
+from . import votes
 
 __all__ = [
     'candidates',
@@ -22,4 +23,5 @@ __all__ = [
     'person',
     'pollbook',
     'roles',
+    'votes',
 ]
