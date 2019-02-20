@@ -57,3 +57,6 @@ class ElectionMutations(graphene.ObjectType):
         nodes.roles.AddAdmin.Field()
     remove_admin = \
         nodes.roles.RemoveAdmin.Field()
+
+    # Votes
+    vote = nodes.votes.AddVote.Field()

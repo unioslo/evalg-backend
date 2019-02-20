@@ -4,11 +4,17 @@ GraphQL ObjectType for PollBook and Voter nodes.
 import graphene
 import graphene_sqlalchemy
 
+import evalg.database.query
 import evalg.models.election
+import evalg.models.person
 import evalg.models.pollbook
 import evalg.models.voter
+import evalg.proc.pollbook
 from evalg import db
 
+
+def get_session(info):
+    return info.context.get('session')
 
 #
 # Query
@@ -64,6 +70,16 @@ def resolve_voter_by_id(_, info, **args):
     return Voter.get_query(info).get(args['id'])
 
 
+def resolve_voters_by_person_id(_, info, **args):
+    person_id = args['id']
+    session = get_session(info)
+    person = evalg.database.query.lookup(
+        session,
+        evalg.models.person.Person,
+        id=person_id)
+    return evalg.proc.pollbook.get_voters_for_person(session, person).all()
+
+
 list_voters_query = graphene.List(
     Voter,
     resolver=resolve_voters_by_fields)
@@ -73,14 +89,16 @@ get_voter_query = graphene.Field(
     resolver=resolve_voter_by_id,
     id=graphene.Argument(graphene.UUID, required=True))
 
-
-# TODO: Search for voter objects and elections from person identifiers?
+# TODO: Re-design person-voter relationship
+find_voters_query = graphene.List(
+    Voter,
+    resolver=resolve_voters_by_person_id,
+    id=graphene.Argument(graphene.UUID, required=True))
 
 
 #
 # Mutations
 #
-
 
 class UpdateVoterPollBook(graphene.Mutation):
     """
@@ -128,22 +146,55 @@ class AddVoter(graphene.Mutation):
     class Arguments:
         person_id = graphene.UUID(required=True)
         pollbook_id = graphene.UUID(required=True)
+        status = graphene.String(
+            description='voter status',
+            default_value='added',
+        )
+        reason = graphene.String(
+            description='reason for adding voter to the pollbook',
+        )
 
+    voter = graphene.Field(Voter)
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
         # TODO:
         #   We have to make sure that the person only has one active voter
         #   object in pollbooks for a given election.
-        voter = evalg.models.voter.Voter()
-        voter.person_id = kwargs.get('person_id')
-        voter.pollbook_id = kwargs.get('pollbook_id')
-        voter.voter_status = evalg.models.voter.VoterStatus.query.get('added')
-        db.session.add(voter)
+        session = get_session(info)
+        policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
+        person_id = kwargs['person_id']
+        pollbook_id = kwargs['pollbook_id']
+        status = kwargs.get('status', policy.status_default)
+        reason = kwargs.get('reason')
+
+        person = evalg.database.query.lookup(
+            session,
+            evalg.models.person.Person,
+            id=person_id)
+
+        pollbook = evalg.database.query.lookup(
+            session,
+            evalg.models.pollbook.PollBook,
+            id=pollbook_id)
+
+        voter = policy.add_voter(
+            pollbook,
+            person,
+            status=status,
+            reason=reason)
+
+        node = AddVoter(
+            voter=voter,
+            ok=True
+        )
         db.session.commit()
-        return AddVoter(ok=True)
+        return node
 
 
+#
+# TODO: Do we ever want to delete a voter? What do we do about any votes?
+#
 class DeleteVoter(graphene.Mutation):
     """
     Delete a single voter object from a pollbook.

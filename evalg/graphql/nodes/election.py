@@ -35,6 +35,7 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
             return None
         return convert_json(self.meta)
 
+    is_ongoing = graphene.Boolean()
     # TODO: Wouldn't we have to do this for our other models as well?
     pollbooks = graphene.List(pollbook.PollBook)
 
