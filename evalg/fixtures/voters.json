@@ -1,26 +1,5 @@
 [
   {
-    "model": "evalg.models.voter.VoterStatus",
-    "records": [
-      {
-        "code": "imported",
-        "description": "Imported initially during elecion initiation"
-      },
-      {
-        "code": "deleted",
-        "description": "Deleted manually"
-      },
-      {
-        "code": "added",
-        "description": "Added manually"
-      },
-      {
-        "code": "accepted",
-        "description": "Added after giving vote"
-      }
-    ]
-  },
-  {
     "model": "evalg.models.voter.Voter",
     "records": [
       {
@@ -28,7 +7,8 @@
           "tag": "My tag",
           "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
           "pollbook_id": "dc382424-e024-42b0-a445-9839269790e4",
-          "voter_status_id": "imported"
+          "manual": false,
+          "verified": true
       }
     ]
   }

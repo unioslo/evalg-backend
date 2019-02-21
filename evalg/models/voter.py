@@ -17,16 +17,6 @@ from evalg.database.types import UuidType
 from .base import ModelBase
 
 
-class VoterStatus(ModelBase):
-    """ Voter / census member status code model. """
-
-    code = db.Column(
-        db.UnicodeText,
-        primary_key=True)
-
-    description = db.Column(db.UnicodeText)
-
-
 class Voter(ModelBase):
     """ Voter / census member model."""
 
@@ -53,12 +43,15 @@ class Voter(ModelBase):
         'PollBook',
         back_populates='voters')
 
-    voter_status_id = db.Column(
-        db.UnicodeText,
-        db.ForeignKey('voter_status.code'),
+    manual = db.Column(
+        db.Boolean,
+        doc='voter was added to the poll book by himself',
         nullable=False)
 
-    voter_status = db.relationship('VoterStatus')  # no bakref needed
+    verified = db.Column(
+        db.Boolean,
+        doc='voter is verified, and any vote should be counted',
+        nullable=False)
 
     votes = db.relationship('Vote')
 

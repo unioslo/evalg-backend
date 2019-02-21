@@ -146,12 +146,11 @@ class AddVoter(graphene.Mutation):
     class Arguments:
         person_id = graphene.UUID(required=True)
         pollbook_id = graphene.UUID(required=True)
-        status = graphene.String(
-            description='voter status',
-            default_value='added',
+        approved = graphene.Boolean(
+            description='add a pre-approved voter to the poll book',
         )
         reason = graphene.String(
-            description='reason for adding voter to the pollbook',
+            description='reason for adding voter to the poll book',
         )
 
     voter = graphene.Field(Voter)
@@ -165,7 +164,7 @@ class AddVoter(graphene.Mutation):
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
         person_id = kwargs['person_id']
         pollbook_id = kwargs['pollbook_id']
-        status = kwargs.get('status', policy.status_default)
+        manual = not kwargs.get('approved', False)
         reason = kwargs.get('reason')
 
         person = evalg.database.query.lookup(
@@ -181,7 +180,7 @@ class AddVoter(graphene.Mutation):
         voter = policy.add_voter(
             pollbook,
             person,
-            status=status,
+            manual=manual,
             reason=reason)
 
         node = AddVoter(
