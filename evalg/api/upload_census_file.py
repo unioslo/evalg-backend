@@ -35,7 +35,7 @@ def get_or_create_person(id_type, id_value):
                 external_id=id_value))
         # Temporary hack -- set display_name
         p.display_name = {
-            'nin': 'fnr: {0[0:6]}*****',
+            'nin': 'fnr: {0:.6}*****',
         }.get(id_type, id_type + ': {0}').format(id_value)
         evalg.db.session.add(p)
         evalg.db.session.flush()
@@ -60,7 +60,6 @@ class UploadCensusFile(flask_apispec.views.MethodResource):
             census_file = request.files['census_file']
         else:
             raise BadRequest('missing census_file')
-        logger.info("Uploading %r to %r", census_file, pollbook_id)
 
         try:
             pollbook = evalg.database.query.lookup(
@@ -73,13 +72,13 @@ class UploadCensusFile(flask_apispec.views.MethodResource):
         census_file = request.files['census_file']
         if not census_file or census_file.filename == '':
             raise BadRequest('No census file provided')
+        logger.info('updating %r from %r', pollbook, census_file)
         parser = CensusFileParser.factory(census_file)
         if not parser:
             raise BadRequest('Unsupported file %r' % (census_file.filename, ))
-
         id_type = parser.id_type
-        logger.debug('loading file %r using parser %r (id_type=%r)',
-                     census_file, type(parser), id_type)
+        logger.debug('loading file using parser %r (id_type=%r)',
+                     type(parser), id_type)
         for i, identifier in enumerate(parser.parse(), 1):
             try:
                 person = get_or_create_person(id_type, identifier)
