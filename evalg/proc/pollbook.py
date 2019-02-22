@@ -67,51 +67,29 @@ class ElectionVoterPolicy(object):
     This is super messy. Our database model is not made for this.
     """
 
-    statuses = ('imported', 'accepted', 'added', 'deleted')
-    status_ok = ('imported', 'accepted', 'added')
-    status_user_added = 'added'
-    status_default = status_user_added
-
     def __init__(self, session):
         self.session = session
 
-    def add_voter(self, pollbook, person, status=status_default, reason=None):
+    def add_voter(self, pollbook, person, manual=True, reason=None):
         """
         Add a voter to a pollbook for a given person object.
         """
         voter = self.get_voter(pollbook, person)
 
-        if status not in self.statuses:
-            raise ValueError('invalid status %r, must be one of %r'
-                             % (status, self.statuses))
-
-        if status == self.status_user_added and not reason:
-            # Not *really* a ValueError?
-            raise ValueError('must provide reason for voter status %r' %
-                             (status, ))
-
         if voter:
-            if voter.voter_status_id in self.status_ok:
-                # Not *really* a ValueError?
-                raise ValueError('voter already exists with status %r' %
-                                 (voter.voter_status_id, ))
-            logger.debug('re-enable voter %r, status %r -> %r',
-                         voter, voter.voter_status_id, status)
-            voter.voter_status_id = status
-            if reason:
-                voter.reason = reason
-        else:
-            voter = Voter(
-                pollbook_id=pollbook.id,
-                person_id=person.id,
-                voter_status_id=status,
-                reason=reason,
-            )
+            raise ValueError('voter already exists in pollbook')
+
+        voter = Voter(
+            pollbook_id=pollbook.id,
+            person_id=person.id,
+            manual=manual,
+            verified=(not manual),
+            reason=reason,
+        )
 
         self.session.add(voter)
         self.session.flush()
-        logger.info('added voter %r with status %r',
-                    voter, voter.voter_status_id)
+        logger.info('added voter %r', voter)
         return voter
 
     def get_voter(self, pollbook, person):

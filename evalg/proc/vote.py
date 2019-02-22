@@ -1,6 +1,7 @@
 """
 This module implements interfaces for voting and getting vote statistics.
 """
+import collections
 import logging
 
 from sqlalchemy.sql import and_, select, func
@@ -17,8 +18,6 @@ logger = logging.getLogger(__name__)
 class ElectionVotePolicy(object):
     """
     """
-
-    acceptable_voter_status = ('imported', 'added', 'approved')
 
     def __init__(self, session):
         self.session = session
@@ -85,10 +84,6 @@ class ElectionVotePolicy(object):
         logger.info("Adding vote in election/pollbook %r/%r",
                     voter.pollbook.election, voter.pollbook)
 
-        if voter.voter_status_id not in self.acceptable_voter_status:
-            raise Exception('invalid voter status %r' %
-                            (voter.voter_status_id,))
-
         if not voter.pollbook.election.is_ongoing:
             raise Exception('inactive election')
 
@@ -108,23 +103,46 @@ class ElectionVotePolicy(object):
 
 def get_election_vote_counts(session, election):
     """
-    Get a dict of vote count per voter_status in an election.
+    Get a dict of vote counts for the election.
+
+    The votes are grouped by
+
+    approved
+        Votes from voters that are ``verified``
+
+    need_approval
+        Votes from voters that are ``manual`` and not ``verified``
+
+    omitted
+        Votes from voters that are not ``manual`` and not ``verified``
     """
     voters_subq = select([Voter.id]).where(
         Voter.pollbook_id.in_(
             select([PollBook.id]).where(
                 PollBook.election_id == election.id)))
     query = session.query(
-        Voter.voter_status_id,
+        Voter.manual,
+        Voter.verified,
         func.count(Vote.ballot_id)
     ).join(
         Vote
     ).filter(
         Voter.id.in_(voters_subq)
     ).group_by(
-        Voter.voter_status_id
+        Voter.manual,
+        Voter.verified
     )
-    return dict(query.all())
+    keys = {
+        (True, True): 'approved',
+        (True, False): 'need_approval',
+        (False, True): 'approved',
+        (False, False): 'omitted',
+    }
+    count = collections.Counter()
+    for m, v, c in query.all():
+        key = keys[m, v]
+        count[key] += c
+    return count
 
 
 def get_votes_for_person(session, person):

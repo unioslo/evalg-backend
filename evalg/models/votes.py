@@ -174,18 +174,6 @@ class Vote(ModelBase):
         back_populates="vote",
     )
 
-    @hybrid_property
-    def is_approved(self):
-        """ whether this vote comes from an approved voter or not. """
-        return self.voter.voter_status.code != "unapproved"
-
-    @is_approved.expression
-    def is_approved(self):
-        return exists([Vote]).where(
-            and_(
-                self.voter_id == Voter.id,
-                Voter.voter_status_id != "unapproved"))
-
 
 class VoteRecord(ModelBase):
     """

@@ -44,31 +44,32 @@ class ElectionVoteCounts(graphene.ObjectType):
     """ Vote counts for election, grouped by voter status. """
     id = graphene.UUID()
 
-    # TODO:
-    #   This should be an object with individual vote counts per voter status.
-    #
-    # imported = graphene.Integer()
-    # added = graphene.Integer()
-    # deleted = graphene.Integer()
-    # ...
-    #
-    # However, we'll need to refactor the Voter object first, and make the
-    # voter status codes constant (and not database values).
-    #
-    stats = graphene.JSONString()
-
-    def resolve_stats(self, info):
-        session = get_session(info)
-        election = evalg.database.query.lookup(
-            session,
-            evalg.models.election.Election,
-            id=self.id)
-
-        return evalg.proc.vote.get_election_vote_counts(session, election)
+    approved = graphene.Int(
+        default_value=0,
+        description='approved votes',
+    )
+    need_approval = graphene.Int(
+        default_value=0,
+        description='votes awaiting approval',
+    )
+    omitted = graphene.Int(
+        default_value=0,
+        description='votes that will be omitted from the count',
+    )
 
 
 def resolve_election_count_by_id(_, info, **args):
-    return ElectionVoteCounts(id=args['id'])
+    session = get_session(info)
+    elec_id = args['id']
+    election = evalg.database.query.lookup(
+        session,
+        evalg.models.election.Election,
+        id=elec_id)
+    data = {
+        'id': elec_id,
+    }
+    data.update(evalg.proc.vote.get_election_vote_counts(session, election))
+    return ElectionVoteCounts(**data)
 
 
 election_vote_count_query = graphene.Field(
