@@ -99,6 +99,59 @@ evalg_evalg_1 flask populate-tables`.
 Run the commands `flask db downgrade` and `flask db upgrade` on beforehand if
 you would like to clean before populating.
 
+### Configuring authentication and authorization with Dataporten
+
+#### Using a mock for Dataporten
+
+During day-to-day development, it is easier to use a mock of Dataporten,
+that assumes that all users of the application is logged in and maps
+their identity to a faux user.
+
+The following configuration snippet enables mocking authentication:
+
+```
+AUTH_ENABLED = True
+
+AUTH_METHOD = 'feide_mock'
+
+# when mocking, pretend the gatekeeper authenticated this user
+FEIDE_MOCK_LOGIN_AS = 'abababab-abab-abab-abab-abababababab'
+FEIDE_MOCK_DATA = {
+    'client_id': 'fafafafa-fafa-fafa-fafa-fafafafafafa',
+    'users': {
+        'abababab-abab-abab-abab-abababababab': {
+            'id': 'abababab-abab-abab-abab-abababababab',
+            'sec': {
+                'feide': ('testesen@example.com', ),
+                'nin': ('01011012343', ),
+            },
+            'feide_data': {
+                'givenName': 'Test',
+                'sn': 'Testesen',
+                'displayName': 'Test Testesen',
+                'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
+            }
+        },
+    },
+}
+```
+
+#### Actual Datporten integration
+
+To set up authentication with Dataporten, the following configuratin should be defined:
+
+```
+AUTH_ENABLED = True
+
+AUTH_METHOD = 'feide'
+FEIDE_BASIC_REQUIRE = True
+FEIDE_BASIC_USERS = [
+    ('dataporten', '<password>'),
+]
+```
+
+`<password>` should be replaced with the password supplied by the [Dataporten API Gateway](https://docs.feide.no/).
+
 #### Example data definitions
 In evalg/fixtures, there are located a series of JSON files. These files define
 the example data. These files must be mentioned in an appropriate order in
