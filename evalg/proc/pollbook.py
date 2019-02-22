@@ -67,11 +67,6 @@ class ElectionVoterPolicy(object):
     This is super messy. Our database model is not made for this.
     """
 
-    statuses = ('imported', 'accepted', 'added', 'deleted')
-    status_ok = ('imported', 'accepted', 'added')
-    status_user_added = 'added'
-    status_default = status_user_added
-
     def __init__(self, session):
         self.session = session
 

@@ -19,8 +19,6 @@ class ElectionVotePolicy(object):
     """
     """
 
-    acceptable_voter_status = ('imported', 'added', 'approved')
-
     def __init__(self, session):
         self.session = session
 
@@ -105,7 +103,18 @@ class ElectionVotePolicy(object):
 
 def get_election_vote_counts(session, election):
     """
-    Get a dict of vote count per voter_status in an election.
+    Get a dict of vote counts for the election.
+
+    The votes are grouped by
+
+    approved
+        Votes from voters that are ``verified``
+
+    need_approval
+        Votes from voters that are ``manual`` and not ``verified``
+
+    omitted
+        Votes from voters that are not ``manual`` and not ``verified``
     """
     voters_subq = select([Voter.id]).where(
         Voter.pollbook_id.in_(
