@@ -1,8 +1,9 @@
 from evalg.unit_importer.importer import UnitImporter
 
 import logging
-import requests
+
 from collections import deque
+from sap_client import SapClient
 
 logger = logging.getLogger(__name__)
 
@@ -22,31 +23,14 @@ class UIOSAPWSImporter(UnitImporter):
         elif 'root_ou' not in self.config:
             raise ValueError('UIOSPWS root_ou missing from config')
 
-    def _get_unit(self, ou_id, children=False):
-        """Get a unit from SAPWS."""
-        query = 'locations({0})'.format(ou_id)
-        if children:
-            query += '/children'
-
-        r = requests.get(self.config['base_url']+query,
-                         headers={
-                             'X-Gravitee-Api-Key': self.config['api_key'],
-                             'accept': 'application/json',
-        })
-        if children:
-            return r.json()['d']['results']
-
-        return r.json()['d']
-
     def get_units(self):
         """Generator returning units from SAPWS."""
-        units = deque()
-        units.append(self._get_unit(self.config['root_ou']))
 
-        while units:
-            unit = units.popleft()
-            units.extend(self._get_unit(unit['locationId'], children=True))
+        client = SapClient(
+            self.config['base_url'],
+            headers={'X-Gravitee-API-Key': self.config['api_key']})
 
+        for unit in client.list_locations():
             u = {}
 
             if 'locationCode' in unit:

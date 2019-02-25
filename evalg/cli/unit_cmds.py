@@ -12,14 +12,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def add_unit(new_unit):
+def add_unit(unit):
     logger.info('Adding new unit, ou: %s, name: %s',
-                unit.external_id, unit.name)
-    unit = evalg.models.ou.OrganizationalUnit()
-    unit.name = new_unit['name']
-    unit.external_id = new_unit['external_id']
-    unit.tag = new_unit['tag']
-    evalg.db.session.add(unit)
+                unit['external_id'], unit['name'])
+    u = evalg.models.ou.OrganizationalUnit()
+    u.name = unit['name']
+    u.external_id = unit['external_id']
+    u.tag = unit['tag']
+    evalg.db.session.add(u)
     evalg.db.session.flush()
 
 
@@ -57,8 +57,6 @@ def get_unit(external_id):
 def import_units():
     config = flask.current_app.config
     importer_type = config.get('UNIT_IMPORTER')
-
-    logger.error(importer_type)
 
     unit_importer = evalg.unit_importer.importer.UnitImporter.factory(
         importer_type['type'],

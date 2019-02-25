@@ -26,3 +26,6 @@ sqlalchemy==1.2.15
 sqlalchemy-json
 sqlalchemy-utils
 werkzeug
+
+# Our own dependencies
+sap-client==0.2.0
