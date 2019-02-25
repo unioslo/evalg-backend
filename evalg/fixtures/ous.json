@@ -5,9 +5,9 @@
       {
         "id": "a184e25e-907c-4155-860f-79df898ad51c",
         "name": {
-          "en": "University of Hacking",
-          "nn": "Universitetet for Hacking",
-          "nb": "Universitetet for Hacking"
+          "en": "University of Oslo",
+          "nn": "Universitetet i Oslo",
+          "nb": "Universitetet i Oslo"
         },
         "external_id": "900000",
         "tag": "root"
@@ -15,46 +15,42 @@
       {
         "id": "61499710-726d-43ab-b6f7-63138391dd02",
         "name": {
-          "en": "Faculty of White-Hat Hacking",
-          "nn": "White-Hat Hacking fakultet",
-          "nb": "White-Hat Hacking fakultet"
+          "en": "Faculty of Mathematics and Natural Sciences",
+          "nn": "Det matematisk-naturvitenskapelige fakultet",
+          "nb": "Det matematisk-naturvitenskapelige fakultet"
         },
-        "external_id": "901000",
-        "parent_id": "a184e25e-907c-4155-860f-79df898ad51c",
-        "tag": "faculty"
+        "external_id": "150000",
+        "tag": "unit"
       },
       {
         "id": "e3f26a01-56ff-42c4-a581-5bc942193b2e",
         "name": {
-          "en": "Faculty of Black-Hat Hacking",
-          "nn": "Black-Hat Hacking fakultet",
-          "nb": "Black-Hat Hacking fakultet"
+          "en": "Faculty of Humanities",
+          "nn": "Det humanistiske fakultet",
+          "nb": "Det humanistiske fakultet"
         },
-        "external_id": "902000",
-        "parent_id": "a184e25e-907c-4155-860f-79df898ad51c",
-        "tag": "faculty"
+        "external_id": "140000",
+        "tag": "unit"
       },
       {
         "id": "3fc2aa46-5ea1-45b2-9ad1-9296210e4f51",
         "name": {
-          "en": "Institute of Backdoor Exploiting",
-          "nn": "Institutt for Backdoor Exploiting",
-          "nb": "Institutt for Backdoor Exploiting"
+          "en": "Department of Mathematics",
+          "nn": "Matematisk institutt",
+          "nb": "Matematisk institutt"
         },
-        "external_id": "902010",
-        "parent_id": "e3f26a01-56ff-42c4-a581-5bc942193b2e",
-        "tag": "department"
+        "external_id": "151300",
+        "tag": "unit"
       },
       {
         "id": "2ec82fd8-da0e-4ad7-b844-76659fa8ce9e",
         "name": {
-          "en": "Institute of Whistleblowing",
-          "nn": "Institutt for Whistleblowing",
-          "nb": "Institutt for Whistleblowing"
+          "en": "Department of Philosophy, Classics, History of Art and Ideas",
+          "nn": "Institutt for filosofi, idé- og kunsthistorie og klassiske språk",
+          "nb": "Institutt for filosofi, idé- og kunsthistorie og klassiske språk"
         },
-        "external_id": "901010",
-        "parent_id": "61499710-726d-43ab-b6f7-63138391dd02",
-        "tag": "department"
+        "external_id": "143300",
+        "tag": "unit"
       }
     ]
   }

@@ -5,9 +5,9 @@
       {
         "id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09",
         "name": {
-          "nb": "Universitetsstyre ved Universitetet for Hacking",
-          "nn": "Universitetsstyre ved Universitetet for Hacking",
-          "en": "University board at University of Hacking"
+          "nb": "Universitetsstyre ved Universitetet i Oslo",
+          "nn": "Universitetsstyre ved Universitetet i Oslo",
+          "en": "University board at University of Oslo"
         },
         "meta": {
           "candidate_type": "single",
@@ -34,9 +34,9 @@
       {
         "id": "aafef259-39ac-478d-909b-e72c0ce2d397",
         "name": {
-          "nb": "Rektor ved Universitetet for Hacking",
-          "nn": "Rektor ved Universitetet for Hacking",
-          "en": "Principal at University of Hacking"
+          "nb": "Rektor ved Universitetet i Oslo",
+          "nn": "Rektor ved Universitetet i Oslo",
+          "en": "Principal at University of Oslo"
         },
         "meta": {
           "candidate_type": "single_team",
@@ -58,9 +58,9 @@
       {
         "id": "729bf1a5-6f68-4ed5-bdc2-8cf51ccf5389",
         "name": {
-          "nb": "Studentparlament ved Universitetet for Hacking",
-          "nn": "Studentparlament ved Universitetet for Hacking",
-          "en": "Student parliament at University of Hacking"
+          "nb": "Studentparlament ved Universitetet i Oslo",
+          "nn": "Studentparlament ved Universitetet i Oslo",
+          "en": "Student parliament at University of Oslo"
         },
         "meta": {
           "candidate_type": "party_list",
@@ -96,9 +96,9 @@
         "start": "2018-08-30T08:00:00Z",
         "end": "2018-09-06T12:00:00Z",
         "name": {
-          "nb": "Studentparlament ved Universitetet for Hacking",
-          "nn": "Studentparlament ved Universitetet for Hacking",
-          "en": "Student parliament at University of Hacking"
+          "nb": "Studentparlament ved Universitetet i Oslo",
+          "nn": "Studentparlament ved Universitetet i Oslo",
+          "en": "Student parliament at University of Oslo"
         },
         "description": null,
         "information_url": null,
@@ -114,9 +114,9 @@
         "end": "2018-09-05T12:00:00Z",
         "active": true,
         "name": {
-          "nb": "Rektor ved Universitetet for Hacking",
-          "nn": "Rektor ved Universitetet for Hacking",
-          "en": "Principal at University of Hacking"
+          "nb": "Rektor ved Universitetet i Oslo ",
+          "nn": "Rektor ved Universitetet i Oslo",
+          "en": "Principal at University of Oslo"
         },
         "description": null,
         "information_url": null,

@@ -1,6 +1,6 @@
 # coding: utf_8
 
-OU_TAGS = ['root', 'faculty', 'department']
+OU_TAGS = ['root', 'faculty', 'department', 'unit']
 """ The possible ou tags in use. """
 
 ###
@@ -314,7 +314,7 @@ board_leader_node = {
                 'en': 'Dean',
             },
             'settings': {
-                'ou_tag': 'faculty',
+                'ou_tag': 'unit',
                 'template_name': 'uio_dean'
             }
         },
@@ -325,7 +325,7 @@ board_leader_node = {
                 'en': 'Institute leader',
             },
             'settings': {
-                'ou_tag': 'department',
+                'ou_tag': 'unit',
                 'template_name': 'uio_department_leader'
             }
         },
@@ -357,7 +357,7 @@ board_node = {
                 'en': 'Faculty Board',
             },
             'settings': {
-                'ou_tag': 'faculty',
+                'ou_tag': 'unit',
                 'template_name': 'uio_faculty_board'
             }
         },
@@ -368,7 +368,7 @@ board_node = {
                 'en': 'Institute Board',
             },
             'settings': {
-                'ou_tag': 'department',
+                'ou_tag': 'unit',
                 'template_name': 'uio_department_board'
             }
         },

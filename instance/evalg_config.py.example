@@ -52,6 +52,11 @@ FEIDE_MOCK_DATA = {
     },
 }
 
+# SAPWS config. Used to import units
+SAPWD_BASE_URL = 'https://api-gateway.uio.no/sws/v2/'
+SAPWS_API_KEY = ''
+SAPWS_ROOT_OU = '900000'
+
 LOGGER_NAME = 'evalg'
 
 LOGGING = {
