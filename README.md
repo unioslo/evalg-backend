@@ -134,6 +134,32 @@ FLASK_APP=evalg.wsgi flask shell
 
 See http://flask.pocoo.org/docs/latest/shell/
 
+## Import units from SAP
+
+Units can be imported from the SAP-WS with the following command.
+
+```
+FLASK_APP=evalg.wsgi flask import-units
+```
+
+Or if running docker.
+```
+docker exec -it evalg_evalg_1 flask import-units
+```
+
+Config in evalg\_config.py:
+```
+UNIT_IMPORTER = { 
+    'type': 'UIOSAPWS',
+    'config': {
+            'base_url': <URI>,
+            'api_key': <SAP_API_KEY>,
+        'root_ou': <ROOT_OU_NR>,
+    }   
+}
+```
+
+
 ## Other CLI commands
 
 This lists all CLI commands an application has to offer:
@@ -141,3 +167,4 @@ This lists all CLI commands an application has to offer:
 ```
 FLASK_APP=evalg.wsgi flask --help
 ```
+
