@@ -7,15 +7,11 @@ from collections import deque
 logger = logging.getLogger(__name__)
 
 
+@UnitImporter.register('UIOSAPWS')
 class UIOSAPWSImporter(UnitImporter):
 
     def __init__(self, config):
         super().__init__(config)
-
-    @classmethod
-    def get_type(cls):
-        """Get the importer type"""
-        return 'UIOSAPWS'
 
     def check_config(self):
         """Rudimentary config check"""
@@ -64,7 +60,7 @@ class UIOSAPWSImporter(UnitImporter):
             if u['external_id'] == self.config['root_ou']:
                 u['tag'] = 'root'
             else:
-                u['tag'] = 'department'
+                u['tag'] = 'unit'
 
             if 'locationName' in unit:
                 u['name'] = {}

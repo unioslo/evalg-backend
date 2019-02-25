@@ -20,7 +20,7 @@ def add_unit(new_unit):
     unit.external_id = new_unit['external_id']
     unit.tag = new_unit['tag']
     evalg.db.session.add(unit)
-    evalg.db.session.commit()
+    evalg.db.session.flush()
 
 
 def update_unit(unit, new_unit):
@@ -29,14 +29,12 @@ def update_unit(unit, new_unit):
                 unit.external_id,
                 unit.name)
 
-    updated = False
     if unit.name != new_unit['name']:
         logger.info('Found updated name, ou: %s, old_name: %s, new_name: %s',
                     unit.external_id,
                     unit.name,
                     new_unit['name'])
         unit.name == new_unit['name']
-        updated = True
 
     if unit.tag != new_unit['tag']:
         logger.info('Found updated tag, ou: %s, old_tag: %s, new_tag: %s',
@@ -44,13 +42,8 @@ def update_unit(unit, new_unit):
                     unit.tag,
                     new_unit['tag'])
         unit.tag == new_unit['tag']
-        updated = True
 
-    if updated:
-        logger.info('Commiting changes to unit %s', unit.external_id)
-        evalg.db.session.commit()
-    else:
-        logger.info('No changes found, ou: %s', unit.external_id)
+    evalg.db.session.flush()
 
 
 def get_unit(external_id):
@@ -64,17 +57,23 @@ def get_unit(external_id):
 def import_units():
     config = flask.current_app.config
     importer_type = config.get('UNIT_IMPORTER')
+
+    logger.error(importer_type)
+
     unit_importer = evalg.unit_importer.importer.UnitImporter.factory(
         importer_type['type'],
         importer_type['config'],
     )
 
     for unit in unit_importer.get_units():
-        u = get_unit(unit['external_id'])
-        if u:
-            update_unit(u, unit)
+        old_unit = get_unit(unit['external_id'])
+
+        if old_unit:
+            update_unit(old_unit, unit)
         else:
             add_unit(unit)
+
+    evalg.db.session.commit()
 
 
 commands = tuple((
@@ -86,4 +85,3 @@ def init_app(app):
     """ Add commands to flask application cli. """
     for command in commands:
         app.cli.add_command(command)
-

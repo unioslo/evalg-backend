@@ -1,13 +1,13 @@
-
 import evalg
 
 import abc
 
-from flask import Flask, current_app
-
 
 class UnitImporter(metaclass=abc.ABCMeta):
     """Abstract class used to create OU importers."""
+
+    subclasses = {}
+
     def __init__(self, config):
         self.config = config
         self.check_config()
@@ -21,16 +21,15 @@ class UnitImporter(metaclass=abc.ABCMeta):
         """Check if config is correct."""
 
     @classmethod
-    @abc.abstractmethod
-    def get_type(cls):
-        """Get the importer type."""
-
-    @classmethod
     def factory(cls, importer_type, config):
         """Returns the correct importer, if supported."""
-        supported_types = {
-            x.get_type(): x for x in UnitImporter.__subclasses__()
-        }
-        if importer_type in supported_types:
-            return supported_types[importer_type](config)
-        return None
+        if importer_type not in cls.subclasses:
+            return ValueError('Importer type not supported %s', importer_type)
+        return cls.subclasses[importer_type](config)
+
+    @classmethod
+    def register(cls, importer_type):
+        def decorator(subclass):
+            cls.subclasses[importer_type] = subclass
+            return subclass
+        return decorator
