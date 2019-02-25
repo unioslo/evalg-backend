@@ -23,6 +23,12 @@ pipeline {
                 sh "docker push '${project}/valg-backend'"
             }
         }
+        stage ('Cleanup after docker') {
+            steps {
+                sh "docker system prune -f"
+                sh "docker rmi \$(docker images --filter 'reference=it-usit-int-drift/valg-backend' --filter 'before=it-usit-int-drift/valg-backend:${image_version}' -q)"
+            }
+        }
     }
 }
 
