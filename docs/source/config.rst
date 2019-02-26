@@ -69,10 +69,14 @@ The following configuration snippet enables mocking authentication::
                   'feide': ('testesen@example.com', ),
                   'nin': ('01011012343', ),
               },
-              'feide_data': {
-                  'givenName': 'Test',
-                  'sn': 'Testesen',
-                  'displayName': 'Test Testesen',
+              'dp_user_info': {
+                  'user': {
+                      'name': 'Test Testesen',
+                      'email': 'testesen@example.com',
+                  },
+                  'audience': 'mock',
+              },
+              'feide_user_info': {
                   'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
               }
           },
