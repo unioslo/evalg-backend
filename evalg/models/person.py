@@ -1,7 +1,6 @@
 """
 Database models for users
 """
-import enum
 import uuid
 
 from sqlalchemy.sql import and_, or_
@@ -68,7 +67,7 @@ class Person(ModelBase):
 IdType = make_descriptive_enum(
     'IdType',
     {
-        None: 'Identifier types',
+        '': 'Identifier types',
         'feide_id': 'Feide id (eduPersonPrincipalName)',
         'feide_user_id': 'Feide/Dataporten user id',
         'nin': 'National identification number',

@@ -1,8 +1,8 @@
 import datetime
 import enum
 import re
-
 from collections.abc import Iterable
+from types import DynamicClassAttribute
 
 under_pat = re.compile(r'_([a-z])')
 
@@ -37,13 +37,24 @@ def utcnow():
     return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
 
 
+class _DescriptiveEnumMixin(object):
+
+    def get_description(self):
+        return ''
+
+    @DynamicClassAttribute
+    def description(self):
+        return self.get_description()
+
+
 def make_descriptive_enum(name, values):
     """
     Make an enum of string constants with descriptions.
 
     >>> Values = make_descriptive_enum(
     ...     'Values',
-    ...     {None: 'some values', 'foo': 'a foo value', 'bar': 'a bar value'})
+    ...     {'': 'some values', 'foo': 'a foo value', 'bar': 'a bar value'})
+    >>> Values
     <enum 'Values'>
     >>> Values.foo
     <Values.foo: 'foo'>
@@ -53,7 +64,7 @@ def make_descriptive_enum(name, values):
     'some values'
     >>> Values.get_description('bar')
     'a bar value'
-    >>> Values.foo.get_description()
+    >>> Values.foo.description
     'a foo value'
 
     :type name: str
@@ -61,25 +72,28 @@ def make_descriptive_enum(name, values):
 
     :type values: dict
     :param values:
-        A mapping of enum values and their description.
-        The special key ``None`` will provide a description of the enum class.
+        A mapping of enum values and their description.  An empty key will
+        provide a description for the enum class.
 
     :rtype: enum.EnumMeta
     :return: An enum class with values and descriptions
     """
 
+    class_description = values.get('', '')
+    enum_descriptions = {v: values[v] for v in values if v}
+    enum_values = {v: v for v in values if v}
+
     def get_description(value=None):
+        if not value:
+            return class_description
         if isinstance(value, enum.Enum):
             value = value.value
-        return values.get(value, '')
+        return enum_descriptions.get(value, '')
 
-    _description_mixin = type(
-        'DescriptiveEnum',
-        (object, ),
+    description_mixin = type(
+        '_{name}_DescriptiveEnum'.format(name=name),
+        (_DescriptiveEnumMixin, ),
         {'get_description': get_description})
 
     return enum.unique(
-        enum.Enum(
-            name,
-            {v: v for v in values if v is not None},
-            type=_description_mixin))
+        enum.Enum(name, enum_values, type=description_mixin))
