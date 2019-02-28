@@ -60,11 +60,11 @@ def get_voters_for_id(session, id_type, id_value, election=None):
     if election is None:
         cond = and_(
             Voter.id_type == id_type,
-            Voter.id_Value == id_value)
+            Voter.id_value == id_value)
     else:
         cond = and_(
             Voter.id_type == id_type,
-            Voter.id_Value == id_value,
+            Voter.id_value == id_value,
             Voter.pollbook_id.in_(p.id for p in election.pollbooks))
 
     voter_query = session.query(
