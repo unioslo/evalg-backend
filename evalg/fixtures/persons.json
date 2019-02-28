@@ -46,52 +46,52 @@
       {
         "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
         "id_type": "feide_id",
-        "external_id": "zaphod@example.com"
+        "id_value": "zaphod@example.com"
       },
       {
         "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
         "id_type": "uid",
-        "external_id": "zaphod"
+        "id_value": "zaphod"
       },
       {
         "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
         "id_type": "nin",
-        "external_id": "01011012341"
+        "id_value": "01011012341"
       },
       {
         "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
-        "id_type": "dp_user_id",
-        "external_id": "fe141576-8ed0-4382-a2ef-3913b2f32ea6"
+        "id_type": "feide_user_id",
+        "id_value": "fe141576-8ed0-4382-a2ef-3913b2f32ea6"
       },
       {
         "person_id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
         "id_type": "feide_id",
-        "external_id": "arthur@example.com"
+        "id_value": "arthur@example.com"
       },
       {
         "person_id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
         "id_type": "uid",
-        "external_id": "arthur"
+        "id_value": "arthur"
       },
       {
         "person_id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
         "id_type": "nin",
-        "external_id": "01011012342"
+        "id_value": "01011012342"
       },
       {
         "person_id": "ba8bd95a-86ea-4158-be62-7e9a29bddd5d",
-        "id_type": "dp_user_id",
-        "external_id": "63a4a54b-890c-4a8c-b7db-166b29024da2"
+        "id_type": "feide_user_id",
+        "id_value": "63a4a54b-890c-4a8c-b7db-166b29024da2"
       },
       {
         "person_id": "d8b77f79-452f-4e24-98ce-e361bb5dfd16",
         "id_type": "feide_id",
-        "external_id": "ford@example.com"
+        "id_value": "ford@example.com"
       },
       {
         "person_id": "d8b77f79-452f-4e24-98ce-e361bb5dfd16",
         "id_type": "uid",
-        "external_id": "ford"
+        "id_value": "ford"
       }
     ]
   }

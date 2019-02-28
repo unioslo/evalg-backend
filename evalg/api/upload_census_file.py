@@ -25,14 +25,14 @@ def get_or_create_person(id_type, id_value):
             evalg.db.session,
             evalg.models.person.PersonExternalId,
             id_type=id_type,
-            external_id=id_value)
+            id_value=id_value)
         return person_identifier.person
     except evalg.database.query.TooFewError:
         p = evalg.models.person.Person()
-        p.external_ids.append(
+        p.identifiers.append(
             evalg.models.person.PersonExternalId(
                 id_type=id_type,
-                external_id=id_value))
+                id_value=id_value))
         # Temporary hack -- set display_name
         p.display_name = {
             'nin': 'fnr: {0:.6}*****',

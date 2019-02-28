@@ -69,7 +69,6 @@ def make_descriptive_enum(name, values):
     """
 
     def get_description(value=None):
-        print('get_description(%r)' % (value, ))
         if isinstance(value, enum.Enum):
             value = value.value
         return values.get(value, '')

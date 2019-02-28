@@ -22,9 +22,16 @@ import evalg.authentication.user
 #   evalg.person in order to show or mutate objects.
 
 
+class PersonIdentifier(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = evalg.models.person.PersonExternalId
+
+
 class Person(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.person.Person
+
+    identifiers = graphene.List(PersonIdentifier)
 
 
 def resolve_persons_by_info(_, info):

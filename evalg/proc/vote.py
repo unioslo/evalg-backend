@@ -11,6 +11,7 @@ from evalg.models.ballot import Envelope
 from evalg.models.pollbook import PollBook
 from evalg.models.voter import Voter
 from evalg.models.votes import Vote
+from evalg.models.person import PersonExternalId
 
 logger = logging.getLogger(__name__)
 
@@ -155,8 +156,13 @@ def get_votes_for_person(session, person):
         Voter
     ).join(
         PollBook
+    ).join(
+        PersonExternalId,
+        and_(
+            Voter.id_type == PersonExternalId.id_type,
+            Voter.id_value == PersonExternalId.id_value)
     ).filter(
-        Voter.person_id == person.id
+        PersonExternalId.person_id == person.id
     ).order_by(
         PollBook.priority
     )
