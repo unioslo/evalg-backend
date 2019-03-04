@@ -101,28 +101,29 @@ class EvalgUser(object):
         # TODO: use evalg.person._update_person?
 
     def update_person_ids(self, person):
-        logger.info('person.id %r', person.id)
+        logger.info('Updating identifiers for person_id=%r', person.id)
         existing_ids = set((x.id_type, x.id_value)
                            for x in person.identifiers)
         dp_ids = set(list(self.flattened_dp_ids))
         to_remove = existing_ids.difference(dp_ids)
         to_add = dp_ids.difference(existing_ids)
+
         if to_remove:
-            for existing_id in person.id_value:
-                if (existing_id.id_type, existing_id.id_value) in to_remove:
-                    logger.info('Deleting external ID: %r', existing_id)
-                    person.identifiers.remove(existing_id)
+            for id_obj in person.identifiers:
+                if (id_obj.id_type, id_obj.id_value) in to_remove:
+                    logger.info('Removing identifier=%r', id_obj)
+                    person.identifiers.remove(id_obj)
         if to_add:
-            for id_type, value in to_add:
-                new_id = PersonExternalId(
+            for id_type, id_value in to_add:
+                id_obj = PersonExternalId(
                     person_id=person.id,
                     id_type=id_type,
-                    id_value=value,
+                    id_value=id_value,
                 )
-                logger.info('Adding new external ID: %r', new_id)
-                person.identifiers.append(new_id)
+                logger.info('Adding identifier=%r', id_obj)
+                person.identifiers.append(id_obj)
         db.session.flush()
-        logger.info(repr(person.identifiers))
+        logger.info('Identifiers: %s', repr(person.identifiers))
 
     def set_person(self, person):
         too_old = utcnow() - datetime.timedelta(

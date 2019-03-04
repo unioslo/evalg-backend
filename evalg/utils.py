@@ -47,13 +47,14 @@ class _DescriptiveEnumMixin(object):
         return self.get_description()
 
 
-def make_descriptive_enum(name, values):
+def make_descriptive_enum(name, values, description=None):
     """
     Make an enum of string constants with descriptions.
 
     >>> Values = make_descriptive_enum(
     ...     'Values',
-    ...     {'': 'some values', 'foo': 'a foo value', 'bar': 'a bar value'})
+    ...     {'foo': 'a foo value', 'bar': 'a bar value'},
+    ...     description='some_values')
     >>> Values
     <enum 'Values'>
     >>> Values.foo
@@ -71,21 +72,22 @@ def make_descriptive_enum(name, values):
     :param name: Name of the enum
 
     :type values: dict
-    :param values:
-        A mapping of enum values and their description.  An empty key will
-        provide a description for the enum class.
+    :param values: A mapping of enum values and their description.
+
+    :type description: str
+    param description: A description of the enum class:
 
     :rtype: enum.EnumMeta
     :return: An enum class with values and descriptions
     """
 
-    class_description = values.get('', '')
-    enum_descriptions = {v: values[v] for v in values if v}
-    enum_values = {v: v for v in values if v}
+    class_description = description
+    enum_values = {v: v for v in values}
+    enum_descriptions = {v: values[v] for v in values}
 
     def get_description(value=None):
         if not value:
-            return class_description
+            return class_description or ''
         if isinstance(value, enum.Enum):
             value = value.value
         return enum_descriptions.get(value, '')

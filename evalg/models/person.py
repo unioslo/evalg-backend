@@ -67,12 +67,13 @@ class Person(ModelBase):
 IdType = make_descriptive_enum(
     'IdType',
     {
-        '': 'Identifier types',
         'feide_id': 'Feide id (eduPersonPrincipalName)',
         'feide_user_id': 'Feide/Dataporten user id',
         'nin': 'National identification number',
         'uid': 'Username',
-    })
+    },
+    description='Identifier types',
+)
 
 
 class PersonExternalId(ModelBase):
