@@ -70,6 +70,7 @@ def wipe_db():
 
 def shell_context():
     """ Shell context. """
+    import uuid
     from evalg import db, models
     from evalg.authentication import user
     from evalg.database.formatting import pretty_format
@@ -86,6 +87,7 @@ def shell_context():
         'ElectionList': models.election_list.ElectionList,
         'ElectionRole': models.authorization.ElectionRole,
         'ElectionGroupRole': models.authorization.ElectionGroupRole,
+        'Envelope': models.ballot.Envelope,
         'Group': models.group.Group,
         'Person': models.person.Person,
         'PersonExternalId': models.person.PersonExternalId,
@@ -96,8 +98,13 @@ def shell_context():
         'GroupPrincipal': models.authorization.GroupPrincipal,
         'Role': models.authorization.Role,
         'OU': models.ou.OrganizationalUnit,
-        'Voter': models.voter.Voter,
+        'models': models,
+        'query': db.session.query,
         'user': user,
+        'uuid4': uuid.uuid4,
+        'Voter': models.voter.Voter,
+        'Vote': models.votes.Vote,
+        'VoteRecord': models.votes.VoteRecord,
         'g': g,
         'wipe_db': wipe_db,
     }
