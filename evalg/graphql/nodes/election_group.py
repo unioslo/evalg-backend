@@ -10,8 +10,10 @@ from graphene.types.generic import GenericScalar
 
 import evalg.metadata
 import evalg.models.election
+import evalg.proc.vote
 from evalg import db
 from evalg.election_templates import election_template_builder
+from evalg.graphql.nodes.base import get_session, MutationResponse
 from evalg.utils import convert_json
 
 
@@ -205,16 +207,44 @@ class UnannounceElectionGroup(graphene.Mutation):
         return UnannounceElectionGroup(ok=True)
 
 
+class SetElectionGroupKeyResponse(MutationResponse):
+    pass
+
+
 class SetElectionGroupKey(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)
-        key = graphene.String(required=True)
+        public_key = graphene.String(required=True)
 
-    ok = graphene.Boolean()
+    Output = SetElectionGroupKeyResponse
 
     def mutate(self, info, **args):
-        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
-        el_grp.public_key = args.get('key')
-        db.session.add(el_grp)
-        db.session.commit()
-        return SetElectionGroupKey(ok=True)
+        group_id = args['id']
+        public_key = args['public_key']
+        session = get_session(info)
+        group = evalg.database.query.lookup(
+            session,
+            evalg.models.election.ElectionGroup,
+            id=group_id)
+        for election in group.elections:
+            if group.public_key and group.published:
+                return SetElectionGroupKeyResponse(
+                    success=False,
+                    code='cannot-change-key-if-published',
+                    message='The public key cannot be changed if an election is published')
+            elif group.public_key and election.active and election.has_started:
+                return SetElectionGroupKeyResponse(
+                    success=False,
+                    code='cannot-change-key-if-past-start',
+                    message='The public key cannot be changed if an election has started')
+            else:
+                count = evalg.proc.vote.get_election_vote_counts(session, election)
+                if any(count.values()):
+                    return SetElectionGroupKeyResponse(
+                        success=False,
+                        code='cannot-change-key-if-votes-exist',
+                        message='The public key cannot be changed if a vote has been cast')
+        group.public_key = public_key
+        session.add(group)
+        session.commit()
+        return SetElectionGroupKeyResponse(success=True)

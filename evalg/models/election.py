@@ -216,15 +216,32 @@ class Election(AbstractElection):
             else_='draft')
 
     @hybrid_property
+    def has_started(self):
+        """ Check if an election is past its start time. """
+        return bool(self.start and self.start < utcnow())
+
+    @has_started.expression
+    def has_started(cls):
+        return case([
+            (and_(cls.start.isnot(None),
+                  cls.start <= func.now()), True)],
+            else_=False)
+
+    @hybrid_property
     def is_ongoing(self):
-        """ check if an election is currently ongoing. """
-        return bool(self.election_group.published_at and self.start < utcnow())
+        """ Check if an election is currently ongoing. """
+        return bool(self.election_group.published_at and
+                    self.start < utcnow() and
+                    self.end > utcnow())
 
     @is_ongoing.expression
     def is_ongoing(cls):
         return case([
             (and_(cls.published_at.isnot(None),
-                  cls.start < func.now()), True)],
+                  cls.start.isnot(None),
+                  cls.start < func.now(),
+                  cls.end.isnot(None),
+                  cls.end > func.now()), True)],
             else_=False)
 
     @property
