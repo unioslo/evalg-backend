@@ -91,7 +91,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -107,7 +107,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'evalgdoc'
+htmlhelp_basename = 'evalg-docs'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -134,8 +134,13 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'evalg.tex', 'evalg Documentation',
-     'USIT/BNT/INT', 'manual'),
+    (
+        master_doc,
+        'evalg.tex',
+        'evalg documentation',
+        'USIT/BNT/INT',
+        'manual',
+    ),
 ]
 
 
@@ -144,8 +149,13 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'evalg', 'evalg Documentation',
-     [author], 1)
+    (
+        master_doc,
+        'evalg',
+        'evalg documentation',
+        [author],
+        1,
+    ),
 ]
 
 
@@ -155,36 +165,25 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'evalg', 'evalg Documentation',
-     author, 'evalg', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        'evalg',
+        'evalg documentation',
+        author,
+        'evalg',
+        'Electionic voting at the University of Oslo',
+        'Miscellaneous',
+    ),
 ]
-
-
-# -- Options for Epub output -------------------------------------------------
-
-# Bibliographic Dublin Core info.
-epub_title = project
-
-# The unique identifier of the text. This can be a ISBN number
-# or the project homepage.
-#
-# epub_identifier = ''
-
-# A unique identification for the text.
-#
-# epub_uid = ''
-
-# A list of files that should not be packed into the epub file.
-epub_exclude_files = ['search.html']
-
 
 # -- Extension configuration -------------------------------------------------
 
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {
+    'https://docs.python.org/': None,
+}
 
 # -- Options for todo extension ----------------------------------------------
 
