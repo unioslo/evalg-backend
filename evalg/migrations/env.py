@@ -1,32 +1,35 @@
-from __future__ import with_statement
-from alembic import context
-from sqlalchemy import engine_from_config, pool
-from logging.config import fileConfig
+"""
+Alembic environment configuration.
+
+The script is automatically imported by *alembic*, and is used to configure the
+database migration tooling.   The environment requires an flask app context, so
+any migration command must be invoked using *flask-migrate*:
+
+::
+
+    FLASK_APP=evalg flask db <command>
+
+For more information:
+
+- `Flask-Migrate Documentation
+  <https://flask-migrate.readthedocs.io/en/latest/>`_
+- `Alembic Documentation
+  <https://alembic.sqlalchemy.org/en/latest/>`_
+"""
+import contextlib
 import logging
+import logging.config
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
-config = context.config
-
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-fileConfig(config.config_file_name)
-logger = logging.getLogger('alembic.env')
-
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
+from alembic import context
 from flask import current_app
+from sqlalchemy import engine_from_config, pool
 
-config.set_main_option('sqlalchemy.url',
-                       current_app.config.get('SQLALCHEMY_DATABASE_URI'))
+logger = logging.getLogger(__name__)
+
 target_metadata = current_app.extensions['migrate'].db.metadata
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+context.config.set_main_option(
+    'sqlalchemy.url',
+    current_app.config.get('SQLALCHEMY_DATABASE_URI'))
 
 
 def run_migrations_offline():
@@ -41,7 +44,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = context.config.get_main_option('sqlalchemy.url')
     context.configure(url=url)
 
     with context.begin_transaction():
@@ -53,38 +56,39 @@ def run_migrations_online():
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
-
     # this callback is used to prevent an auto-migration from being generated
     # when there are no changes to the schema
     # reference: http://alembic.readthedocs.org/en/latest/cookbook.html
     def process_revision_directives(context, revision, directives):
-        if getattr(config.cmd_opts, 'autogenerate', False):
+        if getattr(context.config.cmd_opts, 'autogenerate', False):
             script = directives[0]
             if script.upgrade_ops.is_empty():
                 directives[:] = []
                 logger.info('No changes in schema detected.')
 
-    engine = engine_from_config(config.get_section(config.config_ini_section),
-                                prefix='sqlalchemy.',
-                                poolclass=pool.NullPool)
+    engine = engine_from_config(
+        context.config.get_section(context.config.config_ini_section),
+        prefix='sqlalchemy.',
+        poolclass=pool.NullPool)
 
-    connection = engine.connect()
-    context.configure(connection=connection,
-                      target_metadata=target_metadata,
-                      process_revision_directives=process_revision_directives,
-                      user_module_prefix="evalg.database.types.",
-                      **current_app.extensions['migrate'].configure_args)
+    with contextlib.closing(engine.connect()) as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            process_revision_directives=process_revision_directives,
+            user_module_prefix="evalg.database.types.",
+            compare_type=True,
+            compare_server_default=True,
+            **current_app.extensions['migrate'].configure_args)
 
-    try:
         with context.begin_transaction():
             context.run_migrations()
-    finally:
-        connection.close()
 
 
 if context.is_offline_mode():
+    logger.info("Offline mode")
     run_migrations_offline()
 else:
+    logger.info("Online mode")
     run_migrations_online()
