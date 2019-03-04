@@ -7,7 +7,7 @@ import datetime
 import functools
 import logging
 
-from flask import g, current_app
+from flask import current_app
 from flask_feide_gk.utils import ContextAttribute
 
 from evalg import db
@@ -16,6 +16,7 @@ from evalg.utils import utcnow
 
 
 logger = logging.getLogger(__name__)
+
 
 class EvalgUser(object):
     MAX_PERSON_DATA_AGE = 60  # in minutes
@@ -30,7 +31,7 @@ class EvalgUser(object):
     ID_TYPE_MAP = {
         'feide': 'feide_id',
         'nin': 'nin',
-        'dp_user_id': 'dp_user_id',
+        'dp_user_id': 'feide_user_id',
     }
 
     gk_user = ContextAttribute('gk_user')
@@ -50,7 +51,8 @@ class EvalgUser(object):
         return self._dp_user_info
 
     def find_person(self):
-        if not self.gk_user.access_token and current_app.config['AUTH_METHOD'] == 'feide':
+        if (not self.gk_user.access_token and
+                current_app.config['AUTH_METHOD'] == 'feide'):
             logger.warning('No access token in headers')
             return None
         matches = PersonExternalId.find_ids(*self.flattened_dp_ids).all()
@@ -99,39 +101,40 @@ class EvalgUser(object):
         # TODO: use evalg.person._update_person?
 
     def update_person_ids(self, person):
-        logger.info('person.id %r', person.id)
-        keep = list()
-        remove = list()
-        existing_ids = set([(x.id_type, x.external_id) for x in person.external_ids])
+        logger.info('Updating identifiers for person_id=%r', person.id)
+        existing_ids = set((x.id_type, x.id_value)
+                           for x in person.identifiers)
         dp_ids = set(list(self.flattened_dp_ids))
         to_remove = existing_ids.difference(dp_ids)
         to_add = dp_ids.difference(existing_ids)
+
         if to_remove:
-            for existing_id in person.external_ids:
-                if (existing_id.id_type, existing_id.external_id) in to_remove:
-                    logger.info('Deleting external ID: %r', existing_id)
-                    person.external_ids.remove(existing_id)
+            for id_obj in person.identifiers:
+                if (id_obj.id_type, id_obj.id_value) in to_remove:
+                    logger.info('Removing identifier=%r', id_obj)
+                    person.identifiers.remove(id_obj)
         if to_add:
-            for id_type, value in to_add:
-                new_id = PersonExternalId(
+            for id_type, id_value in to_add:
+                id_obj = PersonExternalId(
                     person_id=person.id,
                     id_type=id_type,
-                    external_id=value,
+                    id_value=id_value,
                 )
-                logger.info('Adding new external ID: %r', new_id)
-                person.external_ids.append(new_id)
+                logger.info('Adding identifier=%r', id_obj)
+                person.identifiers.append(id_obj)
         db.session.flush()
-        logger.info(repr(person.external_ids))
+        logger.info('Identifiers: %s', repr(person.identifiers))
 
     def set_person(self, person):
-        too_old = utcnow() - datetime.timedelta(minutes=self.MAX_PERSON_DATA_AGE)
+        too_old = utcnow() - datetime.timedelta(
+            minutes=self.MAX_PERSON_DATA_AGE)
         if (person.last_update_from_feide is None or
-            person.last_update_from_feide < too_old):
+                person.last_update_from_feide < too_old):
             self.update_person(person)
         self._person = person
-        current_app.logger.info('Identified dp_user_id=%r as person_id=%r',
-                    self.dp_user_id,
-                    self.person.id)
+        current_app.logger.info(
+            'Identified dp_user_id=%r as person_id=%r',
+            self.dp_user_id, self.person.id)
 
     @property
     def person(self):

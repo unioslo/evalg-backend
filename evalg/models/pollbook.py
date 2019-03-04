@@ -29,6 +29,8 @@ from .base import ModelBase
 
 class PollBook(ModelBase):
 
+    __tablename__ = 'pollbook_meta'
+
     id = db.Column(
         UuidType,
         primary_key=True,

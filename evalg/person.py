@@ -7,7 +7,7 @@ from functools import wraps
 from collections import defaultdict
 from sqlalchemy import func, or_
 from evalg import db
-from .models.person import Person
+from .models.person import Person, PersonExternalId
 from .api import NotFoundError
 from .authorization import check_perms, all_perms, PermissionDenied
 
@@ -67,16 +67,15 @@ def get_person(person_id):
 
 
 def _update_person(person, kwargs):
-    if 'external_id' in kwargs:
-        ext = kwargs['external_id']
-        del kwargs['external_id']
+    identifiers = kwargs.pop('identifiers', {})
+    if identifiers:
         current = defaultdict(set)
-        map(lambda x: current[x.id_type].add(x.external_id),
-            person.external_ids)
-        for k, value in ext.items():
+        map(lambda x: current[x.id_type].add(x.id_value),
+            person.identifiers)
+        for k, value in identifiers.items():
             if value not in current[k]:
-                person.external_ids.append(PersonExternalId(id_type=k,
-                                                            external_id=value))
+                person.identifiers.append(
+                    PersonExternalId(id_type=k, id_value=value))
     for k, v in kwargs.items():
         if hasattr(person, k) and getattr(person, k) != v:
             setattr(person, k, v)

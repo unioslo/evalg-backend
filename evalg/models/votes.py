@@ -154,7 +154,7 @@ class Vote(ModelBase):
     # TODO: Find out what other constraints we'd need? One vote per election?
 
     voter_id = schema.Column(
-        schema.ForeignKey('voter.id'),
+        schema.ForeignKey('pollbook_voters.id'),
         primary_key=True,
     )
 
@@ -191,7 +191,7 @@ class VoteRecord(ModelBase):
     )
 
     voter_id = schema.Column(
-        schema.ForeignKey('voter.id'),
+        schema.ForeignKey('pollbook_voters.id'),
         doc='reference to the voter who cast the ballot',
         index=True,
         nullable=False,

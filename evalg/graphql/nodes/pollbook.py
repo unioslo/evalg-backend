@@ -139,7 +139,57 @@ class DeleteVotersInPollBook(graphene.Mutation):
         return DeleteVotersInPollBook(ok=True)
 
 
-class AddVoter(graphene.Mutation):
+VoterIdType = graphene.Enum.from_enum(
+    evalg.models.person.IdType,
+    description=evalg.models.person.IdType.get_description)
+
+
+class AddVoterByIdentifier(graphene.Mutation):
+    """
+    Create a single voter object in a pollbook.
+    """
+    class Arguments:
+        id_type = VoterIdType(required=True)
+        id_value = graphene.String(required=True)
+        pollbook_id = graphene.UUID(required=True)
+        approved = graphene.Boolean(
+            description='add a pre-approved voter to the poll book',
+        )
+        reason = graphene.String(
+            description='reason for adding voter to the poll book',
+        )
+
+    Output = Voter
+
+    def mutate(self, info, **kwargs):
+        # TODO:
+        #   We have to make sure that the person only has one active voter
+        #   object in pollbooks for a given election.
+        session = get_session(info)
+        policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
+        id_type = kwargs['id_type']
+        id_value = kwargs['id_value']
+        pollbook_id = kwargs['pollbook_id']
+        manual = not kwargs.get('approved', False)
+        reason = kwargs.get('reason')
+
+        pollbook = evalg.database.query.lookup(
+            session,
+            evalg.models.pollbook.PollBook,
+            id=pollbook_id)
+
+        voter = policy.add_voter_id(
+            pollbook,
+            id_type,
+            id_value,
+            manual=manual,
+            reason=reason)
+
+        db.session.commit()
+        return voter
+
+
+class AddVoterByPersonId(graphene.Mutation):
     """
     Create a single voter object in a pollbook.
     """
@@ -153,8 +203,7 @@ class AddVoter(graphene.Mutation):
             description='reason for adding voter to the poll book',
         )
 
-    voter = graphene.Field(Voter)
-    ok = graphene.Boolean()
+    Output = Voter
 
     def mutate(self, info, **kwargs):
         # TODO:
@@ -183,12 +232,8 @@ class AddVoter(graphene.Mutation):
             manual=manual,
             reason=reason)
 
-        node = AddVoter(
-            voter=voter,
-            ok=True
-        )
         db.session.commit()
-        return node
+        return voter
 
 
 #

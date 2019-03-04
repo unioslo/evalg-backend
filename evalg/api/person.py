@@ -19,7 +19,7 @@ add_all_authz(globals())
 class PersonSchema(BaseSchema):
     id = fields.UUID()
 
-    dp_user_id = fields.String()
+    feide_user_id = fields.String()
     email = fields.String()
     feide_id = fields.String()
     first_name = fields.String()

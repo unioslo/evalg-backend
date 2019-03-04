@@ -1,7 +1,6 @@
 """
 Database models for users
 """
-
 import uuid
 
 from sqlalchemy.sql import and_, or_
@@ -9,7 +8,7 @@ from sqlalchemy.orm import validates
 
 import evalg.database.types
 from evalg import db
-from evalg.utils import iterable_but_not_str, utcnow
+from evalg.utils import iterable_but_not_str, make_descriptive_enum, utcnow
 from .base import ModelBase
 
 
@@ -38,22 +37,49 @@ class Person(ModelBase):
 
     principals = db.relationship('PersonPrincipal')
 
-    external_ids = db.relationship(
+    identifiers = db.relationship(
         'PersonExternalId',
         back_populates='person',
         cascade='all, delete-orphan')
+
+    def get_preferred_id(self, *preference):
+        """
+        Get the first available *preferred* identifier
+
+        :param preference:
+            ``PersonExternalId.id_type``s to consider. The first id_type will
+            be the *most* preferred.
+
+        :rtype: PersonExternalId
+        :return:
+            Returns the most preferred ``PersonExternalId`` object, or ``None``
+            if the person does not have any of the given id types.
+        """
+        for obj in sorted(
+                (obj for obj in self.identifiers
+                 if obj.id_type in preference),
+                key=lambda o: preference.index(o.id_type)):
+            return obj
+        # TODO: Or raise LookupError?
+        return None
+
+
+IdType = make_descriptive_enum(
+    'IdType',
+    {
+        'feide_id': 'Feide id (eduPersonPrincipalName)',
+        'feide_user_id': 'Feide/Dataporten user id',
+        'nin': 'National identification number',
+        'uid': 'Username',
+    },
+    description='Identifier types',
+)
+
 
 class PersonExternalId(ModelBase):
     """ Person external ID. """
 
     __tablename__ = 'person_external_id'
-
-    ID_TYPE_CHOICES = {
-        'nin': 'National identification number',
-        'uid': 'Username',
-        'dp_user_id': 'Dataporten user ID',
-        'feide_id': 'Feide ID',
-    }
 
     person_id = db.Column(
         evalg.database.types.UuidType,
@@ -64,18 +90,17 @@ class PersonExternalId(ModelBase):
         db.UnicodeText,
         primary_key=True)
 
-    external_id = db.Column(
+    id_value = db.Column(
         db.UnicodeText,
         primary_key=True)
 
     person = db.relationship(
         'Person',
-        back_populates='external_ids')
+        back_populates='identifiers')
 
     @validates('id_type')
     def validate_id_type(self, key, id_type):
-        assert id_type in self.ID_TYPE_CHOICES
-        return id_type
+        return IdType(id_type).value
 
     @classmethod
     def find_ids(cls, *where):
@@ -87,7 +112,7 @@ class PersonExternalId(ModelBase):
         or_clauses = or_(
             and_(
                 cls.id_type == id_type,
-                cls.external_id.in_(ensure_iterable(values)),
+                cls.id_value.in_(ensure_iterable(values)),
             )
             for id_type, values in where
         )

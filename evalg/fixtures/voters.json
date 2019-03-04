@@ -3,12 +3,22 @@
     "model": "evalg.models.voter.Voter",
     "records": [
       {
-          "id": "cdfbcdc2-7f14-4d28-83ef-57e24992488a",
-          "tag": "My tag",
-          "person_id": "98447aeb-81d7-4c39-b070-335087765e3c",
-          "pollbook_id": "dc382424-e024-42b0-a445-9839269790e4",
-          "manual": false,
-          "verified": true
+        "id": "cdfbcdc2-7f14-4d28-83ef-57e24992488a",
+        "tag": "My tag",
+        "id_type": "nin",
+        "id_value": "01011012341",
+        "pollbook_id": "dc382424-e024-42b0-a445-9839269790e4",
+        "manual": false,
+        "verified": true
+      },
+      {
+        "id": "12b12aa8-bbf0-4eb4-8fb5-50583a151dac",
+        "tag": "My tag",
+        "id_type": "feide_id",
+        "id_value": "ford@example.com",
+        "pollbook_id": "dc382424-e024-42b0-a445-9839269790e4",
+        "manual": false,
+        "verified": true
       }
     ]
   }
