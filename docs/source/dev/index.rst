@@ -5,6 +5,6 @@ Development
    :maxdepth: 2
 
    getting-started
-   environment
-   docker
+   docker-env
+   local-env
    flask-commands

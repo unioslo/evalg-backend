@@ -1,12 +1,13 @@
 .. highlight:: bash
 
-Development environment
-=======================
+Local dev-environment
+=====================
 
 #. Set up a virtualenv with all the evalg dependencies.
 #. Create an empty database.
 #. Create a configuration file (``./instance/evalg_config.py``).
-#. Update the database with the evalg schema.
+#. Initialize the database with the evalg schema.
+
 
 Virtualenv
 ----------
@@ -20,14 +21,14 @@ Virtualenv
 
 Database
 --------
-TODO: Describe *short* what needs to be done to set up a database, how to
-configure the database connection, and how to apply the schema and basic data.
+You'll need a database to run evalg.  In increasing complexity, you can:
 
-1. Install postgresql...
-2. Configure postgresql...
-3. Start postgresql...
+#. Run a postgresql docker container
+#. Install and run postgresql
 
-TODO: Link to more substantial documentation about the database setup.
+.. todo::
+   Describe *short* what needs to be done to set up a database, how to configure
+   the database connection, and how to apply the schema and basic data?
 
 
 Configuration
@@ -46,8 +47,6 @@ You'll typically have to configure:
 ::
 
   SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/evalg'
-  SQLALCHEMY_TRACK_MODIFICATIONS = False
-  LOGGER_NAME = 'evalg'
 
   AUTH_ENABLED = True
   AUTH_METHOD = 'feide_mock'
@@ -64,17 +63,36 @@ more information on how to configure mock authentication.
 Database init
 -------------
 
+The database is initialized by running
+
 ::
 
+  FLASK_APP=evalg.wsgi flask db migrate
+  FLASK_APP=evalg.wsgi flask db upgrade
+
+.. note::
+   After the initial release of evalg, you should skip the ``flask db migrate``
+   commands, as the migrate scripts should be included in the evalg package.
+
+
+The database can be populated by test fixture data by running:
+
+::
+
+  FLASK_APP=evalg.wsgi flask populate-tables
+
+The database can later be reset by running:
+
+::
   FLASK_APP=evalg.wsgi flask recreate-tables
   FLASK_APP=evalg.wsgi flask populate-tables
 
+.. warning::
+   Using ``recreate-tables`` can introduce conflicts with the database migration
+   tool if you:
 
-.. note::
-   recreate-tables is incompatible with the database migration commands.
-
-   To support database migrations, you'll have to use ``flask db migrate`` and
-   ``flask db upgrade``.
+   - run it on an empty database without a schema
+   - run it when you've done changes to the schema
 
 
 Get the front-end up and running
