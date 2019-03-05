@@ -196,7 +196,7 @@ class Election(AbstractElection):
         if self.election_group.published_at:
             if self.end <= utcnow():
                 return 'closed'
-            if self.start < utcnow():
+            if self.start <= utcnow():
                 return 'ongoing'
             return 'published'
         if self.election_group.announced_at:
@@ -210,7 +210,7 @@ class Election(AbstractElection):
             (and_(cls.published_at.isnot(None),
                   cls.end <= func.now()), 'closed'),
             (and_(cls.published_at.isnot(None),
-                  cls.start < func.now()), 'ongoing'),
+                  cls.start <= func.now()), 'ongoing'),
             (cls.published_at.isnot(None), 'published'),
             (cls.announced_at.isnot(None), 'announced')],
             else_='draft')
@@ -218,7 +218,7 @@ class Election(AbstractElection):
     @hybrid_property
     def has_started(self):
         """ Check if an election is past its start time. """
-        return bool(self.start and self.start < utcnow())
+        return bool(self.start and self.start <= utcnow())
 
     @has_started.expression
     def has_started(cls):
@@ -231,17 +231,17 @@ class Election(AbstractElection):
     def is_ongoing(self):
         """ Check if an election is currently ongoing. """
         return bool(self.election_group.published_at and
-                    self.start < utcnow() and
-                    self.end > utcnow())
+                    self.start <= utcnow() and
+                    self.end >= utcnow())
 
     @is_ongoing.expression
     def is_ongoing(cls):
         return case([
             (and_(cls.published_at.isnot(None),
                   cls.start.isnot(None),
-                  cls.start < func.now(),
+                  cls.start <= func.now(),
                   cls.end.isnot(None),
-                  cls.end > func.now()), True)],
+                  cls.end >= func.now()), True)],
             else_=False)
 
     @property
