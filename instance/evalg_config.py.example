@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" Default configuration for eValg. """
+""" example config """
 
 DEBUG = False
-
 SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:secret@localhost/postgres'
 
 TRUSTED_PROXIES = (
@@ -15,49 +12,18 @@ TRUSTED_PROXIES = (
     '2001:700:0:4030::/61',
 )
 
-# setting this to False disables all authentication middleware
 AUTH_ENABLED = True
-# can be 'feide' or 'feide_mock'
-AUTH_METHOD = 'feide_mock'
-
-FEIDE_BASIC_REQUIRE = True
-FEIDE_BASIC_REALM = None
+AUTH_METHOD = 'feide'
 FEIDE_BASIC_USERS = [
     ('dataporten', 'secret'),
 ]
 
-# when mocking, pretend the gatekeeper authenticated this user
-FEIDE_MOCK_LOGIN_AS = 'abababab-abab-abab-abab-abababababab'
-FEIDE_MOCK_DATA = {
-    'client_id': 'fafafafa-fafa-fafa-fafa-fafafafafafa',
-    'users': {
-        'abababab-abab-abab-abab-abababababab': {
-            'id': 'abababab-abab-abab-abab-abababababab',
-            'sec': {
-                'feide': ('testesen@example.com', ),
-                'nin': ('01011012343', ),
-                # 'uuid': ('some-uuid', ),  # historical merged primary keys
-            },
-            'dp_user_info': {
-                'user': {
-                    'name': 'Test Testesen',
-                    'email': 'testesen@example.com',
-                },
-                'audience': 'mock',
-            },
-            'feide_user_info': {
-                'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
-            }
-        },
-    },
-}
-
+#
 # SAPWS config. Used to import units
-SAPWD_BASE_URL = 'https://api-gateway.uio.no/sws/v2/'
+#
+SAPWS_BASE_URL = 'https://api-gateway.uio.no/sws/v2/'
 SAPWS_API_KEY = ''
 SAPWS_ROOT_OU = '900000'
-
-LOGGER_NAME = 'evalg'
 
 LOGGING = {
     'disable_existing_loggers': False,
