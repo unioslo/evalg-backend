@@ -12,20 +12,13 @@ node ('evalg') {
             script: 'git describe --dirty=+ --tags'
         ).trim() - /^v/
     }
-    stage ('Build ballotbox image') {
-        sh "docker build \
-            -t '${project}/valg-ballotbox' \
-            -f Dockerfile-ballotbox ."
-        sh "docker tag '${project}/valg-ballotbox' '${project}/valg-ballotbox:${image_version}'"
-    }
-    stage ('Build evalg image') {
+    stage ('Build image') {
         sh "docker build \
             -t '${project}/valg-evalg' \
             -f Dockerfile-evalg ."
         sh "docker tag '${project}/valg-evalg' '${project}/valg-evalg:${image_version}'"
     }
-    stage ('Push images') {
+    stage ('Push image') {
         sh "docker push '${project}/valg-evalg'"
-        sh "docker push '${project}/valg-ballotbox'"
     }
 }

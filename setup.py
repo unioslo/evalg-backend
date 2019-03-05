@@ -26,9 +26,7 @@ def get_textfile(filename):
 
 def get_packages():
     """List of (sub)packages to install."""
-    return setuptools.find_packages('.',
-                                    include=('evalg', 'evalg.*',
-                                             'ballotbox', 'ballotbox.*'))
+    return setuptools.find_packages('.', include=('evalg', 'evalg.*'))
 
 
 class PyTest(setuptools.command.test.test):
