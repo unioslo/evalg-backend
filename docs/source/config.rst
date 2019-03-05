@@ -1,100 +1,42 @@
 .. highlight:: bash
+.. _doc-config:
 
-Configuring Evalg
+Configuring evalg
 =================
+
+Instance folder
+---------------
+We load all evalg configuration files from the Flask app instance folder.  By
+default, the instance folder is:
+
+- ``./instance`` when running evalg directly from the repo.
+- ``<sys-prefix>/evalg-instance`` when running evalg from an installed package.
+
+The environment variable ``EVALG_CONFIG`` can be used to override the location
+of the instance folder.
+
 
 Configuration files
 -------------------
 
-Instance folder
-~~~~~~~~~~~~~~~
-
-.. note::
-
-   This is only relevant when installing from the package.
-   When running the development enviroment, the instance folder
-   in the repo is used.
-
-We store all configuration files in the flask instance folder.
-We use the environment variables *EVALG_CONFIG* to set the path.
-
-::
-
- export EVALG_CONFIG="/path/to/evalg/instance"
-
 evalg_config.py
 ~~~~~~~~~~~~~~~
-
-Main config file. Overrides default values in `evalg/default_config.py`.
+The main evalg configuration gets loaded from ``evalg_config.py``. Any value in
+this python file will override default values set in the
+``evalg.default_config`` module.
 
 .. todo::
 
    Document the config parameters.
 
+Details on how to configure authentication is described in :ref:`doc-auth`.
+
+
 evalg_template_config.py
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
-Defines the rulesets used by the various supported election.
+The evalg template configuration defines election types and their rulesets.
 
 .. todo::
 
-   Document the election rulsets.
-
-
-
-Configuring authentication and authorization with Dataporten
-------------------------------------------------------------
-
-Using a mock for Dataporten
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-During day-to-day development, it is easier to use a mock of Dataporten,
-that assumes that all users of the application is logged in and maps
-their identity to a faux user.
-
-The following configuration snippet enables mocking authentication::
-
-  AUTH_ENABLED = True
-
-  AUTH_METHOD = 'feide_mock'
-
-  # when mocking, pretend the gatekeeper authenticated this user
-  FEIDE_MOCK_LOGIN_AS = 'abababab-abab-abab-abab-abababababab'
-  FEIDE_MOCK_DATA = {
-      'client_id': 'fafafafa-fafa-fafa-fafa-fafafafafafa',
-      'users': {
-          'abababab-abab-abab-abab-abababababab': {
-              'id': 'abababab-abab-abab-abab-abababababab',
-              'sec': {
-                  'feide': ('testesen@example.com', ),
-                  'nin': ('01011012343', ),
-              },
-              'dp_user_info': {
-                  'user': {
-                      'name': 'Test Testesen',
-                      'email': 'testesen@example.com',
-                  },
-                  'audience': 'mock',
-              },
-              'feide_user_info': {
-                  'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
-              }
-          },
-      },
-  }
-
-Actual Datporten integration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To set up authentication with Dataporten, the following configuration should be defined::
-
-  AUTH_ENABLED = True
-
-  AUTH_METHOD = 'feide'
-  FEIDE_BASIC_REQUIRE = True
-  FEIDE_BASIC_USERS = [
-      ('dataporten', '<password>'),
-  ]
-
-`<password>` should be replaced with the password supplied by the `Dataporten API Gateway <https://docs.feide.no/>`_.
-
+   - Document election rulsets.
+   - Consider moving this configuration into the database.
