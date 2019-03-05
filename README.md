@@ -55,7 +55,7 @@ gunicorn evalg:wsgi
 To get started with a dev environment, check out the following documents:
 
 - [Getting started][doc_dev_intro]
-- [Environment][doc_dev_env]
+- [Basic dev-environment][doc_dev_local]
 - [Using Docker][doc_dev_docker]
 
 
@@ -83,7 +83,7 @@ TODO: Database documentation?
   [repo_frontend]: https://bitbucket.usit.uio.no/projects/EVALG/repos/evalg-frontend/
   [doc_config]: docs/source/config.rst
   [doc_auth]: docs/source/auth.rst
-  [doc_dev_docker]: docs/source/dev/docker.rst
-  [doc_dev_env]: docs/source/dev/environment.rst
+  [doc_dev_docker]: docs/source/dev/docker-env.rst
+  [doc_dev_local]: docs/source/dev/local-env.rst
   [doc_dev_intro]: docs/source/dev/getting-started.rst
   [doc_install]: docs/source/install.rst
