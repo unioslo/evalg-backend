@@ -1,8 +1,48 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" Default configuration for eValg. """
+""" example config for dev-environments. """
 
 DEBUG = True
 
 SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db/postgres'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+# Setting AUTH_ENABLED = False disables all auth middleware!
+AUTH_ENABLED = False
+
+# AUTH_METHOD can be 'feide' or 'feide_mock'
+AUTH_METHOD = 'feide_mock'
+FEIDE_MOCK_LOGIN_AS = 'a6733d24-8987-44b6-8cd0-308030710aa2'
+
+#
+# Mock users:
+#
+FEIDE_MOCK_DATA = {
+    'client_id': 'b936d447-c5fb-4a5a-8da6-2948584a9cce',
+    'users': {
+        'a6733d24-8987-44b6-8cd0-308030710aa2': {
+            'id': 'a6733d24-8987-44b6-8cd0-308030710aa2',
+            'sec': {
+                'feide': ('testesen@example.com', ),
+                'nin': ('01011012343', ),
+            },
+            'dp_user_info': {
+                'user': {
+                    'name': 'Test Testesen',
+                    'email': 'testesen@example.com',
+                },
+                'audience': 'mock',
+            },
+            'feide_user_info': {
+                'eduPersonEntitlement': (
+                    'urn:mace:uio.no:evalg:valgadministrator',
+                )
+            },
+        },
+    },
+}
+
+#
+# SAP client settings, for running ou update
+#
+SAPWD_BASE_URL = 'https://api-gateway.uio.no/sws/v2/'
+SAPWS_API_KEY = ''
+SAPWS_ROOT_OU = '900000'
