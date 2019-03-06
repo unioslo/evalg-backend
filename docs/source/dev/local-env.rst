@@ -1,41 +1,27 @@
-.. highlight:: bash
-
 Local dev-environment
 =====================
 
 #. Set up a virtualenv with all the evalg dependencies.
-#. Create an empty database.
 #. Create a configuration file (``./instance/evalg_config.py``).
-#. Initialize the database with the evalg schema.
+#. Create and initialize a database with the evalg schema.
+#. Run the flask app
 
 
 Virtualenv
 ----------
 
-::
+.. code:: bash
 
   python -m venv /path/to/env
   source /path/to/env/bin/activate
   pip install -r requirements.txt
 
 
-Database
---------
-You'll need a database to run evalg.  In increasing complexity, you can:
-
-#. Run a postgresql docker container
-#. Install and run postgresql
-
-.. todo::
-   Describe *short* what needs to be done to set up a database, how to configure
-   the database connection, and how to apply the schema and basic data?
-
-
 Configuration
 -------------
 Copy and update the example configuration files:
 
-::
+.. code:: bash
 
   cp instance/evalg_template_config.py.example instance/evalg_template_config.py
   cp instance/evalg_config.py.example.dev instance/evalg_config.py
@@ -57,42 +43,30 @@ You'll typically have to configure:
    }
 
 
-See :ref:`doc-config` for details on the evalg config, and :ref:`doc-auth` for
+See :doc:`../config` for details on the evalg config, and :doc:`../auth` for
 more information on how to configure mock authentication.
 
-Database init
--------------
+
+Database
+--------
 
 The database is initialized by running
 
-::
+.. code:: bash
 
   FLASK_APP=evalg.wsgi flask db migrate
   FLASK_APP=evalg.wsgi flask db upgrade
 
-.. note::
-   After the initial release of evalg, you should skip the ``flask db migrate``
-   commands, as the migrate scripts should be included in the evalg package.
+See :doc:`database` for more details on how to get a test database up and
+running.
 
 
-The database can be populated by test fixture data by running:
+Run the app
+-----------
 
-::
+.. code:: bash
 
-  FLASK_APP=evalg.wsgi flask populate-tables
-
-The database can later be reset by running:
-
-::
-  FLASK_APP=evalg.wsgi flask recreate-tables
-  FLASK_APP=evalg.wsgi flask populate-tables
-
-.. warning::
-   Using ``recreate-tables`` can introduce conflicts with the database migration
-   tool if you:
-
-   - run it on an empty database without a schema
-   - run it when you've done changes to the schema
+   FLASK_APP=evalg.wsgi flask run
 
 
 Get the front-end up and running

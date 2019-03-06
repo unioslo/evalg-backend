@@ -65,14 +65,17 @@ References
 3rd party documentation
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-* `graphene`_
+* `alembic`_
 * `flask`_
+* `graphene`_
 * `sqlalchemy`_
 
 
 .. References
 .. ----------
+.. _alembic: https://alembic.sqlalchemy.org/
 .. _flake-8: http://flake8.pycqa.org/
+.. _flask-alembic: https://flask-alembic.readthedocs.io/
 .. _flask: http://flask.pocoo.org/docs/
 .. _graphene: https://docs.graphene-python.org/
 .. _GraphQL: https://graphql.org/learn/
