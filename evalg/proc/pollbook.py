@@ -145,7 +145,7 @@ class ElectionVoterPolicy(object):
         voter = self.get_voter(pollbook, person)
 
         if voter:
-            raise ValueError('voter already exists in pollbook')
+            return voter
 
         id_obj = person.get_preferred_id(*self.preferred_ids)
 
