@@ -32,6 +32,7 @@ from .base import ModelBase
 
 class Envelope(ModelBase):
 
+    __versioned__ = {}
     __tablename__ = 'ballots'
 
     # a unique vote id - this is the ballot_id in the evalg.models.votes

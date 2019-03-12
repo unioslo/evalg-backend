@@ -44,6 +44,8 @@ class AbstractElection(ModelBase):
 
 class ElectionGroup(AbstractElection):
 
+    __versioned__ = {}
+
     ou_id = db.Column(
         evalg.database.types.UuidType,
         db.ForeignKey('organizational_unit.id'),
@@ -126,6 +128,8 @@ class ElectionGroup(AbstractElection):
 
 class Election(AbstractElection):
     """ Election. """
+
+    __versioned__ = {}
 
     sequence = db.Column(db.Text)
     """ Some ID for the UI """
