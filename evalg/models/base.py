@@ -1,19 +1,23 @@
 """
 Database model base classes.
 """
-# import sqlalchemy_continuum
-# from sqlalchemy_continuum.plugins import ActivityPlugin
 
-import sqlalchemy_continuum
+from sqlalchemy_continuum import make_versioned
+from sqlalchemy_continuum.manager import VersioningManager
 
 from evalg import db
 from evalg.database import audit
 from evalg.database.formatting import PrimaryKeyRepr
+from evalg.database.types import UtcDateTime, IpAddressType, UuidType
 
 _model_repr = PrimaryKeyRepr(maxstring=50, maxother=50)
 
+# Use our own Transaction factory
+versioning_manager = VersioningManager(
+    transaction_cls=audit.EvalgTransactionFactory())
 
-sqlalchemy_continuum.make_versioned(
+make_versioned(
+    manager=versioning_manager,
     user_cls='Person',
     plugins=[
         audit.audit_plugin,

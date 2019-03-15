@@ -5,14 +5,107 @@ This module implements custom configuration of sqlalchemy-continuum to support
 tracking changes in evalg.
 
 """
-import collections.abc
-import logging
-import reprlib
 
+import collections.abc
+import datetime
+import reprlib
+import sqlalchemy as sa
+
+from collections import OrderedDict
+from sqlalchemy_continuum.exc import ImproperlyConfigured
 from sqlalchemy_continuum.plugins import TransactionMetaPlugin
 from sqlalchemy_continuum.plugins.base import Plugin
+from sqlalchemy_continuum.transaction import TransactionBase, TransactionFactory, create_triggers
 
-logger = logging.getLogger(__name__)
+from evalg.database.types import UtcDateTime, IpAddressType
+
+
+class EvalgTransactionFactory(TransactionFactory):
+
+    model_name = 'Transaction'
+
+    def __init__(self, remote_addr=True):
+        self.remote_addr = remote_addr
+
+    def create_class(self, manager):
+        """
+        Create Transaction class.
+        """
+
+        class EvalgTransaction(
+            manager.declarative_base,
+            TransactionBase
+        ):
+            """
+            Custom transaction class, used to override the default
+            column types.
+
+            Most of this class is copied from the Transaction class in Continuum
+
+            Column changes:
+            issued_at: Use our DateTime type with timezone, default value with timezone.
+            remote_id: Use our own ip-address type.
+            """
+
+            __tablename__ = 'transaction'
+
+            # Override issued_at from TransactionBase
+            issued_at = sa.Column(
+                UtcDateTime, default=datetime.datetime.now(datetime.timezone.utc))
+
+            id = sa.Column(
+                sa.types.BigInteger,
+                sa.schema.Sequence('transaction_id_seq'),
+                primary_key=True,
+                autoincrement=True
+            )
+
+            remote_addr = sa.Column(IpAddressType)
+
+            user_cls = manager.user_cls
+            registry = manager.declarative_base._decl_class_registry
+
+            if isinstance(user_cls, str):
+                try:
+                    user_cls = registry[user_cls]
+                except KeyError:
+                    raise ImproperlyConfigured(
+                        'Could not build relationship between Transaction'
+                        ' and %s. %s was not found in declarative class '
+                        'registry. Either configure VersioningManager to '
+                        'use different user class or disable this '
+                        'relationship ' % (user_cls, user_cls)
+                    )
+
+                user_id = sa.Column(
+                    sa.inspect(user_cls).primary_key[0].type,
+                    sa.ForeignKey(sa.inspect(user_cls).primary_key[0]),
+                    index=True
+                )
+                user = sa.orm.relationship(user_cls)
+
+            def __repr__(self):
+                fields = ['id', 'issued_at', 'user']
+                field_values = OrderedDict(
+                    (field, getattr(self, field))
+                    for field in fields
+                    if hasattr(self, field)
+                )
+                return '<Transaction %s>' % ', '.join(
+                    (
+                        '%s=%r' % (field, value)
+                       if not isinstance(value, six.integer_types)
+                        # We want the following line to ensure that longs get
+                        # shown without the ugly L suffix on python 2.x
+                        # versions
+                        else '%s=%d' % (field, value)
+                        for field, value in field_values.items()
+                    )
+                )
+
+        if manager.options['native_versioning']:
+            create_triggers(EvalgTransaction)
+        return EvalgTransaction
 
 
 class CallbackMapping(collections.abc.Mapping):
@@ -114,26 +207,3 @@ class TransactionArgsPlugin(TransactionMetaPlugin):
 
 meta_plugin_source = CallbackMapping()
 meta_plugin = TransactionArgsPlugin(meta_plugin_source)
-
-
-# In evalg.wsgi.app:
-
-@meta_plugin_source.register('foo')
-def get_foo():
-    return 'foo'
-
-
-@audit_plugin_source.register('user_id')
-def get_user_id():
-    # TODO: Get Person object from request/request stack
-    person = None
-    if person:
-        return person.id
-    else:
-        return None
-
-
-@audit_plugin_source.register('remote_addr')
-def get_remote_addr():
-    # TODO: Get the real client ip from request/request stack
-    return '127.0.0.1'
