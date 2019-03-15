@@ -155,8 +155,11 @@ def create_app(config=None, flask_class=Flask):
 
     @audit_plugin_source.register('remote_addr')
     def get_remote_addr():
-        from flask import request
-        return request.remote_addr
+        from flask import request, has_request_context
+
+        if has_request_context():
+            return request.remote_addr
+        return None
 
     @audit_plugin_source.register('user_id')
     def get_user_id():
