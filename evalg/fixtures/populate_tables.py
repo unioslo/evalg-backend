@@ -102,7 +102,7 @@ class Populator(flask_fixtures.FixturesMixin):
         'persons.json',
         'groups.json',
         'voters.json',
-        'authz.json',
+        # 'authz.json',
     ]
 
     app = current_app
