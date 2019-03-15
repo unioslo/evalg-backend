@@ -38,17 +38,31 @@ class EvalgUser(object):
     feide_api = ContextAttribute('feide_api')
     _dp_user_info = ContextAttribute('dp_user_info')
     _person = ContextAttribute('person')
+    _auth_finished = ContextAttribute('auth_finished')
 
     def init_app(self, app, gk_user, feide_api):
         @app.before_request
         def init_authentication():
             self.gk_user = gk_user
             self.feide_api = feide_api
+            self._auth_finished = False
+            self.find_or_create_person()
 
     def get_dp_user_info(self):
         if self._dp_user_info is None:
             self._dp_user_info = self.feide_api.get_user_info().get('user')
         return self._dp_user_info
+
+    def find_or_create_person(self):
+        if self._person == None:
+            person = self.find_person()
+            if person is None:
+                person = Person()
+                self.update_person(person)
+                logger.info('Creating a new person for dp_user_id=%r',
+                            self.dp_user_id)
+            self.set_person(person)
+        self._auth_finished = True
 
     def find_person(self):
         if (not self.gk_user.access_token and
@@ -58,11 +72,7 @@ class EvalgUser(object):
         matches = PersonExternalId.find_ids(*self.flattened_dp_ids).all()
         persons = set([x.person_id for x in matches])
         if not persons:
-            # We create a new person
-            logger.info('Creating a new person for dp_user_id=%r',
-                        self.dp_user_id)
-            person = Person()
-            self.update_person(person)
+            return None
         elif len(persons) == 1:
             match = matches[0]
             person = Person.query.get(match.person_id)
@@ -75,6 +85,14 @@ class EvalgUser(object):
             # TODO: we're in deep shit
             raise Exception('Matched multiple persons :-(')
         return person
+
+    def is_authenticated(self):
+        if not self.gk_user:
+            return False
+        return True
+
+    def is_authentication_finished(self):
+        return self._auth_finished
 
     def update_person(self, person):
         self.update_person_data(person)
@@ -134,18 +152,13 @@ class EvalgUser(object):
         self._person = person
         current_app.logger.info(
             'Identified dp_user_id=%r as person_id=%r',
-            self.dp_user_id, self.person.id)
+            self.dp_user_id, person.id)
 
     @property
     def person(self):
-        if self._person is None:
-            # TODO: try/except
-            person = self.find_person()
-            if person is None:
-                logger.warning('User not logged in')
-                return None
-            self.set_person(person)
-        return self._person
+        if self._auth_finished:
+            return self._person
+        return None
 
     @property
     def dp_ids(self):
