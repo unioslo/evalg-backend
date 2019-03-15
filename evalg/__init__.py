@@ -4,7 +4,7 @@ Module for bootstrapping the eValg application.
 import os
 
 import flask_sqlalchemy
-from flask import Flask, json
+from flask import Flask, json, has_request_context
 from flask_apispec.extension import FlaskApiSpec
 from flask_cors import CORS
 from flask_marshmallow import Marshmallow
@@ -16,9 +16,10 @@ from . import default_config
 from . import default_election_template_config
 from . import request_id
 from . import version
+
 from .config import init_config
 from .logging import init_logging
-
+from .database.audit import audit_plugin_source, meta_plugin_source
 
 __version__ = version.get_distribution().version
 
@@ -150,6 +151,32 @@ def create_app(config=None, flask_class=Flask):
             import flask
             current_app.logger.info("client-ip: %r", flask.request.remote_addr)
             current_app.logger.info("x-forwarded-for: %r",
-                        utils.get_multi_header('x-forwarded-for'))
+                                    utils.get_multi_header('x-forwarded-for'))
+
+    @audit_plugin_source.register('remote_addr')
+    def get_remote_addr():
+        from flask import request
+        return request.remote_addr
+
+    @audit_plugin_source.register('user_id')
+    def get_user_id():
+        from evalg import authentication
+        if authentication.user.is_authenticated():
+            if authentication.user.is_authentication_finished():
+                return authentication.user.person.id
+        return None
+
+    @meta_plugin_source.register('feide_id')
+    def get_feide_id():
+        from evalg import authentication
+        if authentication.user.is_authenticated():
+            return authentication.user.dp_ids['feide']
+        return None
+
+    @meta_plugin_source.register('job_name')
+    def get_job_name():
+        import os
+        if 'EVALG_JOB_NAME' in os.environ:
+            return os.environ['EVALG_JOB_NAME']
 
     return app
