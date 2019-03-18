@@ -76,7 +76,7 @@ class Viewer(graphene.ObjectType):
 
 
 def resolve_viewer_from_context(_, info):
-    return evalg.authentication.user
+    return info.context['user']
 
 
 get_current_viewer_query = graphene.Field(

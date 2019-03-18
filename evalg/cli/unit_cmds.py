@@ -55,6 +55,8 @@ def get_unit(external_id):
                short_help='Import units.')
 @flask.cli.with_appcontext
 def import_units():
+    import os
+    os.environ['EVALG_JOB_NAME'] = "import-units"
     config = flask.current_app.config
     importer_type = config.get('UNIT_IMPORTER')
 

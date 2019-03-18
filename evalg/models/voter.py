@@ -24,6 +24,7 @@ from .person import IdType
 class Voter(ModelBase):
     """ Voter / census member model."""
 
+    __versioned__ = {}
     __tablename__ = 'pollbook_voters'
 
     id = sqlalchemy.schema.Column(

@@ -23,6 +23,7 @@ python-json-logger
 pytz
 setuptools
 sqlalchemy==1.2.15
+sqlalchemy-continuum
 sqlalchemy-json
 sqlalchemy-utils
 werkzeug

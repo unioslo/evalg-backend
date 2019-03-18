@@ -149,6 +149,7 @@ class Vote(ModelBase):
     The Vote object represents the *current* ballot for a given voter.
     """
 
+    __versioned__ = {}
     __tablename__ = 'vote'
 
     # TODO: Find out what other constraints we'd need? One vote per election?
@@ -180,6 +181,7 @@ class VoteRecord(ModelBase):
     The VoteRecord represents *all* votes left by a given voter.
     """
 
+    __versioned__ = {}
     __tablename__ = 'vote_log'
 
     # ballot_id is a reference to a ballot.

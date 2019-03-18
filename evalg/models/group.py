@@ -16,6 +16,8 @@ from .base import ModelBase
 class Group(ModelBase):
     """ Group of persons. """
 
+    __versioned__ = {}
+
     id = db.Column(
         evalg.database.types.UuidType,
         primary_key=True,
@@ -43,6 +45,8 @@ class Group(ModelBase):
 class GroupExternalIDType(ModelBase):
     """ Group external ID type. """
 
+    __versioned__ = {}
+
     code = db.Column(
         db.UnicodeText,
         primary_key=True)
@@ -53,6 +57,7 @@ class GroupExternalIDType(ModelBase):
 class GroupExternalID(ModelBase):
     """ Group external ID. """
 
+    __versioned__ = {}
     __tablename__ = 'group_external_id'
 
     group_id = db.Column(

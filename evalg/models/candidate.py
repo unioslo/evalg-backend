@@ -13,6 +13,8 @@ from .base import ModelBase
 
 class Candidate(ModelBase):
 
+    __versioned__ = {}
+
     id = db.Column(
         UuidType,
         primary_key=True,
