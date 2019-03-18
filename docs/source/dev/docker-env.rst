@@ -23,7 +23,7 @@ Start the development environment
 
    docker-compose -f docker-compose-evalg-dev.yaml up
 
-3. Initialize the database:
+3. :doc:`Initialize the database <database>`:
 
 ::
 
@@ -31,28 +31,11 @@ Start the development environment
    docker exec -it evalg_evalg_1 flask db upgrade
 
 
-Add example data to the database
---------------------------------
+Flask commands
+--------------
 
-If you want to populate the database with example data, run:
-
-::
-
-   docker exec -it evalg_evalg_1 flask populate-tables
-
-
-To clear out the database:
-
-::
-
-   docker exec -it evalg_evalg_1 flask recreate-tables
-
-
-
-Flask shell
------------
-
-You can run the flask shell in order to do migrations and run commands defined by the application:
+You can run different :doc:`flask commands <flask-commands>` in the evalg
+container using ``docker exec``.  If you e.g. want to start an ipython shell:
 
 ::
 

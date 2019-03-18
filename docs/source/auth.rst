@@ -1,5 +1,3 @@
-.. _doc-auth:
-
 Authentication and authorization
 ================================
 
