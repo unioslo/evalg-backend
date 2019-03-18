@@ -94,7 +94,7 @@ class EvalgTransactionFactory(TransactionFactory):
                 return '<Transaction %s>' % ', '.join(
                     (
                         '%s=%r' % (field, value)
-                       if not isinstance(value, six.integer_types)
+                       if not isinstance(value, str)
                         # We want the following line to ensure that longs get
                         # shown without the ugly L suffix on python 2.x
                         # versions
