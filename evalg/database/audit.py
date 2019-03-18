@@ -92,15 +92,8 @@ class EvalgTransactionFactory(TransactionFactory):
                     if hasattr(self, field)
                 )
                 return '<Transaction %s>' % ', '.join(
-                    (
-                        '%s=%r' % (field, value)
-                       if not isinstance(value, str)
-                        # We want the following line to ensure that longs get
-                        # shown without the ugly L suffix on python 2.x
-                        # versions
-                        else '%s=%d' % (field, value)
-                        for field, value in field_values.items()
-                    )
+                    ('%s=%r' % (field, value)
+                     for field, value in field_values.items())
                 )
 
         if manager.options['native_versioning']:
