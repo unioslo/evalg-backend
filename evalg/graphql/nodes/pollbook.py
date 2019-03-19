@@ -1,8 +1,12 @@
 """
 GraphQL ObjectType for PollBook and Voter nodes.
 """
+import collections
+import logging
+
 import graphene
 import graphene_sqlalchemy
+from graphene_file_upload.scalars import Upload
 
 import evalg.database.query
 import evalg.models.election
@@ -11,10 +15,11 @@ import evalg.models.pollbook
 import evalg.models.voter
 import evalg.proc.pollbook
 from evalg import db
+from evalg.file_parser.parser import CensusFileParser
+from evalg.graphql.nodes.base import get_session, MutationResponse
 
 
-def get_session(info):
-    return info.context.get('session')
+logger = logging.getLogger(__name__)
 
 #
 # Query
@@ -257,3 +262,65 @@ class DeleteVoter(graphene.Mutation):
         db.session.delete(voter)
         db.session.commit()
         return DeleteVoter(ok=True)
+
+
+class UploadCensusFileResponse(MutationResponse):
+    num_failed = graphene.Int()
+    num_ok = graphene.Int()
+
+
+class UploadCensusFile(graphene.Mutation):
+    """Upload and parse census file."""
+
+    class Arguments:
+        pollbook_id = graphene.UUID(required=True)
+        census_file = Upload(required=True)
+
+    Output = UploadCensusFileResponse
+
+    def mutate(self, info, **kwargs):
+        pollbook_id = kwargs['pollbook_id']
+        census_file = kwargs['census_file']
+        session = get_session(info)
+        voters = evalg.proc.pollbook.ElectionVoterPolicy(session)
+        result = collections.Counter(ok=0, failed=0)
+
+        logger.debug('kwargs %r', kwargs)
+
+        try:
+            pollbook = evalg.database.query.lookup(
+                evalg.db.session,
+                evalg.models.pollbook.PollBook,
+                id=pollbook_id)
+        except Exception as e:
+            return UploadCensusFileResponse(
+                success=False,
+                code='pollbook-not-found',
+                message='No pollbook with id {!r}'.format(pollbook_id))
+
+        logger.info('Updating %r from %r', pollbook, census_file)
+        parser = CensusFileParser.factory(census_file)
+        if not parser:
+            return UploadCensusFileResponse(
+                success=False,
+                code='unsupported-file-type',
+                message='Unsupported file type {!r}'.format(census_file.mimetype))
+
+        id_type = parser.id_type
+        logger.debug('Loading file using parser %r (id_type=%r)',
+                     type(parser), id_type)
+        for i, id_value in enumerate(parser.parse(), 1):
+            try:
+                voters.add_voter_id(pollbook, id_type, id_value, manual=False)
+            except Exception as e:
+                logger.warning('Entry #%d: unable to add voter: %s',
+                               i, e, exc_info=True)
+                result['failed'] += 1
+                continue
+            result['ok'] += 1
+
+        session.commit()
+        return UploadCensusFileResponse(
+            success=True,
+            num_failed=result['failed'],
+            num_ok=result['ok'])
