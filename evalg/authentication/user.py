@@ -7,7 +7,7 @@ import datetime
 import functools
 import logging
 
-from flask import current_app
+from flask import current_app, request
 from flask_feide_gk.utils import ContextAttribute
 
 from evalg import db
@@ -44,6 +44,10 @@ class EvalgUser(object):
         @app.before_request
         def init_authentication():
             self.gk_user = gk_user
+            if request.method == 'OPTIONS':
+                # If we are here, we have authenticated the Feide Gatekeeper,
+                # but will not have been provided a user access token.
+                return
             self.feide_api = feide_api
             self._auth_finished = False
             self.find_or_create_person()
@@ -87,12 +91,12 @@ class EvalgUser(object):
         return person
 
     def is_authenticated(self):
-        if not self.gk_user:
+        if not self.gk_user.access_token:
             return False
         return True
 
     def is_authentication_finished(self):
-        return self._auth_finished
+        return bool(self.is_authenticated() and self._auth_finished)
 
     def update_person(self, person):
         self.update_person_data(person)
