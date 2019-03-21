@@ -4,6 +4,7 @@ Database model base classes.
 
 from sqlalchemy_continuum import make_versioned
 from sqlalchemy_continuum.manager import VersioningManager
+from sqlalchemy_continuum.plugins import PropertyModTrackerPlugin
 
 from evalg import db
 from evalg.database import audit
@@ -22,6 +23,7 @@ make_versioned(
     plugins=[
         audit.audit_plugin,
         audit.meta_plugin,
+        PropertyModTrackerPlugin(),
     ],
 )
 
