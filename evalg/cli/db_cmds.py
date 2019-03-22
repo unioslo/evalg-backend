@@ -8,6 +8,7 @@ import click
 import flask.cli
 from flask import current_app, g
 
+
 def start_request(*args, **kwargs):
     """
     Make a request context.
@@ -19,12 +20,14 @@ def start_request(*args, **kwargs):
     current_app.preprocess_request()
     return ctx
 
+
 def end_request(ctx, response=None):
     """
     End a request context with a response.
     """
     current_app.process_response(response or current_app.response_class())
     ctx.pop()
+
 
 def save_object(obj):
     from evalg import db
@@ -119,8 +122,11 @@ def shell_context():
 @flask.cli.with_appcontext
 def populate_tables():
     """ Use flask_fixtures to populate tables. """
+    import os
     import flask_fixtures
     from evalg.fixtures import populate_tables
+
+    os.environ['EVALG_JOB_NAME'] = "populate_table"
     flask_fixtures.setup(populate_tables.Populator)
 
 

@@ -13,6 +13,8 @@ from .base import ModelBase
 class ElectionList(ModelBase):
     """ List of electable candidates in an election. """
 
+    __versioned__ = {}
+
     id = db.Column(
         UuidType,
         primary_key=True,

@@ -13,6 +13,8 @@ from .base import ModelBase
 class OrganizationalUnit(ModelBase):
     """ Organizational unit. """
 
+    __versioned__ = {}
+
     id = db.Column(
         UuidType,
         default=uuid.uuid4,

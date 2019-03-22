@@ -34,6 +34,7 @@ The new version builds upon the same principles as the old version:
    api
    design/index
    dev/index
+   audit
 
 
 Indices and tables

@@ -15,6 +15,8 @@ from .base import ModelBase
 class Person(ModelBase):
     """ Person. """
 
+    __versioned__ = {}
+
     id = db.Column(
         evalg.database.types.UuidType,
         primary_key=True,
@@ -79,6 +81,7 @@ IdType = make_descriptive_enum(
 class PersonExternalId(ModelBase):
     """ Person external ID. """
 
+    __versioned__ = {}
     __tablename__ = 'person_external_id'
 
     person_id = db.Column(

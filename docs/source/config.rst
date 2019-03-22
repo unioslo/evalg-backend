@@ -1,6 +1,3 @@
-.. highlight:: bash
-.. _doc-config:
-
 Configuring evalg
 =================
 
@@ -29,7 +26,7 @@ this python file will override default values set in the
 
    Document the config parameters.
 
-Details on how to configure authentication is described in :ref:`doc-auth`.
+Details on how to configure authentication is described in :doc:`auth`.
 
 
 evalg_template_config.py

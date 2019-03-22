@@ -34,6 +34,8 @@ class Principal(ModelBase):
     user or a group of users.
     """
 
+    __versioned__ = {}
+
     principal_id = Column(
         UuidType,
         default=uuid.uuid4,
@@ -55,6 +57,8 @@ class Principal(ModelBase):
 
 class PersonPrincipal(Principal):
     """ Security principal based on a person/user entity. """
+
+    __versioned__ = {}
 
     principal_id = Column(
         UuidType,
@@ -80,6 +84,8 @@ class PersonPrincipal(Principal):
 class GroupPrincipal(Principal):
     """ Security principal based on membership in a group. """
 
+    __versioned__ = {}
+
     principal_id = Column(
         UuidType,
         ForeignKey('principal.principal_id'),
@@ -104,6 +110,8 @@ class GroupPrincipal(Principal):
 class RolePermission(ModelBase):
     """ Permissions granted by role. """
 
+    __versioned__ = {}
+
     code = Column(
         String,
         ForeignKey('permission.code'),
@@ -117,6 +125,8 @@ class RolePermission(ModelBase):
 
 class Role(ModelBase):
     """ Roles granted to a principal. """
+
+    __versioned__ = {}
 
     grant_id = Column(
         UuidType,
@@ -157,6 +167,8 @@ class Role(ModelBase):
 class RoleList(ModelBase):
     """ List of roles in system. """
 
+    __versioned__ = {}
+
     role = Column(
         String,
         primary_key=True)
@@ -188,6 +200,8 @@ class RoleList(ModelBase):
 
 class OuRole(Role):
     """ Roles granted to principal on OU. """
+
+    __versioned__ = {}
 
     grant_id = Column(
         UuidType,
@@ -235,6 +249,8 @@ class OuRole(Role):
 class OuRoleList(RoleList):
     """ Roles based on OU. """
 
+    __versioned__ = {}
+
     role = Column(
         String,
         ForeignKey('role_list.role'),
@@ -250,6 +266,8 @@ class OuRoleList(RoleList):
 
 class ElectionRole(Role):
     """ Roles granted on election. """
+
+    __versioned__ = {}
 
     grant_id = Column(
         UuidType,
@@ -298,6 +316,8 @@ class ElectionRole(Role):
 class ElectionRoleList(RoleList):
     """ Roles given on election (group). """
 
+    __versioned__ = {}
+
     role = Column(
         String,
         ForeignKey('role_list.role'),
@@ -318,6 +338,8 @@ class ElectionRoleList(RoleList):
 
 class ElectionGroupRole(Role):
     """ Roles granted on election. """
+
+    __versioned__ = {}
 
     grant_id = Column(
         UuidType,
@@ -364,6 +386,8 @@ class ElectionGroupRole(Role):
 
 class Permission(ModelBase):
     """Permission."""
+
+    __versioned__ = {}
 
     code = Column(
         String,

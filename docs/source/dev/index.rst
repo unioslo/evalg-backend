@@ -7,4 +7,5 @@ Development
    getting-started
    docker-env
    local-env
+   database
    flask-commands

@@ -6,6 +6,7 @@ import logging
 import flask
 import flask_graphql
 import graphene
+from graphene_file_upload.flask import FileUploadGraphQLView
 
 from evalg import db
 from evalg.authentication import user
@@ -24,16 +25,20 @@ schema = graphene.Schema(
     types=[nodes.election_group.ElectionGroup])
 
 
-class ProperView(flask_graphql.GraphQLView):
+class ContextGraphQLView(flask_graphql.GraphQLView):
 
     context = None
 
     def __init__(self, context=context, **kwargs):
-        super(ProperView, self).__init__(**kwargs)
+        super(ContextGraphQLView, self).__init__(**kwargs)
         self.context = context
 
     def get_context(self):
         return self.context
+
+
+class EvalgGraphQLView(ContextGraphQLView, FileUploadGraphQLView):
+    pass
 
 
 def init_app(app):
@@ -48,7 +53,7 @@ def init_app(app):
 
     app.add_url_rule(
         '/graphql',
-        view_func=ProperView.as_view(
+        view_func=EvalgGraphQLView.as_view(
             'graphql',
             schema=schema,
             batch=True,
