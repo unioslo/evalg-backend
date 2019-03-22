@@ -143,6 +143,7 @@ def get_election_vote_counts(session, election):
     for m, v, c in query.all():
         key = keys[m, v]
         count[key] += c
+    count['total'] = count['approved'] + count['need_approval']
     return count
 
 
