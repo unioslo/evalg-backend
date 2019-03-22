@@ -9,6 +9,7 @@ import logging
 
 from flask import current_app, request
 from flask_feide_gk.utils import ContextAttribute
+from flask_feide_gk.mock.gatekeeper import MockGatekeeperData
 
 from evalg import db
 from evalg.models.person import Person, PersonExternalId
@@ -91,8 +92,11 @@ class EvalgUser(object):
         return person
 
     def is_authenticated(self):
-        if not self.gk_user or not self.gk_user.access_token:
-            return False
+        if self.gk_user:
+            if isinstance(self.gk_user, MockGatekeeperData):
+                return True
+            elif not self.gk_user.access_token:
+                return False
         return True
 
     def is_authentication_finished(self):
