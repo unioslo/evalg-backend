@@ -5,6 +5,8 @@ import graphene
 import graphene_sqlalchemy
 
 import evalg.models.election
+from evalg.graphql.nodes.votes import (resolve_election_count_by_id,
+                                       ElectionVoteCounts)
 from evalg.utils import convert_json
 from evalg import db
 from . import pollbook
@@ -38,6 +40,10 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
     is_ongoing = graphene.Boolean()
     # TODO: Wouldn't we have to do this for our other models as well?
     pollbooks = graphene.List(pollbook.PollBook)
+    vote_count = graphene.Field(lambda: ElectionVoteCounts)
+
+    def resolve_vote_count(self, info):
+        return resolve_election_count_by_id(None, info, id=self.id)
 
 
 def resolve_elections_by_fields(_, info):

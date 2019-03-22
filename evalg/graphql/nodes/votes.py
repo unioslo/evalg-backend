@@ -56,6 +56,10 @@ class ElectionVoteCounts(graphene.ObjectType):
         default_value=0,
         description='votes that will be omitted from the count',
     )
+    total = graphene.Int(
+        default_value=0,
+        description='total votes'
+    )
 
 
 def resolve_election_count_by_id(_, info, **args):
