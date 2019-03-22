@@ -4,16 +4,21 @@ The GraphQL ElectionGroup ObjectType.
 This module defines the GraphQL ObjectType that represents election group, as
 well as queries and mutations for this object.
 """
+import datetime
 import graphene
 import graphene_sqlalchemy
+from graphql import GraphQLError
 from graphene.types.generic import GenericScalar
+from sqlalchemy_continuum import version_class
 
 import evalg.metadata
 import evalg.models.election
 import evalg.proc.vote
 from evalg import db
 from evalg.election_templates import election_template_builder
+from evalg.graphql import types
 from evalg.graphql.nodes.base import get_session, MutationResponse
+from evalg.graphql.nodes.person import Person
 from evalg.utils import convert_json
 
 
@@ -86,6 +91,39 @@ get_election_template_query = graphene.Field(
     GenericScalar,
     resolver=resolve_election_template)
 
+
+class ElectionKeyMeta(graphene.ObjectType):
+    """
+    Election key meta info.
+    """
+    generated_at = types.DateTime()
+    generated_by = graphene.Field(Person)
+
+
+def resolve_election_key_meta(_, info, **args):
+    election_group_id = args['id']
+    ElectionGroupVersion = version_class(evalg.models.election.ElectionGroup)
+
+    key_meta = db.session.query(ElectionGroupVersion).filter(
+        ElectionGroupVersion.id == election_group_id,
+        ElectionGroupVersion.public_key_mod).order_by(
+            ElectionGroupVersion.transaction_id.desc()).limit(1).all()
+
+    if key_meta and len(key_meta) > 0:
+        generated_at = key_meta[0].transaction.issued_at
+        generated_by = key_meta[0].transaction.user
+
+        return ElectionKeyMeta(
+            generated_at=generated_at,
+            generated_by=generated_by
+        )
+    raise GraphQLError('No info on key found')
+
+
+get_election_key_meta_query = graphene.Field(
+    ElectionKeyMeta,
+    id=graphene.Argument(graphene.UUID, required=True),
+    resolver=resolve_election_key_meta)
 
 #
 # Mutation
@@ -238,7 +276,8 @@ class SetElectionGroupKey(graphene.Mutation):
                     code='cannot-change-key-if-past-start',
                     message='The public key cannot be changed if an election has started')
             else:
-                count = evalg.proc.vote.get_election_vote_counts(session, election)
+                count = evalg.proc.vote.get_election_vote_counts(
+                    session, election)
                 if any(count.values()):
                     return SetElectionGroupKeyResponse(
                         success=False,
