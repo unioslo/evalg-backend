@@ -6,11 +6,14 @@
 from functools import singledispatch, wraps
 from evalg import db
 from .authorization import check_perms, all_perms, PermissionDenied
-from .api import NotFoundError
 from .metadata import eperm
 from .models.candidate import Candidate
 from .models.election import Election
 from .models.election_list import ElectionList
+
+
+class NotFoundError(Exception):
+    pass
 
 
 def lperm(arg=0, *permission):

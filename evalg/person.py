@@ -8,8 +8,11 @@ from collections import defaultdict
 from sqlalchemy import func, or_
 from evalg import db
 from .models.person import Person, PersonExternalId
-from .api import NotFoundError
 from .authorization import check_perms, all_perms, PermissionDenied
+
+
+class NotFoundError(Exception):
+    pass
 
 
 def perm(*permission):

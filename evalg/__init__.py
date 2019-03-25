@@ -5,9 +5,7 @@ import os
 
 import flask_sqlalchemy
 from flask import Flask, json, has_request_context
-from flask_apispec.extension import FlaskApiSpec
 from flask_cors import CORS
-from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
 
 
@@ -59,14 +57,8 @@ APP_INSTANCE_PATH_ENVIRON_NAME = 'EVALG_INSTANCE_PATH'
 db = SQLAlchemy()
 """Database."""
 
-ma = Marshmallow()
-"""Marshmallow."""
-
 migrate = Migrate()
 """Migrations."""
-
-docs = FlaskApiSpec()
-"""API documentation."""
 
 cors = CORS()
 """CORS."""
@@ -112,7 +104,6 @@ def create_app(config=None, flask_class=Flask):
 
     # Setup db
     db.init_app(app)
-    ma.init_app(app)
     migrate.init_app(app, db, directory='evalg/migrations')
 
     # Feide Gatekeeper: Add localhost and trusted proxy subnets to whitelist
@@ -125,11 +116,6 @@ def create_app(config=None, flask_class=Flask):
     authentication.init_app(app)
 
     # Setup API
-    docs.init_app(app)
-
-    from evalg import api
-    api.init_app(app)
-
     from evalg import graphql
     graphql.init_app(app)
 
