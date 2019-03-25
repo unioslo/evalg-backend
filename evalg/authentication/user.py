@@ -97,7 +97,7 @@ class EvalgUser(object):
                 return True
             elif not self.gk_user.access_token:
                 return False
-        return True
+        return False
 
     def is_authentication_finished(self):
         return bool(self.is_authenticated() and self._auth_finished)
