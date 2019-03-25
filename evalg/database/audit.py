@@ -20,7 +20,7 @@ from sqlalchemy_continuum.transaction import TransactionBase, TransactionFactory
 from evalg.database.types import UtcDateTime, IpAddressType
 
 
-def default_time(self):
+def default_time():
     return datetime.datetime.now(datetime.timezone.utc)
 
 
