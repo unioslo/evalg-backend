@@ -20,6 +20,10 @@ from sqlalchemy_continuum.transaction import TransactionBase, TransactionFactory
 from evalg.database.types import UtcDateTime, IpAddressType
 
 
+def default_time(self):
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 class EvalgTransactionFactory(TransactionFactory):
 
     model_name = 'Transaction'
@@ -51,7 +55,8 @@ class EvalgTransactionFactory(TransactionFactory):
 
             # Override issued_at from TransactionBase
             issued_at = sa.Column(
-                UtcDateTime, default=datetime.datetime.now(datetime.timezone.utc))
+                UtcDateTime,
+                default=default_time)
 
             id = sa.Column(
                 sa.types.BigInteger,
