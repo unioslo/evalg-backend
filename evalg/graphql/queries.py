@@ -12,6 +12,7 @@ class ElectionQuery(graphene.ObjectType):
     # Elections and election groups
     election_groups = nodes.election_group.list_election_groups_query
     election_group = nodes.election_group.get_election_group_query
+    election_group_key_meta = nodes.election_group.get_election_key_meta_query
     election_template = nodes.election_group.get_election_template_query
     elections = nodes.election.list_elections_query
     election = nodes.election.get_election_query
