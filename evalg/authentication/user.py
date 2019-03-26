@@ -95,8 +95,8 @@ class EvalgUser(object):
         if self.gk_user:
             if isinstance(self.gk_user, MockGatekeeperData):
                 return True
-            elif not self.gk_user.access_token:
-                return False
+            elif self.gk_user.access_token:
+                return True
         return False
 
     def is_authentication_finished(self):
