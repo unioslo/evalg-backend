@@ -63,7 +63,7 @@ def run_setup():
         # Sphinx modules:
         setup_requirements.extend(get_requirements('docs/requirements.txt'))
         # pofh-dependencies for generating autodoc:
-        setup_requirements.extend(get_requirements('requirements.txt'))
+        # setup_requirements.extend(get_requirements('requirements.txt'))
 
     setuptools.setup(
         name='evalg',
