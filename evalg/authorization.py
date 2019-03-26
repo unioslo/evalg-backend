@@ -16,11 +16,10 @@ from .models.authorization import (Permission,
                                    RoleList,
                                    get_principals_for)
 from .auth import check_perms, all_permissions
-from .apierror import ApiError
 
 
-class PermissionDenied(ApiError):
-    code = 401
+class PermissionDenied(Exception):
+    pass
 
 
 all_perms = set(all_permissions.keys())

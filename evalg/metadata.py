@@ -10,9 +10,15 @@ from functools import wraps
 from .models.election import ElectionGroup, Election
 from .models.pollbook import PollBook
 from .models.election_list import ElectionList
-from .api import NotFoundError, BadRequest
 from .authorization import check_perms, all_perms, PermissionDenied
 from evalg import db
+
+
+class NotFoundError(Exception):
+    pass
+
+class BadRequest(Exception):
+    pass
 
 
 def eperm(permission, arg=0):

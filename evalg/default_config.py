@@ -6,21 +6,6 @@
 DEBUG = False
 
 #
-# Supported languages
-#
-LANGUAGES = {
-    'en': 'English',
-    'nb': 'Norwegian (bokmål)',
-    'nn': 'Norwegian (nynorsk)'
-}
-
-#
-# ???
-#
-APISPEC_TITLE = 'evalg'
-APISPEC_VERSION = 'v1'
-
-#
 # Database settings
 #
 SQLALCHEMY_DATABASE_URI = ''
