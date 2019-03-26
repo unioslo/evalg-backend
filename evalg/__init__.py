@@ -164,9 +164,8 @@ def create_app(config=None, flask_class=Flask):
     @audit_plugin_source.register('user_id')
     def get_user_id():
         from evalg import authentication
-        if authentication.user.is_authenticated():
-            if authentication.user.is_authentication_finished():
-                return authentication.user.person.id
+        if authentication.user.is_authentication_finished():
+            return authentication.user.person.id
         return None
 
     @meta_plugin_source.register('feide_id')
