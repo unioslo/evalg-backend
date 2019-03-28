@@ -132,11 +132,11 @@ class Voter(ModelBase):
     def validate_id_type(self, key, id_type):
         return IdType(id_type).value
 
-    @validates('self_added', 'reviewed', 'verified')
-    def validate_verified_status(self, key, self_added, reviewed, verified):
-        return db_values2verified_status[(self_added,
-                                          reviewed,
-                                          verified)]
+    # @validates('self_added', 'reviewed', 'verified')
+    # def validate_verified_status(self, key, self_added, reviewed, verified):
+    #     return db_values2verified_status[(self_added,
+    #                                       reviewed,
+    #                                       verified)]
 
     __table_args__ = (
         UniqueConstraint(
