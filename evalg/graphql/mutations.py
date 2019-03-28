@@ -55,6 +55,10 @@ class ElectionMutations(graphene.ObjectType):
         nodes.pollbook.DeleteVotersInPollBook.Field()
     upload_census_file = \
         nodes.pollbook.UploadCensusFile.Field()
+    review_self_added_voter = \
+        nodes.pollbook.ReviewSelfAddedVoter.Field()
+    undo_review_self_added_voter = \
+        nodes.pollbook.UndoReviewSelfAddedVoter.Field()
 
     # Roles
     add_admin = \

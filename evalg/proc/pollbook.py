@@ -114,7 +114,7 @@ class ElectionVoterPolicy(object):
         self.session = session
 
     def add_voter_id(self, pollbook, id_type, id_value,
-                     manual=True, reason=None):
+                     self_added=True, reason=None):
         """
         Add a voter to a pollbook for a given person object.
         """
@@ -128,8 +128,9 @@ class ElectionVoterPolicy(object):
             pollbook_id=pollbook.id,
             id_type=id_type,
             id_value=id_value,
-            manual=manual,
-            verified=(not manual),
+            self_added=self_added,
+            reviewed=False,
+            verified=(not self_added),
             reason=reason,
         )
 
@@ -138,7 +139,7 @@ class ElectionVoterPolicy(object):
         logger.info('added voter %r', voter)
         return voter
 
-    def add_voter(self, pollbook, person, manual=True, reason=None):
+    def add_voter(self, pollbook, person, self_added=True, reason=None):
         """
         Add a voter to a pollbook for a given person object.
         """
@@ -157,8 +158,9 @@ class ElectionVoterPolicy(object):
             pollbook_id=pollbook.id,
             id_type=id_obj.id_type,
             id_value=id_obj.id_value,
-            manual=manual,
-            verified=(not manual),
+            self_added=self_added,
+            reviewed=False,
+            verified=(not self_added),
             reason=reason,
         )
 

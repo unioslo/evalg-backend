@@ -1,0 +1,32 @@
+version: "2"
+
+services:
+  evalg:
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/usr/src/evalg:z
+      - ./instance:/usr/local/var/evalg-instance:z
+    working_dir: /usr/src/evalg
+    depends_on:
+      - db
+    command: flask run --host 0.0.0.0 --port 5000 --reload
+    environment:
+      PYTHONDONTWRITEBYTECODE: "yes"
+      FLASK_APP: evalg.wsgi
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+
+  db:
+    image: harbor.uio.no/library/postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+volumes:
+  db-data:

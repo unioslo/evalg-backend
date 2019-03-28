@@ -5,8 +5,11 @@ import graphene
 import graphene_sqlalchemy
 
 import evalg.person
+import evalg.proc.vote
 import evalg.models.person
 import evalg.authentication.user
+import evalg.database.query
+from evalg.graphql.nodes.base import get_session
 
 # TODO:
 #   resolve_person_search argument should be renamed from *val* to
@@ -47,6 +50,16 @@ def resolve_person_search(_, info, **args):
     return evalg.person.search_person(args['val'])
 
 
+def resolve_get_person_for_voter(_, info, **args):
+    voter_id = args['voter_id']
+    session = get_session(info)
+    voter = evalg.database.query.lookup(
+        session,
+        evalg.models.voter.Voter,
+        id=voter_id)
+    return evalg.proc.vote.get_person_for_voter(session, voter)
+
+
 list_persons_query = graphene.List(
     Person,
     resolver=resolve_persons_by_info)
@@ -60,6 +73,12 @@ search_persons_query = graphene.List(
     Person,
     resolver=resolve_person_search,
     val=graphene.Argument(graphene.String, required=True))
+
+
+get_person_for_voter_query = graphene.Field(
+    Person,
+    voter_id=graphene.Argument(graphene.UUID, required=True),
+    resolver=resolve_get_person_for_voter)
 
 
 class Viewer(graphene.ObjectType):

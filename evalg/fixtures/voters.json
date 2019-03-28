@@ -8,7 +8,8 @@
         "id_type": "nin",
         "id_value": "01011012341",
         "pollbook_id": "dc382424-e024-42b0-a445-9839269790e4",
-        "manual": false,
+        "self_added": false,
+        "reviewed": false,
         "verified": true
       },
       {
@@ -17,7 +18,8 @@
         "id_type": "feide_id",
         "id_value": "ford@example.com",
         "pollbook_id": "dc382424-e024-42b0-a445-9839269790e4",
-        "manual": false,
+        "self_added": false,
+        "reviewed": false,
         "verified": true
       }
     ]

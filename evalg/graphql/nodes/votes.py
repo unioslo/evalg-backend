@@ -44,22 +44,15 @@ class ElectionVoteCounts(graphene.ObjectType):
     """ Vote counts for election, grouped by voter status. """
     id = graphene.UUID()
 
-    approved = graphene.Int(
-        default_value=0,
-        description='approved votes',
-    )
-    need_approval = graphene.Int(
-        default_value=0,
-        description='votes awaiting approval',
-    )
-    omitted = graphene.Int(
-        default_value=0,
-        description='votes that will be omitted from the count',
-    )
     total = graphene.Int(
         default_value=0,
         description='total votes'
     )
+
+    verified_map = dict()
+    for status in evalg.models.voter.db_values2verified_status.values():
+        verified_map[status.name.lower()] = graphene.Int(default_value=0)
+    locals().update(verified_map)
 
 
 def resolve_election_count_by_id(_, info, **args):

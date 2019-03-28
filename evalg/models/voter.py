@@ -9,16 +9,54 @@ should be represented by a *unique* voter object for each election they are
 entitled to vote in.
 """
 import uuid
+from enum import Enum
 
-import sqlalchemy.schema
 import sqlalchemy.types
 from sqlalchemy.orm import validates
 from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from evalg import db
 from evalg.database.types import UuidType
 from .base import ModelBase
 from .person import IdType
+
+
+class VerifiedStatus(Enum):
+    SELF_ADDED_NOT_REVIEWED = 1
+    ADMIN_ADDED_REJECTED = 2
+    SELF_ADDED_REJECTED = 3
+    ADMIN_ADDED_AUTO_VERIFIED = 4
+    SELF_ADDED_VERIFIED = 7
+
+    @property
+    def description(self):
+        if self == VerifiedStatus.SELF_ADDED_NOT_REVIEWED:
+            return 'voter not in census, admin review needed'
+        if self == VerifiedStatus.ADMIN_ADDED_REJECTED:
+            return 'voter in census, rejected by admin'
+        if self == VerifiedStatus.SELF_ADDED_REJECTED:
+            return 'voter not in census, rejected by admin'
+        if self == VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED:
+            return 'voter in census'
+        if self == VerifiedStatus.SELF_ADDED_VERIFIED:
+            return 'voter not in census, verified by admin'
+
+
+# Mapping (manual, reviewed, verified) to VerifiedStatus and vice versa
+verified_status2db_values = {
+    VerifiedStatus.SELF_ADDED_NOT_REVIEWED: (True, False, False),
+    VerifiedStatus.ADMIN_ADDED_REJECTED: (False, True, False),
+    VerifiedStatus.SELF_ADDED_REJECTED: (True, True, False),
+    VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED: (False, False, True),
+    VerifiedStatus.SELF_ADDED_VERIFIED: (True, True, True)}
+
+db_values2verified_status = {
+    (True, False, False): VerifiedStatus.SELF_ADDED_NOT_REVIEWED,
+    (False, True, False): VerifiedStatus.ADMIN_ADDED_REJECTED,
+    (True, True, False): VerifiedStatus.SELF_ADDED_REJECTED,
+    (False, False, True): VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED,
+    (True, True, True): VerifiedStatus.SELF_ADDED_VERIFIED}
 
 
 class Voter(ModelBase):
@@ -58,13 +96,21 @@ class Voter(ModelBase):
         'PollBook',
         back_populates='voters')
 
-    manual = db.Column(
+    self_added = db.Column(
         sqlalchemy.types.Boolean,
+        db.ForeignKey('verified_status.self_added'),
         doc='voter was added to the poll book by himself',
+        nullable=False)
+
+    reviewed = db.Column(
+        sqlalchemy.types.Boolean,
+        db.ForeignKey('verified_status.reviewed'),
+        doc='voter has been reviewed by admin',
         nullable=False)
 
     verified = sqlalchemy.schema.Column(
         sqlalchemy.types.Boolean,
+        db.ForeignKey('verified_status.verified'),
         doc='voter is verified, and any vote should be counted',
         nullable=False)
 
@@ -74,6 +120,35 @@ class Voter(ModelBase):
         sqlalchemy.types.UnicodeText,
         doc='reason why this voter should be included in the pollbook',
         nullable=True)
+
+    @hybrid_property
+    def verified_status(self):
+        return db_values2verified_status[(self.self_added,
+                                          self.reviewed,
+                                          self.verified)]
+
+    @validates('self_added', 'reviewed', 'verified')
+    def validate_verified_status(self, key, self_added, reviewed, verified):
+        return db_values2verified_status[(self_added,
+                                          reviewed,
+                                          verified)]
+
+    #
+    # @verified_status.expression
+    # def filter_verified_status(cls, verified_status):
+    #     (self_added, reviewed, verified) = verified_status2db_values[
+    #         verified_status]
+    #     return cls.query.filter(cls.self_added == self_added,
+    #                             cls.reviewed == reviewed,
+    #                             cls.verified == verified)
+    #
+    # @verified_status.expression
+    # def group_by_verified_status(cls, query, verified_status):
+    #     (self_added, reviewed, verified) = verified_status2db_values[
+    #         verified_status]
+    #     return cls.query.group_by(cls.self_added == self_added,
+    #                               cls.reviewed == reviewed,
+    #                               cls.verified == verified)
 
     #
     # TODO: Get ID_TYPE_CHOICES from PersonExternalId, or implement a separate

@@ -57,7 +57,8 @@ class UploadCensusFile(flask_apispec.views.MethodResource):
         for i, id_value in enumerate(parser.parse(), 1):
 
             try:
-                voters.add_voter_id(pollbook, id_type, id_value, manual=False)
+                voters.add_voter_id(pollbook, id_type, id_value,
+                                    self_added=False)
             except Exception as e:
                 logger.debug('entry #%d: unable to add voter: %s', i, e)
                 result['failed'] += 1
