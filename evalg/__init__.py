@@ -64,7 +64,7 @@ cors = CORS()
 """CORS."""
 
 
-def create_app(config=None, flask_class=Flask):
+def create_app(config=None, config_file=None, flask_class=Flask):
     """
     Create application.
 
@@ -86,14 +86,16 @@ def create_app(config=None, flask_class=Flask):
     # Setup CLI
     cli.init_app(app)
 
-    init_config(app, config,
+    init_config(app,
+                config=config,
+                config_file=config_file,
                 environ_name=APP_CONFIG_ENVIRON_NAME,
                 default_file_name=APP_CONFIG_FILE_NAME,
                 default_config=default_config)
 
     # Load evalg_templates as config.
     # TODO: Do this another way?
-    init_config(app, config,
+    init_config(app,
                 environ_name=APP_CONFIG_ENVIRON_NAME,
                 default_file_name=APP_TEMPLATE_CONFIG_FILE_NAME,
                 default_config=default_election_template_config)

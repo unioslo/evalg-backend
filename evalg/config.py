@@ -5,21 +5,44 @@
 import os
 
 
-def init_config(app, config, environ_name, default_file_name,
+def init_config(app, environ_name, default_file_name,
+                config=None,
+                config_file=None,
                 default_config=None):
     """ Initialize app config.
 
-    Loads app config from the first available source:
+    The default configuration is always loaded.
+    Then the app config is loaded from the first available source:
 
-    1. ``config`` argument, if not ``None``
-    2. the path set in the environment variable ``environ_name``
-    3. ``app.instance_path``/``default_file_name``, if it exists
+    1. the object provided as ``config``, if not ``None``
+    2. the file provided in``config_file``, if not ``None``
+    3. the path set in the environment variable ``environ_name``
+    4. ``app.instance_path``/``default_file_name``, if it exists
 
     """
     # Load default config
     if default_config:
         app.config.from_object(default_config)
 
+    if config is not None:
+        print('Config: Using provided config object')
+        app.config.from_object(config)
+    elif config_file is not None:
+        read_config_from_file(app, config_file)
+    else:
+        if app.config.from_envvar(environ_name, silent=True):
+            print("Config: Loading config from ${!s} ({!s})".format(
+                environ_name, os.environ[environ_name]))
+        if app.config.from_pyfile(default_file_name, silent=True):
+            print("Config: Loading config from instance path ({!s})".format(
+                os.path.join(app.instance_path, default_file_name)))
+
+
+def read_config_from_file(app, config=None):
+    """ Initialize app config by evaluating a file.
+
+    Supported file types: .py .cfg .json
+    """
     # Read config
     if config and os.path.splitext(config)[1] in ('.py', '.cfg'):
         # <config>.py, <config>.cfg
@@ -36,10 +59,3 @@ def init_config(app, config, environ_name, default_file_name,
         raise RuntimeError(
             "Unknown config file format '{!s}' ({!s})".format(
                 os.path.splitext(config)[1], config))
-    else:
-        if app.config.from_envvar(environ_name, silent=True):
-            print("Config: Loading config from ${!s} ({!s})".format(
-                environ_name, os.environ[environ_name]))
-        if app.config.from_pyfile(default_file_name, silent=True):
-            print("Config: Loading config from intance path ({!s})".format(
-                os.path.join(app.instance_path, default_file_name)))

@@ -16,8 +16,6 @@ def config():
         AUTH_ENABLED = True
         AUTH_METHOD = 'feide_mock'
         FEIDE_BASIC_REQUIRE = False
-        FEIDE_BASIC_REALM = None
-        FEIDE_BASIC_USERS = []
 
     return Config()
 
@@ -32,8 +30,7 @@ def database(app, request):
 
 @pytest.fixture(scope='session')
 def app(config):
-    app = create_app()
-    app.config.from_object(config)
+    app = create_app(config=config)
     return app
 
 
