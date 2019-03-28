@@ -131,8 +131,8 @@ def get_election_vote_counts(session, election):
     count = collections.Counter()
     for self_added, reviewed, verified, votes in query.all():
         count[
-            db_values2verified_status[(self_added, reviewed, verified)
-            ].name] += votes
+            db_values2verified_status[
+                (self_added, reviewed, verified)].name] += votes
     count['total'] = 0
     for votes in count.values():
         count['total'] += votes

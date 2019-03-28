@@ -127,29 +127,6 @@ class Voter(ModelBase):
                                           self.reviewed,
                                           self.verified)]
 
-    @validates('self_added', 'reviewed', 'verified')
-    def validate_verified_status(self, key, self_added, reviewed, verified):
-        return db_values2verified_status[(self_added,
-                                          reviewed,
-                                          verified)]
-
-    #
-    # @verified_status.expression
-    # def filter_verified_status(cls, verified_status):
-    #     (self_added, reviewed, verified) = verified_status2db_values[
-    #         verified_status]
-    #     return cls.query.filter(cls.self_added == self_added,
-    #                             cls.reviewed == reviewed,
-    #                             cls.verified == verified)
-    #
-    # @verified_status.expression
-    # def group_by_verified_status(cls, query, verified_status):
-    #     (self_added, reviewed, verified) = verified_status2db_values[
-    #         verified_status]
-    #     return cls.query.group_by(cls.self_added == self_added,
-    #                               cls.reviewed == reviewed,
-    #                               cls.verified == verified)
-
     #
     # TODO: Get ID_TYPE_CHOICES from PersonExternalId, or implement a separate
     # set of id types? We may not want to support dp_user_id or uid here?
@@ -157,6 +134,12 @@ class Voter(ModelBase):
     @validates('id_type')
     def validate_id_type(self, key, id_type):
         return IdType(id_type).value
+
+    @validates('self_added', 'reviewed', 'verified')
+    def validate_verified_status(self, key, self_added, reviewed, verified):
+        return db_values2verified_status[(self_added,
+                                          reviewed,
+                                          verified)]
 
     __table_args__ = (
         UniqueConstraint(
