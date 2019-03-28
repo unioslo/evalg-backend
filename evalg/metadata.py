@@ -335,7 +335,6 @@ def make_group_from_template(template_name, ou, principals=()):
                             end=default_end(),
                             mandate_period_start=mandate_period_start(e),
                             mandate_period_end=mandate_period_end(e),
-                            candidate_type=metadata['candidate_type'],
                             meta=metadata,
                             active=group_type == 'single_election',)
         election.lists = list(map(make_candidate_list, e['voter_groups']))

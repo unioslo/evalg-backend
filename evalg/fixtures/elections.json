@@ -22,9 +22,7 @@
           },
           "counting_rules": {
             "method": "uio_stv",
-            "affirmative_action": [
-              "gender_40"
-            ]
+            "affirmative_action": ["gender_40"]
           }
         },
         "type": "multiple_elections",
@@ -105,7 +103,6 @@
         "contact": null,
         "mandate_period_start": "2019-07-01",
         "mandate_period_end": "2020-07-01",
-        "mandate_type": null,
         "group_id": "729bf1a5-6f68-4ed5-bdc2-8cf51ccf5389"
       },
       {
@@ -123,7 +120,6 @@
         "contact": null,
         "mandate_period_start": "2019-01-01",
         "mandate_period_end": "2023-01-01",
-        "mandate_type": null,
         "group_id": "aafef259-39ac-478d-909b-e72c0ce2d397"
       },
       {
@@ -148,9 +144,7 @@
           },
           "candidate_type": "single",
           "counting_rules": {
-            "affirmative_action": [
-              "gender_40"
-            ],
+            "affirmative_action": ["gender_40"],
             "method": "uio_stv"
           }
         },
@@ -159,7 +153,6 @@
         "contact": null,
         "mandate_period_start": "2019-01-01",
         "mandate_period_end": "2023-01-01",
-        "mandate_type": null,
         "group_id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09"
       },
       {
@@ -184,9 +177,7 @@
           },
           "candidate_type": "single",
           "counting_rules": {
-            "affirmative_action": [
-              "gender_40"
-            ],
+            "affirmative_action": ["gender_40"],
             "method": "uio_stv"
           }
         },
@@ -195,7 +186,6 @@
         "contact": null,
         "mandate_period_start": "2019-01-01",
         "mandate_period_end": "2020-01-01",
-        "mandate_type": null,
         "group_id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09"
       },
       {
@@ -220,9 +210,7 @@
           },
           "candidate_type": "single",
           "counting_rules": {
-            "affirmative_action": [
-              "gender_40"
-            ],
+            "affirmative_action": ["gender_40"],
             "method": "uio_stv"
           }
         },
@@ -231,7 +219,6 @@
         "contact": null,
         "mandate_period_start": "2019-01-01",
         "mandate_period_end": "2023-01-01",
-        "mandate_type": null,
         "group_id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09"
       },
       {
@@ -256,9 +243,7 @@
           },
           "candidate_type": "single",
           "counting_rules": {
-            "affirmative_action": [
-              "gender_40"
-            ],
+            "affirmative_action": ["gender_40"],
             "method": "uio_stv"
           }
         },
@@ -267,7 +252,6 @@
         "contact": null,
         "mandate_period_start": "2019-01-01",
         "mandate_period_end": "2020-01-01",
-        "mandate_type": null,
         "group_id": "61c4df2d-f676-4b1f-8ce9-b0caceed1b09"
       }
     ]
