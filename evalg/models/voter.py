@@ -98,19 +98,16 @@ class Voter(ModelBase):
 
     self_added = db.Column(
         sqlalchemy.types.Boolean,
-        db.ForeignKey('verified_status.self_added'),
         doc='voter was added to the poll book by himself',
         nullable=False)
 
     reviewed = db.Column(
         sqlalchemy.types.Boolean,
-        db.ForeignKey('verified_status.reviewed'),
         doc='voter has been reviewed by admin',
         nullable=False)
 
     verified = sqlalchemy.schema.Column(
         sqlalchemy.types.Boolean,
-        db.ForeignKey('verified_status.verified'),
         doc='voter is verified, and any vote should be counted',
         nullable=False)
 
