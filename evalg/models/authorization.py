@@ -13,17 +13,14 @@ Basic idea:
 
 import uuid
 
-from evalg import db
+from sqlalchemy import UniqueConstraint
+from sqlalchemy import types
+from sqlalchemy.sql import schema
+from sqlalchemy.orm import relationship
+
 from evalg.database.types import JsonType
 from evalg.database.types import UuidType
 from .base import ModelBase
-
-
-Column = db.Column
-ForeignKey = db.ForeignKey
-String = db.String
-UniqueConstraint = db.UniqueConstraint
-relationship = db.relationship
 
 
 class Principal(ModelBase):
@@ -34,15 +31,16 @@ class Principal(ModelBase):
     user or a group of users.
     """
 
+    __tablename__ = 'principal'
     __versioned__ = {}
 
-    principal_id = Column(
+    principal_id = schema.Column(
         UuidType,
         default=uuid.uuid4,
         primary_key=True)
 
-    principal_type = Column(
-        String,
+    principal_type = schema.Column(
+        types.String,
         nullable=False)
 
     roles = relationship(
@@ -58,17 +56,18 @@ class Principal(ModelBase):
 class PersonPrincipal(Principal):
     """ Security principal based on a person/user entity. """
 
+    __tablename__ = 'person_principal'
     __versioned__ = {}
 
-    principal_id = Column(
+    principal_id = schema.Column(
         UuidType,
-        ForeignKey('principal.principal_id'),
+        schema.ForeignKey('principal.principal_id'),
         default=uuid.uuid4,
         primary_key=True)
 
-    person_id = Column(
+    person_id = schema.Column(
         UuidType,
-        ForeignKey('person.id'),
+        schema.ForeignKey('person.id'),
         nullable=False)
 
     person = relationship(
@@ -84,17 +83,18 @@ class PersonPrincipal(Principal):
 class GroupPrincipal(Principal):
     """ Security principal based on membership in a group. """
 
+    __tablename__ = 'group_principal'
     __versioned__ = {}
 
-    principal_id = Column(
+    principal_id = schema.Column(
         UuidType,
-        ForeignKey('principal.principal_id'),
+        schema.ForeignKey('principal.principal_id'),
         default=uuid.uuid4,
         primary_key=True)
 
-    group_id = Column(
+    group_id = schema.Column(
         UuidType,
-        ForeignKey('group.id'),
+        schema.ForeignKey('group.id'),
         nullable=False)
 
     group = relationship(
@@ -110,45 +110,47 @@ class GroupPrincipal(Principal):
 class RolePermission(ModelBase):
     """ Permissions granted by role. """
 
+    __tablename__ = 'role_permission'
     __versioned__ = {}
 
-    code = Column(
-        String,
-        ForeignKey('permission.code'),
+    code = schema.Column(
+        types.String,
+        schema.ForeignKey('permission.code'),
         primary_key=True)
 
-    role = Column(
-        String,
-        ForeignKey('role_list.role'),
+    role = schema.Column(
+        types.String,
+        schema.ForeignKey('role_list.role'),
         primary_key=True)
 
 
 class Role(ModelBase):
     """ Roles granted to a principal. """
 
+    __tablename__ = 'role'
     __versioned__ = {}
 
-    grant_id = Column(
+    grant_id = schema.Column(
         UuidType,
         default=uuid.uuid4,
         primary_key=True)
 
-    role = Column(
-        String,
-        ForeignKey('role_list.role'),
+    role = schema.Column(
+        types.String,
+        schema.ForeignKey('role_list.role'),
         nullable=False)
 
-    role_type = Column(
-        String(50),
+    role_type = schema.Column(
+        types.String(50),
         nullable=False)
 
     trait = relationship(
         'RoleList',
         foreign_keys=(role, role_type))
 
-    principal_id = Column(
+    principal_id = schema.Column(
         UuidType,
-        ForeignKey('principal.principal_id'),
+        schema.ForeignKey('principal.principal_id'),
         nullable=False)
 
     principal = relationship(
@@ -167,19 +169,20 @@ class Role(ModelBase):
 class RoleList(ModelBase):
     """ List of roles in system. """
 
+    __tablename__ = 'role_list'
     __versioned__ = {}
 
-    role = Column(
-        String,
+    role = schema.Column(
+        types.String,
         primary_key=True)
 
-    role_type = Column(
-        String(50),
+    role_type = schema.Column(
+        types.String(50),
         nullable=False)
 
     role_class = Role
 
-    name = Column(
+    name = schema.Column(
         JsonType,
         nullable=False)
 
@@ -201,29 +204,30 @@ class RoleList(ModelBase):
 class OuRole(Role):
     """ Roles granted to principal on OU. """
 
+    __tablename__ = 'ou_role'
     __versioned__ = {}
 
-    grant_id = Column(
+    grant_id = schema.Column(
         UuidType,
-        ForeignKey('role.grant_id'),
+        schema.ForeignKey('role.grant_id'),
         default=uuid.uuid4,
         primary_key=True)
 
-    role = Column(
-        String,
-        ForeignKey('ou_role_list.role'),
+    role = schema.Column(
+        types.String,
+        schema.ForeignKey('ou_role_list.role'),
         nullable=False)
 
-    ou_id = Column(
+    ou_id = schema.Column(
         UuidType,
-        ForeignKey('organizational_unit.id'),
+        schema.ForeignKey('organizational_unit.id'),
         nullable=False)
 
     ou = relationship('OrganizationalUnit')
 
-    principal_id = Column(
+    principal_id = schema.Column(
         UuidType,
-        ForeignKey('principal.principal_id'),
+        schema.ForeignKey('principal.principal_id'),
         nullable=False)
 
     principal = relationship(
@@ -249,11 +253,12 @@ class OuRole(Role):
 class OuRoleList(RoleList):
     """ Roles based on OU. """
 
+    __tablename__ = 'ou_role_list'
     __versioned__ = {}
 
-    role = Column(
-        String,
-        ForeignKey('role_list.role'),
+    role = schema.Column(
+        types.String,
+        schema.ForeignKey('role_list.role'),
         primary_key=True)
 
     role_class = OuRole
@@ -267,22 +272,23 @@ class OuRoleList(RoleList):
 class ElectionRole(Role):
     """ Roles granted on election. """
 
+    __tablename__ = 'election_role'
     __versioned__ = {}
 
-    grant_id = Column(
+    grant_id = schema.Column(
         UuidType,
-        ForeignKey('role.grant_id'),
+        schema.ForeignKey('role.grant_id'),
         default=uuid.uuid4,
         primary_key=True)
 
-    role = Column(
-        String,
-        ForeignKey('election_role_list.role'),
+    role = schema.Column(
+        types.String,
+        schema.ForeignKey('election_role_list.role'),
         nullable=False)
 
-    election_id = Column(
+    election_id = schema.Column(
         UuidType,
-        ForeignKey('election.id'),
+        schema.ForeignKey('election.id'),
         nullable=False)
 
     election = relationship(
@@ -290,9 +296,9 @@ class ElectionRole(Role):
         backref='roles',
         lazy='joined')
 
-    principal_id = Column(
+    principal_id = schema.Column(
         UuidType,
-        ForeignKey('principal.principal_id'),
+        schema.ForeignKey('principal.principal_id'),
         nullable=False)
 
     principal = relationship(
@@ -316,11 +322,12 @@ class ElectionRole(Role):
 class ElectionRoleList(RoleList):
     """ Roles given on election (group). """
 
+    __tablename__ = 'election_role_list'
     __versioned__ = {}
 
-    role = Column(
-        String,
-        ForeignKey('role_list.role'),
+    role = schema.Column(
+        types.String,
+        schema.ForeignKey('role_list.role'),
         primary_key=True)
 
     role_class = ElectionRole
@@ -339,31 +346,32 @@ class ElectionRoleList(RoleList):
 class ElectionGroupRole(Role):
     """ Roles granted on election. """
 
+    __tablename__ = 'election_group_role'
     __versioned__ = {}
 
-    grant_id = Column(
+    grant_id = schema.Column(
         UuidType,
-        ForeignKey('role.grant_id'),
+        schema.ForeignKey('role.grant_id'),
         default=uuid.uuid4,
         primary_key=True)
 
-    role = Column(
-        String,
-        ForeignKey('election_role_list.role'),
+    role = schema.Column(
+        types.String,
+        schema.ForeignKey('election_role_list.role'),
         nullable=False)
 
-    group_id = Column(
+    group_id = schema.Column(
         UuidType,
-        ForeignKey('election_group.id'))
+        schema.ForeignKey('election_group.id'))
 
     group = relationship(
         'ElectionGroup',
         backref='roles',
         lazy='joined')
 
-    principal_id = Column(
+    principal_id = schema.Column(
         UuidType,
-        ForeignKey('principal.principal_id'),
+        schema.ForeignKey('principal.principal_id'),
         nullable=False)
 
     principal = relationship(
@@ -387,13 +395,14 @@ class ElectionGroupRole(Role):
 class Permission(ModelBase):
     """Permission."""
 
+    __tablename__ = 'permission'
     __versioned__ = {}
 
-    code = Column(
-        String,
+    code = schema.Column(
+        types.String,
         primary_key=True)
 
-    doc = Column(String)
+    doc = schema.Column(types.String)
 
     roles = relationship(
         'RoleList',
