@@ -2,6 +2,7 @@ flask-fixtures
 pytest
 pytest-coverage
 pytest-flask
+pytest-flask-sqlalchemy
 pytest-pythonpath
 pytest-watch
 pytest-xdist
