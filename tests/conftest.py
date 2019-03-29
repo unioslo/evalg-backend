@@ -1,11 +1,9 @@
 import pytest
 
-from flask_sqlalchemy import SQLAlchemy
-
-
 from evalg import create_app, db
 
 pytest_plugins = ['pytest-flask-sqlalchemy']
+
 
 @pytest.fixture(scope='session')
 def config():
@@ -37,7 +35,9 @@ def app(config):
 @pytest.fixture(scope='session')
 def _db(app, database):
     """
-    Provide the transactional fixtures with access to the database via a Flask-SQLAlchemy
-    database connection.
+    Provide the transactional fixtures with access to the database via a
+    Flask-SQLAlchemy database connection.
+
+    This fixture is expected by `pytest-flask-sqlalchemy
     """
     return database
