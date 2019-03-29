@@ -10,9 +10,15 @@ from functools import wraps
 from .models.election import ElectionGroup, Election
 from .models.pollbook import PollBook
 from .models.election_list import ElectionList
-from .api import NotFoundError, BadRequest
 from .authorization import check_perms, all_perms, PermissionDenied
 from evalg import db
+
+
+class NotFoundError(Exception):
+    pass
+
+class BadRequest(Exception):
+    pass
 
 
 def eperm(permission, arg=0):
@@ -329,7 +335,6 @@ def make_group_from_template(template_name, ou, principals=()):
                             end=default_end(),
                             mandate_period_start=mandate_period_start(e),
                             mandate_period_end=mandate_period_end(e),
-                            candidate_type=metadata['candidate_type'],
                             meta=metadata,
                             active=group_type == 'single_election',)
         election.lists = list(map(make_candidate_list, e['voter_groups']))

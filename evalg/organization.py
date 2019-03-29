@@ -5,8 +5,10 @@
 
 from functools import wraps
 from .models.ou import OrganizationalUnit
-from .api import NotFoundError
 from .authorization import check_perms, all_perms, PermissionDenied
+
+class NotFoundError(Exception):
+    pass
 
 
 def ouperm(permission, arg=0):

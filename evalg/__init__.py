@@ -5,9 +5,7 @@ import os
 
 import flask_sqlalchemy
 from flask import Flask, json, has_request_context
-from flask_apispec.extension import FlaskApiSpec
 from flask_cors import CORS
-from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
 
 
@@ -59,20 +57,14 @@ APP_INSTANCE_PATH_ENVIRON_NAME = 'EVALG_INSTANCE_PATH'
 db = SQLAlchemy()
 """Database."""
 
-ma = Marshmallow()
-"""Marshmallow."""
-
 migrate = Migrate()
 """Migrations."""
-
-docs = FlaskApiSpec()
-"""API documentation."""
 
 cors = CORS()
 """CORS."""
 
 
-def create_app(config=None, flask_class=Flask):
+def create_app(config=None, config_file=None, flask_class=Flask):
     """
     Create application.
 
@@ -94,14 +86,16 @@ def create_app(config=None, flask_class=Flask):
     # Setup CLI
     cli.init_app(app)
 
-    init_config(app, config,
+    init_config(app,
+                config=config,
+                config_file=config_file,
                 environ_name=APP_CONFIG_ENVIRON_NAME,
                 default_file_name=APP_CONFIG_FILE_NAME,
                 default_config=default_config)
 
     # Load evalg_templates as config.
     # TODO: Do this another way?
-    init_config(app, config,
+    init_config(app,
                 environ_name=APP_CONFIG_ENVIRON_NAME,
                 default_file_name=APP_TEMPLATE_CONFIG_FILE_NAME,
                 default_config=default_election_template_config)
@@ -112,7 +106,6 @@ def create_app(config=None, flask_class=Flask):
 
     # Setup db
     db.init_app(app)
-    ma.init_app(app)
     migrate.init_app(app, db, directory='evalg/migrations')
 
     # Feide Gatekeeper: Add localhost and trusted proxy subnets to whitelist
@@ -125,11 +118,6 @@ def create_app(config=None, flask_class=Flask):
     authentication.init_app(app)
 
     # Setup API
-    docs.init_app(app)
-
-    from evalg import api
-    api.init_app(app)
-
     from evalg import graphql
     graphql.init_app(app)
 
@@ -164,9 +152,8 @@ def create_app(config=None, flask_class=Flask):
     @audit_plugin_source.register('user_id')
     def get_user_id():
         from evalg import authentication
-        if authentication.user.is_authenticated():
-            if authentication.user.is_authentication_finished():
-                return authentication.user.person.id
+        if authentication.user.is_authentication_finished():
+            return authentication.user.person.id
         return None
 
     @meta_plugin_source.register('feide_id')
