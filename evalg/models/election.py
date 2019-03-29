@@ -32,12 +32,6 @@ class AbstractElection(ModelBase):
     type = db.Column(db.UnicodeText)
     """ Internal use """
 
-    candidate_type = db.Column(db.Text)
-    """ single | single-team | party-list """
-
-    mandate_type = db.Column(evalg.database.types.MutableJson)
-    """ Translated HR type """
-
     meta = db.Column(evalg.database.types.NestedMutableJson)
     """ Template metadata """
 
@@ -49,7 +43,7 @@ class ElectionGroup(AbstractElection):
     ou_id = db.Column(
         evalg.database.types.UuidType,
         db.ForeignKey('organizational_unit.id'),
-        nullable=False)
+        nullable=True)
 
     ou = db.relationship('OrganizationalUnit')
 
