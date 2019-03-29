@@ -12,7 +12,7 @@ import uuid
 from enum import Enum
 
 import sqlalchemy.types
-from sqlalchemy.orm import validates, column_property
+from sqlalchemy.orm import validates
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -43,14 +43,7 @@ class VerifiedStatus(Enum):
             return 'voter not in census, verified by admin'
 
 
-# Mapping (manual, reviewed, verified) to VerifiedStatus and vice versa
-verified_status2db_values = {
-    VerifiedStatus.SELF_ADDED_NOT_REVIEWED: (True, False, False),
-    VerifiedStatus.ADMIN_ADDED_REJECTED: (False, True, False),
-    VerifiedStatus.SELF_ADDED_REJECTED: (True, True, False),
-    VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED: (False, False, True),
-    VerifiedStatus.SELF_ADDED_VERIFIED: (True, True, True)}
-
+# Mapping (manual, reviewed, verified) to VerifiedStatus
 db_values2verified_status = {
     (True, False, False): VerifiedStatus.SELF_ADDED_NOT_REVIEWED,
     (False, True, False): VerifiedStatus.ADMIN_ADDED_REJECTED,
