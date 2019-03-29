@@ -12,7 +12,7 @@ import uuid
 from enum import Enum
 
 import sqlalchemy.types
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, column_property
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -132,11 +132,24 @@ class Voter(ModelBase):
     def validate_id_type(self, key, id_type):
         return IdType(id_type).value
 
-    # @validates('self_added', 'reviewed', 'verified')
-    # def validate_verified_status(self, key, self_added, reviewed, verified):
-    #     return db_values2verified_status[(self_added,
-    #                                       reviewed,
-    #                                       verified)]
+    @validates('self_added', 'reviewed', 'verified')
+    def validate_verified_status(self, key, value):
+        current_values = dict(self_added=self.self_added,
+                              reviewed=self.reviewed,
+                              verified=self.verified)
+
+        # Don't throw error if a column doesn't have a value yet
+        if any(value is None for value in current_values.values()):
+            return value
+
+        current_values[key] = value
+        new_values = tuple(current_values.values())
+        if not db_values2verified_status.get(new_values):
+            raise ValueError(
+                'Unvalid combination of values given for columns `{}`, `{}`, '
+                '`{}`, ({}, {}, {})'.format(*current_values.keys(),
+                                            *current_values.values()))
+        return value
 
     __table_args__ = (
         UniqueConstraint(

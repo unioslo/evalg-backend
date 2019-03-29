@@ -41,4 +41,3 @@ class ElectionQuery(graphene.ObjectType):
 
     # Votes
     votes_for_person = nodes.votes.find_votes_query
-    election_vote_count = nodes.votes.election_vote_count_query

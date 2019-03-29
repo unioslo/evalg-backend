@@ -69,12 +69,6 @@ def resolve_election_count_by_id(_, info, **args):
     return ElectionVoteCounts(**data)
 
 
-election_vote_count_query = graphene.Field(
-    ElectionVoteCounts,
-    resolver=resolve_election_count_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
-
-
 #
 # Mutations
 #
