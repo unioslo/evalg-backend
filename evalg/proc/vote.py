@@ -10,7 +10,7 @@ import evalg.database.query
 from evalg.models.ballot import Envelope
 from evalg.models.pollbook import PollBook
 from evalg.models.election import ElectionGroup, Election
-from evalg.models.voter import Voter, db_values2verified_status
+from evalg.models.voter import Voter, verified_status
 from evalg.models.votes import Vote
 from evalg.models.person import PersonExternalId, Person
 
@@ -130,9 +130,9 @@ def get_election_vote_counts(session, election):
 
     count = collections.Counter()
     for self_added, reviewed, verified, votes in query.all():
-        verified_status = db_values2verified_status[(self_added,
-                                                     reviewed,
-                                                     verified)]
+        verified_status = verified_status[(self_added,
+                                           reviewed,
+                                           verified)]
         count[verified_status.name.lower()] += votes
     count['total'] = 0
     for votes in count.values():

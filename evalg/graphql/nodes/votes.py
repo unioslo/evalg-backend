@@ -50,7 +50,7 @@ class ElectionVoteCounts(graphene.ObjectType):
     )
 
     verified_map = dict()
-    for status in evalg.models.voter.db_values2verified_status.values():
+    for status in evalg.models.voter.verified_status.values():
         verified_map[status.name.lower()] = graphene.Int(default_value=0)
     locals().update(verified_map)
 

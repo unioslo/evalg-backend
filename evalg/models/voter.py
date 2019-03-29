@@ -13,7 +13,7 @@ from enum import Enum
 
 import sqlalchemy.types
 from sqlalchemy.orm import validates
-from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.schema import UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from evalg import db
@@ -44,12 +44,32 @@ class VerifiedStatus(Enum):
 
 
 # Mapping (manual, reviewed, verified) to VerifiedStatus
-db_values2verified_status = {
+verified_status = {
     (True, False, False): VerifiedStatus.SELF_ADDED_NOT_REVIEWED,
     (False, True, False): VerifiedStatus.ADMIN_ADDED_REJECTED,
     (True, True, False): VerifiedStatus.SELF_ADDED_REJECTED,
     (False, False, True): VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED,
     (True, True, True): VerifiedStatus.SELF_ADDED_VERIFIED}
+
+
+# Returns a CheckConstraint equivalent to:
+# (self_added, reviewed, verified) in verified_status
+def get_check_constraint():
+    names = ('self_added', 'reviewed', 'verified')
+    valid_combinations = tuple(verified_status.keys())
+    last_col = {len(names)-1: ') '}
+    last_row = {len(valid_combinations) - 1: ''}
+    constraint = ''
+
+    for row in range(len(valid_combinations)):
+        constraint += '('
+        for col in range(len(names)):
+            constraint += names[col] + \
+                          ' = ' + \
+                          str(valid_combinations[row][col]) + \
+                          last_col.get(col, ' AND ')
+        constraint += last_row.get(row, ' OR ')
+    return constraint
 
 
 class Voter(ModelBase):
@@ -113,9 +133,9 @@ class Voter(ModelBase):
 
     @hybrid_property
     def verified_status(self):
-        return db_values2verified_status[(self.self_added,
-                                          self.reviewed,
-                                          self.verified)]
+        return verified_status[(self.self_added,
+                                self.reviewed,
+                                self.verified)]
 
     #
     # TODO: Get ID_TYPE_CHOICES from PersonExternalId, or implement a separate
@@ -125,27 +145,9 @@ class Voter(ModelBase):
     def validate_id_type(self, key, id_type):
         return IdType(id_type).value
 
-    @validates('self_added', 'reviewed', 'verified')
-    def validate_verified_status(self, key, value):
-        current_values = dict(self_added=self.self_added,
-                              reviewed=self.reviewed,
-                              verified=self.verified)
-
-        # Don't throw error if a column doesn't have a value yet
-        if any(value is None for value in current_values.values()):
-            return value
-
-        current_values[key] = value
-        new_values = tuple(current_values.values())
-        if not db_values2verified_status.get(new_values):
-            raise ValueError(
-                'Unvalid combination of values given for columns `{}`, `{}`, '
-                '`{}`, ({}, {}, {})'.format(*current_values.keys(),
-                                            *current_values.values()))
-        return value
-
     __table_args__ = (
         UniqueConstraint(
             'pollbook_id', 'id_type', 'id_value',
             name='_pollbook_voter_uc'),
+        CheckConstraint(get_check_constraint())
     )
