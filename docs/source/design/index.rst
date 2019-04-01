@@ -6,6 +6,7 @@ Design
 
    election-types
    voters-review-before-counting
+   ballot-encryption
 
 .. todo::
 
