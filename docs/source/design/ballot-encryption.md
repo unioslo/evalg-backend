@@ -74,8 +74,8 @@ alle stemmer i et valg har samme lengde. Paddingen må være stor nok til å kun
 mulige stemmesedler i et valg.
 
 
-### Nouce
-PyNaCl generer opp tilfeldig nouce automatisk.
+### Nonce
+PyNaCl generer opp tilfeldig nonce automatisk.
 
 ## Se på/advanced 
 Som en del av å implementere kryptering av stemmesedler bør en se på følgende:
