@@ -49,6 +49,8 @@ class ElectionMutations(graphene.ObjectType):
         nodes.pollbook.AddVoterByIdentifier.Field()
     update_voter_pollbook = \
         nodes.pollbook.UpdateVoterPollBook.Field()
+    update_voter_reason = \
+        nodes.pollbook.UpdateVoterReason.Field()
     delete_voter = \
         nodes.pollbook.DeleteVoter.Field()
     delete_voters_in_pollbook = \
