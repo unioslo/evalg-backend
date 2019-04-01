@@ -18,9 +18,9 @@
         "id_type": "feide_id",
         "id_value": "ford@example.com",
         "pollbook_id": "dc382424-e024-42b0-a445-9839269790e4",
-        "self_added": false,
+        "self_added": true,
         "reviewed": false,
-        "verified": true
+        "verified": false
       }
     ]
   }

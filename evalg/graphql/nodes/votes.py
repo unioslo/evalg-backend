@@ -49,10 +49,30 @@ class ElectionVoteCounts(graphene.ObjectType):
         description='total votes'
     )
 
-    verified_map = dict()
-    for status in evalg.models.voter.verified_status.values():
-        verified_map[status.name.lower()] = graphene.Int(default_value=0)
-    locals().update(verified_map)
+    self_added_not_reviewed = graphene.Int(
+        default_value=0,
+        description='voters not in census, admin review needed'
+    )
+
+    admin_added_rejected = graphene.Int(
+        default_value=0,
+        description='voter in census, rejected by admin'
+    )
+
+    self_added_rejected = graphene.Int(
+        default_value=0,
+        description='voter not in census, rejected by admin'
+    )
+
+    admin_added_auto_verified = graphene.Int(
+        default_value=0,
+        description='voter in census'
+    )
+
+    self_added_verified = graphene.Int(
+        default_value=0,
+        description='voter not in census, verified by admin'
+    )
 
 
 def resolve_election_count_by_id(_, info, **args):

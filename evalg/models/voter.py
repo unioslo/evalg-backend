@@ -43,33 +43,13 @@ class VerifiedStatus(Enum):
             return 'voter not in census, verified by admin'
 
 
-# Mapping (manual, reviewed, verified) to VerifiedStatus
+# Mapping (self_added, reviewed, verified) to VerifiedStatus
 verified_status = {
     (True, False, False): VerifiedStatus.SELF_ADDED_NOT_REVIEWED,
     (False, True, False): VerifiedStatus.ADMIN_ADDED_REJECTED,
     (True, True, False): VerifiedStatus.SELF_ADDED_REJECTED,
     (False, False, True): VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED,
     (True, True, True): VerifiedStatus.SELF_ADDED_VERIFIED}
-
-
-# Returns a CheckConstraint equivalent to:
-# (self_added, reviewed, verified) in verified_status
-def get_check_constraint():
-    names = ('self_added', 'reviewed', 'verified')
-    valid_combinations = tuple(verified_status.keys())
-    last_col = {len(names)-1: ') '}
-    last_row = {len(valid_combinations) - 1: ''}
-    constraint = ''
-
-    for row in range(len(valid_combinations)):
-        constraint += '('
-        for col in range(len(names)):
-            constraint += names[col] + \
-                          ' = ' + \
-                          str(valid_combinations[row][col]) + \
-                          last_col.get(col, ' AND ')
-        constraint += last_row.get(row, ' OR ')
-    return constraint
 
 
 class Voter(ModelBase):
@@ -145,9 +125,32 @@ class Voter(ModelBase):
     def validate_id_type(self, key, id_type):
         return IdType(id_type).value
 
+    @staticmethod
+    def verified_status_check_constraint():
+        """Get a CheckConstraint for self_added, reviewed and verified
+
+        :return: A CheckConstraint equivalent to:
+            (self_added, reviewed, verified) in verified_status
+        """
+        names = ('self_added', 'reviewed', 'verified')
+        valid_combinations = tuple(verified_status.keys())
+        last_col = {len(names) - 1: ') '}
+        last_row = {len(valid_combinations) - 1: ''}
+        constraint = ''
+
+        for row in range(len(valid_combinations)):
+            constraint += '('
+            for col in range(len(names)):
+                constraint += names[col] + \
+                              ' = ' + \
+                              str(valid_combinations[row][col]) + \
+                              last_col.get(col, ' AND ')
+            constraint += last_row.get(row, ' OR ')
+        return CheckConstraint(constraint)
+
     __table_args__ = (
         UniqueConstraint(
             'pollbook_id', 'id_type', 'id_value',
             name='_pollbook_voter_uc'),
-        CheckConstraint(get_check_constraint())
+        verified_status_check_constraint.__func__()
     )
