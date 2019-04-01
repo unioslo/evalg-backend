@@ -14,6 +14,7 @@
 #
 import os
 import sys
+from recommonmark.transform import AutoStructify
 sys.path.insert(0, os.path.abspath('..'))
 
 
@@ -46,6 +47,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
     'recommonmark',
+    'sphinxcontrib.seqdiag',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -79,6 +81,15 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+# Fontpath for seqdiag (truetype font)
+seqdiag_fontpath = '/usr/share/fonts/dejavu/DejaVuSans.ttf'
+
+# AutoStructify setup
+def setup(app):
+    app.add_config_value('recommonmark_config', {
+        'enable_eval_rst': True,
+    }, True)
+    app.add_transform(AutoStructify)
 
 # -- Options for HTML output -------------------------------------------------
 
