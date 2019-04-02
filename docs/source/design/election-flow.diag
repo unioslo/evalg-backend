@@ -1,0 +1,15 @@
+seqdiag {
+    browser -> application [label = "deliver vote"]{
+        application -> application [label = "verify ballot"];
+        application -> application [label = "create cryptologic hash"];
+        application -> database [label = "INSERT hash"];
+        application <- database;
+        application -> application [label = "add padding"];
+        application -> database [label = "SELECT election public key"];
+        application <- database;
+        application -> application [label = "encrypt vote using public key"];
+        application -> database [label = "INSERT encrypted vote"];
+        application <- database;
+    }
+    browser <- application [label = "receipt"]
+}
