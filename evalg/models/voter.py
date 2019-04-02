@@ -134,9 +134,9 @@ class Voter(ModelBase):
             constraint += '('
             for col in range(len(names)):
                 constraint += names[col] + \
-                              ' = ' + \
-                              str(valid_combinations[row][col]) + \
-                              last_col.get(col, ' AND ')
+                    ' = ' + \
+                    str(int(valid_combinations[row][col])) + \
+                    last_col.get(col, ' AND ')
             constraint += last_row.get(row, ' OR ')
         return CheckConstraint(constraint)
 
