@@ -44,21 +44,34 @@ class ElectionVoteCounts(graphene.ObjectType):
     """ Vote counts for election, grouped by voter status. """
     id = graphene.UUID()
 
-    approved = graphene.Int(
-        default_value=0,
-        description='approved votes',
-    )
-    need_approval = graphene.Int(
-        default_value=0,
-        description='votes awaiting approval',
-    )
-    omitted = graphene.Int(
-        default_value=0,
-        description='votes that will be omitted from the count',
-    )
     total = graphene.Int(
         default_value=0,
         description='total votes'
+    )
+
+    self_added_not_reviewed = graphene.Int(
+        default_value=0,
+        description='voters not in census, admin review needed'
+    )
+
+    admin_added_rejected = graphene.Int(
+        default_value=0,
+        description='voter in census, rejected by admin'
+    )
+
+    self_added_rejected = graphene.Int(
+        default_value=0,
+        description='voter not in census, rejected by admin'
+    )
+
+    admin_added_auto_verified = graphene.Int(
+        default_value=0,
+        description='voter in census'
+    )
+
+    self_added_verified = graphene.Int(
+        default_value=0,
+        description='voter not in census, verified by admin'
     )
 
 
@@ -74,12 +87,6 @@ def resolve_election_count_by_id(_, info, **args):
     }
     data.update(evalg.proc.vote.get_election_vote_counts(session, election))
     return ElectionVoteCounts(**data)
-
-
-election_vote_count_query = graphene.Field(
-    ElectionVoteCounts,
-    resolver=resolve_election_count_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
 
 
 #

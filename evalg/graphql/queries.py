@@ -8,7 +8,6 @@ from . import nodes
 
 
 class ElectionQuery(graphene.ObjectType):
-
     # Elections and election groups
     election_groups = nodes.election_group.list_election_groups_query
     election_group = nodes.election_group.get_election_group_query
@@ -30,6 +29,7 @@ class ElectionQuery(graphene.ObjectType):
     voters = nodes.pollbook.list_voters_query
     voter = nodes.pollbook.get_voter_query
     voters_for_person = nodes.pollbook.find_voters_query
+    search_voters = nodes.pollbook.search_voters_query
 
     # Users, persons and groups
     persons = nodes.person.list_persons_query
@@ -37,7 +37,7 @@ class ElectionQuery(graphene.ObjectType):
     search_person = nodes.person.search_persons_query
     search_group = nodes.group.search_groups_query
     viewer = nodes.person.get_current_viewer_query
+    person_for_voter = nodes.person.get_person_for_voter_query
 
     # Votes
     votes_for_person = nodes.votes.find_votes_query
-    election_vote_count = nodes.votes.election_vote_count_query

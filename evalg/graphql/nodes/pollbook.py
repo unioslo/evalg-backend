@@ -39,9 +39,34 @@ logger = logging.getLogger(__name__)
 #   elsewhere in order to show or mutate objects. The business logic should not
 #   be tied to GraphQL.
 
+
+class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = evalg.models.voter.Voter
+
+    verified_status = graphene.Enum.from_enum(
+        evalg.models.voter.VerifiedStatus
+    )()
+
+
 class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.pollbook.PollBook
+
+    self_added_voters = graphene.List(lambda: Voter)
+    admin_added_voters = graphene.List(lambda: Voter)
+
+    def resolve_self_added_voters(self, info):
+        session = get_session(info)
+        return evalg.proc.vote.get_voters_by_self_added(session,
+                                                        self.id,
+                                                        self_added=True).all()
+
+    def resolve_admin_added_voters(self, info):
+        session = get_session(info)
+        return evalg.proc.vote.get_voters_by_self_added(session,
+                                                        self.id,
+                                                        self_added=False).all()
 
 
 def resolve_pollbooks_by_fields(_, info):
@@ -62,13 +87,17 @@ get_pollbook_query = graphene.Field(
     id=graphene.Argument(graphene.UUID, required=True))
 
 
-class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
-    class Meta:
-        model = evalg.models.voter.Voter
-
-
 def resolve_voters_by_fields(_, info):
     return Voter.get_query(info).all()
+
+
+def resolve_search_voters(_, info, **args):
+    self_added = args.get('self_added', None)
+    election_group_id = args.get('election_group_id')
+    session = get_session(info)
+    return evalg.proc.vote.get_voters_for_election_group(
+        session, election_group_id, self_added=self_added
+    ).all()
 
 
 def resolve_voter_by_id(_, info, **args):
@@ -88,6 +117,15 @@ def resolve_voters_by_person_id(_, info, **args):
 list_voters_query = graphene.List(
     Voter,
     resolver=resolve_voters_by_fields)
+
+
+search_voters_query = graphene.List(
+    Voter,
+    resolver=resolve_search_voters,
+    election_group_id=graphene.Argument(graphene.UUID, required=True),
+    self_added=graphene.Argument(graphene.Boolean, required=False)
+    )
+
 
 get_voter_query = graphene.Field(
     Voter,
@@ -111,6 +149,7 @@ class UpdateVoterPollBook(graphene.Mutation):
     Add a pre-existing voter to another pollbook?
     Is this even possible?
     """
+
     class Arguments:
         id = graphene.UUID(required=True)
         pollbook_id = graphene.UUID(required=True)
@@ -146,10 +185,46 @@ class UpdateVoterReason(graphene.Mutation):
         return UpdateVoterReason(ok=True)
 
 
+class UndoReviewSelfAddedVoter(graphene.Mutation):
+    class Arguments:
+        id = graphene.UUID(required=True)
+
+    ok = graphene.Boolean()
+
+    def mutate(self, info, **kwargs):
+        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
+        if not voter.reviewed or not voter.self_added:
+            return UndoReviewSelfAddedVoter(ok=False)
+        voter.reviewed = False
+        voter.verified = False
+        db.session.add(voter)
+        db.session.commit()
+        return UndoReviewSelfAddedVoter(ok=True)
+
+
+class ReviewSelfAddedVoter(graphene.Mutation):
+    class Arguments:
+        id = graphene.UUID(required=True)
+        verify = graphene.Boolean(required=True)
+
+    ok = graphene.Boolean()
+
+    def mutate(self, info, **kwargs):
+        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
+        if not voter.self_added or voter.reviewed:
+            return ReviewSelfAddedVoter(ok=False)
+        voter.reviewed = True
+        voter.verified = kwargs.get('verify')
+        db.session.add(voter)
+        db.session.commit()
+        return ReviewSelfAddedVoter(ok=True)
+
+
 class DeleteVotersInPollBook(graphene.Mutation):
     """
     Delete *all* voters in a given pollbook.
     """
+
     class Arguments:
         id = graphene.UUID(required=True)
 
@@ -172,6 +247,7 @@ class AddVoterByIdentifier(graphene.Mutation):
     """
     Create a single voter object in a pollbook.
     """
+
     class Arguments:
         id_type = VoterIdType(required=True)
         id_value = graphene.String(required=True)
@@ -194,7 +270,7 @@ class AddVoterByIdentifier(graphene.Mutation):
         id_type = kwargs['id_type']
         id_value = kwargs['id_value']
         pollbook_id = kwargs['pollbook_id']
-        manual = not kwargs.get('approved', False)
+        self_added = not kwargs.get('approved', False)
         reason = kwargs.get('reason')
 
         pollbook = evalg.database.query.lookup(
@@ -206,7 +282,7 @@ class AddVoterByIdentifier(graphene.Mutation):
             pollbook,
             id_type,
             id_value,
-            manual=manual,
+            self_added=self_added,
             reason=reason)
 
         db.session.commit()
@@ -217,6 +293,7 @@ class AddVoterByPersonId(graphene.Mutation):
     """
     Create a single voter object in a pollbook.
     """
+
     class Arguments:
         person_id = graphene.UUID(required=True)
         pollbook_id = graphene.UUID(required=True)
@@ -237,7 +314,7 @@ class AddVoterByPersonId(graphene.Mutation):
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
         person_id = kwargs['person_id']
         pollbook_id = kwargs['pollbook_id']
-        manual = not kwargs.get('approved', False)
+        self_added = not kwargs.get('approved', False)
         reason = kwargs.get('reason')
 
         person = evalg.database.query.lookup(
@@ -253,7 +330,7 @@ class AddVoterByPersonId(graphene.Mutation):
         voter = policy.add_voter(
             pollbook,
             person,
-            manual=manual,
+            self_added=self_added,
             reason=reason)
 
         db.session.commit()
@@ -267,6 +344,7 @@ class DeleteVoter(graphene.Mutation):
     """
     Delete a single voter object from a pollbook.
     """
+
     class Arguments:
         id = graphene.UUID(required=True)
 
@@ -323,14 +401,16 @@ class UploadCensusFile(graphene.Mutation):
             return UploadCensusFileResponse(
                 success=False,
                 code='unsupported-file-type',
-                message='Unsupported file type {!r}'.format(census_file.mimetype))
+                message='Unsupported file type {!r}'.format(
+                    census_file.mimetype))
 
         id_type = parser.id_type
         logger.debug('Loading file using parser %r (id_type=%r)',
                      type(parser), id_type)
         for i, id_value in enumerate(parser.parse(), 1):
             try:
-                voters.add_voter_id(pollbook, id_type, id_value, manual=False)
+                voters.add_voter_id(pollbook, id_type, id_value,
+                                    self_added=False)
             except Exception as e:
                 logger.warning('Entry #%d: unable to add voter: %s',
                                i, e, exc_info=True)

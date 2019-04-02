@@ -9,9 +9,10 @@ from sqlalchemy.sql import and_, select, func
 import evalg.database.query
 from evalg.models.ballot import Envelope
 from evalg.models.pollbook import PollBook
-from evalg.models.voter import Voter
+from evalg.models.election import ElectionGroup, Election
+from evalg.models.voter import Voter, verified_status
 from evalg.models.votes import Vote
-from evalg.models.person import PersonExternalId
+from evalg.models.person import PersonExternalId, Person
 
 logger = logging.getLogger(__name__)
 
@@ -106,23 +107,15 @@ def get_election_vote_counts(session, election):
     """
     Get a dict of vote counts for the election.
 
-    The votes are grouped by
-
-    approved
-        Votes from voters that are ``verified``
-
-    need_approval
-        Votes from voters that are ``manual`` and not ``verified``
-
-    omitted
-        Votes from voters that are not ``manual`` and not ``verified``
+    The votes are grouped by the voters' ``verified_status``
     """
     voters_subq = select([Voter.id]).where(
         Voter.pollbook_id.in_(
             select([PollBook.id]).where(
                 PollBook.election_id == election.id)))
     query = session.query(
-        Voter.manual,
+        Voter.self_added,
+        Voter.reviewed,
         Voter.verified,
         func.count(Vote.ballot_id)
     ).join(
@@ -130,20 +123,19 @@ def get_election_vote_counts(session, election):
     ).filter(
         Voter.id.in_(voters_subq)
     ).group_by(
-        Voter.manual,
-        Voter.verified
+        Voter.self_added,
+        Voter.reviewed,
+        Voter.verified,
     )
-    keys = {
-        (True, True): 'approved',
-        (True, False): 'need_approval',
-        (False, True): 'approved',
-        (False, False): 'omitted',
-    }
+
     count = collections.Counter()
-    for m, v, c in query.all():
-        key = keys[m, v]
-        count[key] += c
-    count['total'] = count['approved'] + count['need_approval']
+    for self_added, reviewed, verified, votes in query.all():
+        name = verified_status[(self_added, reviewed, verified)].name
+        count[name.lower()] += votes
+    total = 0
+    for votes in count.values():
+        total += votes
+    count['total'] = total
     return count
 
 
@@ -168,3 +160,58 @@ def get_votes_for_person(session, person):
         PollBook.priority
     )
     return vote_query
+
+
+def get_person_for_voter(session, voter):
+    query = session.query(
+        Person
+    ).join(
+        PersonExternalId,
+        and_(
+            Person.id == PersonExternalId.person_id,
+        )
+    ).join(
+        Voter,
+        and_(
+            Voter.id_type == PersonExternalId.id_type,
+            Voter.id_value == PersonExternalId.id_value
+        )
+    ).filter(
+        Voter.id == voter.id
+    ).first()
+
+    return query
+
+
+def get_voters_for_election_group(session, election_group_id, self_added=None):
+    query = session.query(
+        Voter
+    ).join(
+        PollBook,
+        and_(
+            Voter.pollbook_id == PollBook.id
+        )
+    ).join(
+        Election,
+        and_(
+            PollBook.election_id == Election.id
+        )
+    ).join(
+        ElectionGroup,
+        and_(
+            Election.group_id == election_group_id
+        )
+    )
+    if self_added is not None:
+        query = query.filter(Voter.self_added == self_added)
+    return query
+
+
+def get_voters_by_self_added(session, pollbook_id, self_added):
+    query = session.query(
+        Voter
+    ).filter(
+        Voter.self_added == self_added,
+        Voter.pollbook_id == pollbook_id
+    )
+    return query
