@@ -127,6 +127,25 @@ class UpdateVoterPollBook(graphene.Mutation):
         return UpdateVoterPollBook(ok=True)
 
 
+class UpdateVoterReason(graphene.Mutation):
+    """
+    Update the voters supplied reason for why they
+    should be able to vote in the election.
+    """
+    class Arguments:
+        id = graphene.UUID(required=True)
+        reason = graphene.String(required=True)
+
+    ok = graphene.Boolean()
+
+    def mutate(self, info, **kwargs):
+        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
+        voter.reason = kwargs.get('reason')
+        db.session.add(voter)
+        db.session.commit()
+        return UpdateVoterReason(ok=True)
+
+
 class DeleteVotersInPollBook(graphene.Mutation):
     """
     Delete *all* voters in a given pollbook.
