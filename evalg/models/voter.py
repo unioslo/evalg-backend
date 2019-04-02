@@ -9,7 +9,6 @@ should be represented by a *unique* voter object for each election they are
 entitled to vote in.
 """
 import uuid
-from enum import Enum
 
 import sqlalchemy.types
 from sqlalchemy.orm import validates
@@ -17,30 +16,23 @@ from sqlalchemy.schema import UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from evalg import db
+from evalg.utils import make_descriptive_enum
 from evalg.database.types import UuidType
 from .base import ModelBase
 from .person import IdType
 
 
-class VerifiedStatus(Enum):
-    SELF_ADDED_NOT_REVIEWED = 1
-    ADMIN_ADDED_REJECTED = 2
-    SELF_ADDED_REJECTED = 3
-    ADMIN_ADDED_AUTO_VERIFIED = 4
-    SELF_ADDED_VERIFIED = 7
-
-    @property
-    def description(self):
-        if self == VerifiedStatus.SELF_ADDED_NOT_REVIEWED:
-            return 'voter not in census, admin review needed'
-        if self == VerifiedStatus.ADMIN_ADDED_REJECTED:
-            return 'voter in census, rejected by admin'
-        if self == VerifiedStatus.SELF_ADDED_REJECTED:
-            return 'voter not in census, rejected by admin'
-        if self == VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED:
-            return 'voter in census'
-        if self == VerifiedStatus.SELF_ADDED_VERIFIED:
-            return 'voter not in census, verified by admin'
+VerifiedStatus = make_descriptive_enum(
+    'VerifiedStatus',
+    {
+        'SELF_ADDED_NOT_REVIEWED': 'voter not in census, admin review needed',
+        'ADMIN_ADDED_REJECTED': 'voter in census, rejected by admin',
+        'SELF_ADDED_REJECTED': 'voter not in census, rejected by admin',
+        'ADMIN_ADDED_AUTO_VERIFIED': 'voter in census',
+        'SELF_ADDED_VERIFIED': 'voter not in census, verified by admin',
+    },
+    description='Voter verification status',
+)
 
 
 # Mapping (self_added, reviewed, verified) to VerifiedStatus

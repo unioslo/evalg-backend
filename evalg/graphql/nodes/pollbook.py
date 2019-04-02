@@ -44,6 +44,10 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.voter.Voter
 
+    verified_status = graphene.Enum.from_enum(
+        evalg.models.voter.VerifiedStatus
+    )()
+
 
 class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:

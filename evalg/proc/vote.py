@@ -132,9 +132,10 @@ def get_election_vote_counts(session, election):
     for self_added, reviewed, verified, votes in query.all():
         name = verified_status[(self_added, reviewed, verified)].name
         count[name.lower()] += votes
-    count['total'] = 0
+    total = 0
     for votes in count.values():
-        count['total'] += votes
+        total += votes
+    count['total'] = total
     return count
 
 
