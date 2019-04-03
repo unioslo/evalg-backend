@@ -80,8 +80,6 @@ PyNaCl generer opp tilfeldig nonce automatisk.
 ## Se på/advanced 
 Som en del av å implementere kryptering av stemmesedler bør en se på følgende:
 
-- Vurder å bytte ut NaCl pakken i frontend fra js-nacl til tweetnacl.
-Sistnevnte har en vesentlig mye større brukermasse (500 vs 8500000).
 - Vurder om stemmer bør signeres med en egen system-privatnøkkel. Dette for å
 kunne garantere at stemmen er blitt kryptert av systemet.
 
@@ -93,13 +91,15 @@ fra frontend.
 PyNaCl returnerer kryptert data som binære data, men med muligheten for å velge encoding.
 nacl.encoding.Base64Encoder brukes i eksemplene under. Kryptert data er da en base64 bytestring.
 
+Nøklene fra frontend er encodet som base64.
 
 ```python
+import nacl
 from nacl.public import PrivateKey, PublicKey
-public = '592484f031a7ac4fae8bb0bc113149300220e993e4bb33bd7ce6430ee3d9b744'
-private = 'c508f716ab74327c9f744f8cfb2419f0c70f2805b3db81ebd71aa1864a4ee266'
-pub_key = PublicKey(public_key=public, encoder=nacl.encoding.HexEncoder)
-priv_key = PrivateKey(private_key=private, encoder=nacl.encoding.HexEncoder)
+public = 'G8g0YvWaLgFBEwpjxzQBxgaRlEprD0AlVHKw+3ImTnc='
+private = '4dwhka4ewi0fRbz/gBcHttejUz/vcExaqH7bFWsrM8E='
+pub_key = PublicKey(public_key=public, encoder=nacl.encoding.Base64Encoder)
+priv_key = PrivateKey(private_key=private, encoder=nacl.encoding.Base64Encoder)
 ```
 
 Siden stemmegiver ikke signerer stemmen, kan vi bruker en SealedBox til
@@ -116,14 +116,14 @@ Pynacl støtter bare kryptering av bytes. Stemmedata må konverteres først.
 ```python
 ballot = {"vote_for": "Einar Gerhardsen"}
 byte_ballot = json.dumps(ballot, ensure_ascii=False).encode('utf-8')
-encrypted_ballot = sealed_box.encrypt(msg, encoder=nacl.encoding.Base64Encoder)
+encrypted_ballot = sealed_box.encrypt(byte_ballot, encoder=nacl.encoding.Base64Encoder)
 ```
 
 Dekryptering og konvertering til string.
 
 ```python
 unseal_box = SealedBox(priv_key)
-decryptet_ballot = unseal_box.decrypt(encrypted, encoder=nacl.encoding.Base64Encoder)
+decryptet_ballot = unseal_box.decrypt(encrypted_ballot, encoder=nacl.encoding.Base64Encoder)
 decryptet_ballot = decryptet_ballot.decode('utf-8')
 
 ```
