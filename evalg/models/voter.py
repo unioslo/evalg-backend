@@ -11,6 +11,7 @@ entitled to vote in.
 import uuid
 
 import sqlalchemy.types
+from sqlalchemy.sql import and_, or_, not_
 from sqlalchemy.orm import validates
 from sqlalchemy.schema import UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -36,12 +37,20 @@ VerifiedStatus = make_descriptive_enum(
 
 
 # Mapping (self_added, reviewed, verified) to VerifiedStatus
-verified_status = {
+VERIFIED_STATUS_MAP = {
     (True, False, False): VerifiedStatus.SELF_ADDED_NOT_REVIEWED,
     (False, True, False): VerifiedStatus.ADMIN_ADDED_REJECTED,
     (True, True, False): VerifiedStatus.SELF_ADDED_REJECTED,
     (False, False, True): VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED,
     (True, True, True): VerifiedStatus.SELF_ADDED_VERIFIED}
+
+# Invalid combinations of (self_added, reviewed, verified)
+# Manually update `verified_status_check_constraint` if changed
+VERIFIED_STATUS_NO_MAP = (
+    (True, False, True),
+    (False, True, True),
+    (False, False, False)
+)
 
 
 class Voter(ModelBase):
@@ -105,9 +114,15 @@ class Voter(ModelBase):
 
     @hybrid_property
     def verified_status(self):
-        return verified_status[(self.self_added,
-                                self.reviewed,
-                                self.verified)]
+        return VERIFIED_STATUS_MAP[(self.self_added,
+                                    self.reviewed,
+                                    self.verified)]
+
+    verified_status_check_constraint = not_(or_(
+        and_(self_added.is_(True), reviewed.is_(False), verified.is_(True)),
+        and_(self_added.is_(False), reviewed.is_(True), verified.is_(True)),
+        and_(self_added.is_(False), reviewed.is_(False), verified.is_(False))
+    ))
 
     #
     # TODO: Get ID_TYPE_CHOICES from PersonExternalId, or implement a separate
@@ -117,32 +132,12 @@ class Voter(ModelBase):
     def validate_id_type(self, key, id_type):
         return IdType(id_type).value
 
-    @staticmethod
-    def verified_status_check_constraint():
-        """Get a CheckConstraint for self_added, reviewed and verified
-
-        :return: A CheckConstraint equivalent to:
-            (self_added, reviewed, verified) in verified_status
-        """
-        names = ('self_added', 'reviewed', 'verified')
-        valid_combinations = tuple(verified_status.keys())
-        last_col = {len(names) - 1: ') '}
-        last_row = {len(valid_combinations) - 1: ''}
-        constraint = ''
-
-        for row in range(len(valid_combinations)):
-            constraint += '('
-            for col in range(len(names)):
-                constraint += names[col] + \
-                    ' = ' + \
-                    'cast(' + str(int(valid_combinations[row][col])) + ' as boolean)' + \
-                    last_col.get(col, ' AND ')
-            constraint += last_row.get(row, ' OR ')
-        return CheckConstraint(constraint)
-
     __table_args__ = (
         UniqueConstraint(
             'pollbook_id', 'id_type', 'id_value',
             name='_pollbook_voter_uc'),
-        verified_status_check_constraint.__func__()
+        CheckConstraint(
+            verified_status_check_constraint,
+            name='_pollbook_voter_cc_verified_status'
+        )
     )
