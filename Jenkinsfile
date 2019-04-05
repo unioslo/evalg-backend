@@ -18,9 +18,11 @@ pipeline {
     post {
         always {
             junit '**/junit*.xml'
+            cobertura coberturaReportFile: '**/coverage*.xml'
         }
         cleanup {
-            sh 'rm -vf junit.xml'
+            sh 'rm -vf junit-*.xml'
+            sh 'rm -vf coverage-*.xml'
             sh 'rm -vrf build dist'
         }
     }
