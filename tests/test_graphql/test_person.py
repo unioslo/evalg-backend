@@ -80,7 +80,6 @@ def test_query_person_by_id(person_foo, client):
 @pytest.fixture
 def persons(db_session):
     """Multiple persons fixture."""
-
     data = [
         {
             'email': 'foo@example.org',
