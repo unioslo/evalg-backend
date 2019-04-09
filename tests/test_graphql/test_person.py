@@ -1,8 +1,6 @@
 """Tests the person related queries."""
 
 import pytest
-import evalg.database.query
-from evalg.models.person import Person, PersonExternalId
 
 
 def test_query_person_by_id(person_foo, client):
