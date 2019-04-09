@@ -3,8 +3,9 @@
 import pytest
 
 
-def test_query_person_by_id(person_foo, client):
+def test_query_person_by_id(persons, client):
     """Test the person by id query."""
+    person_foo = next(iter(persons.values()))
     variables = {'id': str(person_foo.id)}
     query = """
     query person($id: UUID!) {

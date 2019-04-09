@@ -107,49 +107,6 @@ def pollbook_one(db_session, election_bar):
 
 
 @pytest.fixture
-def person_foo(db_session):
-    """One person fixture."""
-    data = {
-        'email': 'foo@bar.org',
-        'display_name': 'Foo Bar',
-    }
-
-    identifiers = [
-        {
-            "id_type": "feide_id",
-            "id_value": "foo@bar.org",
-        },
-        {
-            "id_type": "feide_user_id",
-            "id_value": "a6733d24-8987-44b6-8cd0-308030710aa2",
-        },
-        {
-            "id_type": "uid",
-            "id_value": "foo@bar.org",
-        },
-        {
-            "id_type": "nin",
-            "id_value": "12128812345",
-        },
-    ]
-
-    person = evalg.database.query.get_or_create(
-        db_session, Person, **data)
-
-    for identifier in identifiers:
-        id_obj = PersonExternalId(
-            person=person.id,
-            id_type=identifier['id_type'],
-            id_value=identifier['id_value']
-        )
-        person.identifiers.append(id_obj)
-
-    db_session.add(person)
-    db_session.flush()
-    return person
-
-
-@pytest.fixture
 def persons(db_session):
     """Multiple persons fixture."""
     data = [
