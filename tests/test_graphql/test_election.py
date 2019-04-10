@@ -1,6 +1,7 @@
-import evalg
-
 import pytest
+
+from evalg.models.candidate import Candidate
+from evalg.models.election_list import ElectionList
 
 
 def test_query_electiongroup_by_id(group_foo, client):
@@ -144,11 +145,9 @@ def test_delete_candidate_mutation(election_lists_foo, client):
     assert not execution.get('errors')
     response = execution['data']['deleteCandidate']
     assert response['ok']
-    candidate_after = evalg.models.candidate.Candidate.query.get(
-        candidate.id)
+    candidate_after = Candidate.query.get(candidate.id)
     assert candidate_after is None
-    election_list_after = evalg.models.election_list.ElectionList.query.get(
-        election_list.id)
+    election_list_after = ElectionList.query.get(election_list.id)
     assert election_list_after is not None
     assert len(election_list_after.candidates) == len(
         election_list.candidates) - 1
@@ -189,8 +188,7 @@ def test_add_pref_elec_candidate_mutation(election_lists_foo, client):
     assert response['ok']
 
     # Get new election list
-    election_list_after = evalg.models.election_list.ElectionList.query.get(
-        election_list.id)
+    election_list_after = ElectionList.query.get(election_list.id)
     assert election_list_after is not None
     assert len(election_list_after.candidates) == len(
         candidates_before) + 1
@@ -242,13 +240,11 @@ def test_update_pref_elec_candidate_mutation(election_lists_foo, client):
     assert response['ok']
 
     # Get new election list
-    election_list_after = evalg.models.election_list.ElectionList.query.get(
-        election_list.id)
+    election_list_after = ElectionList.query.get(election_list.id)
     assert election_list_after is not None
     assert len(election_list_after.candidates) == len(
         candidates_before)
-    candidate_after = evalg.models.candidate.Candidate.query.get(
-        candidate_before.id)
+    candidate_after = Candidate.query.get(candidate_before.id)
     assert candidate_after.list_id == candidate_before.list_id
     assert candidate_after.name != candidate_before.name
     assert candidate_after.name == variables['name']
@@ -293,8 +289,7 @@ def test_add_team_pref_elec_candidate_mutation(election_lists_foo, client):
     assert response['ok']
 
     # Get new election list
-    election_list_after = evalg.models.election_list.ElectionList.query.get(
-        election_list.id)
+    election_list_after = ElectionList.query.get(election_list.id)
     assert election_list_after is not None
     assert len(election_list_after.candidates) == len(
         candidates_before) + 1
@@ -346,13 +341,11 @@ def test_update_team_pref_elec_candidate_mutation(election_lists_foo, client):
     assert response['ok']
 
     # Get new election list
-    election_list_after = evalg.models.election_list.ElectionList.query.get(
-        election_list.id)
+    election_list_after = ElectionList.query.get(election_list.id)
     assert election_list_after is not None
     assert len(election_list_after.candidates) == len(
         candidates_before)
-    candidate_after = evalg.models.candidate.Candidate.query.get(
-        candidate_before.id)
+    candidate_after = Candidate.query.get(candidate_before.id)
     assert candidate_after.list_id == candidate_before.list_id
     assert candidate_after.name != candidate_before.name
     assert candidate_after.name == variables['name']
