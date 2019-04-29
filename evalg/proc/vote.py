@@ -14,7 +14,7 @@ from evalg.models.election import ElectionGroup, Election
 from evalg.models.voter import Voter, VERIFIED_STATUS_MAP
 from evalg.models.votes import Vote
 from evalg.models.person import PersonExternalId, Person
-from evalg.serializer import Base64NaClSerializer
+from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -46,16 +46,8 @@ class ElectionVotePolicy(object):
         :rtype: evalg.models.ballot.Envelope
 
         """
-        # TODO: Build a Ballot object and serialize.
-        ballot_content = repr(ballot_data)
 
-        # TODO: create factory?
-
-        # Get keys
-
-        # TODO: verify ballot_data content
-
-        # TODO: get election key
+        # TODO: create serializer factory?
 
         serializer = Base64NaClSerializer(
             backend_private_key=self._backend_private_key,
@@ -95,12 +87,9 @@ class ElectionVotePolicy(object):
         if not voter.pollbook.election.is_ongoing:
             raise Exception('inactive election')
 
-        # TODO: verify ballot data
-
-        # TODO: get public key
+        # TODO: add ballot verification.
 
         election_public_key = voter.pollbook.election.election_group.public_key
-
         if not election_public_key:
             raise Exception('Election is missing key')
 
@@ -110,13 +99,11 @@ class ElectionVotePolicy(object):
 
         self.session.add(envelope)
         self.session.flush()
-
         logger.info("Stored ballot %r", envelope)
 
         vote = self.make_vote(voter, envelope)
         self.session.add(vote)
         self.session.flush()
-
         logger.info("Stored vote %r", vote)
         return vote
 

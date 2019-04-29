@@ -2,7 +2,7 @@
 
 from evalg.models.ballot import Envelope
 from evalg.models.votes import Vote
-from evalg.serializer import Base64NaClSerializer
+from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 
 
 def test_election_vote_policy(

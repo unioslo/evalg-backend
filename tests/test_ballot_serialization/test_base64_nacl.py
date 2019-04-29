@@ -33,7 +33,6 @@ def test_base64_nacl_encryption(ballot_serializer):
     assert decrypted_data == data
 
 
-
 def test_base64_nacl_keys(ballot_serializer):
     """Tests that the key objects are created correctly."""
     assert isinstance(ballot_serializer.backend_private_key, PrivateKey)
@@ -59,6 +58,22 @@ def test_base64_nacl_serializer(ballot_serializer, ballot):
     assert ballot_deserialized
     assert isinstance(ballot_deserialized, dict)
     assert ballot_deserialized == ballot
+
+
+def test_base64_nacl_hashing(ballot_serializer, ballot):
+
+    ballot_hash = ballot_serializer.generate_hash(ballot)
+    assert ballot_hash
+
+    ballot_hash2 = ballot_serializer.generate_hash(ballot)
+    assert ballot_hash2
+    assert ballot_hash == ballot_hash2
+
+
+
+
+    assert ballot_serializer.is_valid_hash(ballot_hash, ballot)
+
 
 
 def test_base64_nacl_wrong_election_private_key(ballot_serializer, ballot):

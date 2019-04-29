@@ -1,38 +1,11 @@
-"""Ballot serializer/deserializer."""
-
 import json
 
-from abc import ABC, abstractmethod
 from base64 import b64decode, b64encode
-
 from nacl.encoding import Base64Encoder
+from nacl.hash import blake2b
 from nacl.public import Box, PublicKey, PrivateKey
 
-class BallotSerializerBase(ABC):
-
-    def __init__(self):
-        pass
-
-    @abstractmethod
-    def serialize(self, ballot):
-        pass
-
-    @abstractmethod
-    def deserialize(self, encrypted_ballot):
-        pass
-
-    @abstractmethod
-    def generate_hash(self, ballot):
-        pass
-
-    @abstractmethod
-    def validate_hash(self, hash, ballot):
-        pass
-
-    @property
-    @abstractmethod
-    def envelope_type(self):
-        pass
+from evalg.ballot_serializer.ballot_serializer import BallotSerializerBase
 
 
 class Base64NaClSerializer(BallotSerializerBase):
@@ -90,10 +63,22 @@ class Base64NaClSerializer(BallotSerializerBase):
         return deserialized_ballot
 
     def generate_hash(self, ballot):
-        pass
+        """Generate a ballot hash.
 
-    def validate_hash(self, hash, ballot):
-        pass
+        Ballot is the unencrypted ballot_data.
+        """
+
+        ballot_data = json.dumps(ballot, ensure_ascii=False).encode('utf-8')
+        return blake2b(ballot_data, encoder=Base64Encoder)
+
+    def is_valid_hash(self, hash, ballot):
+        """Tests if a ballot hash is correct."""
+
+        ballot_data = json.dumps(ballot, ensure_ascii=False).encode('utf-8')
+        new_hash = blake2b(ballot_data, encoder=Base64Encoder)
+        if hash != new_hash:
+            return False
+        return True
 
     def _encode(self, data):
         return b64encode(data.encode('utf-8'))

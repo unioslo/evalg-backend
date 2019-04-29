@@ -1,6 +1,6 @@
 import pytest
 
-from evalg.serializer import Base64NaClSerializer
+from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 
 @pytest.fixture
 def election_keys():
