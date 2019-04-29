@@ -82,21 +82,6 @@ class ElectionVotePolicy(object):
         vote.ballot_id = envelope.id
         return vote
 
-    def sign_ballot(self, envelope):
-        """
-        Sign ballot for an election.
-
-        remove? ballot is signed in the serializer
-
-        :type election: evalg.models.election.Election
-        :type ballot: evalg.models.ballot.Envelope
-        """
-        # TODO: Get election key
-        key = ''
-
-        # Sign serialized ballot.
-        envelope.sign(key)
-
     def add_vote(self, voter, ballot_data):
         """
         Add a vote for a given election.
