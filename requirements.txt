@@ -15,6 +15,7 @@ graphene-file-upload==1.2.1
 graphene-sqlalchemy
 gunicorn
 psycopg2-binary
+pynacl
 python-json-logger
 pytz
 setuptools

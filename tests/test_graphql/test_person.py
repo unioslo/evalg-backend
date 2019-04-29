@@ -1,7 +1,5 @@
 """Tests the person related queries."""
 
-import pytest
-
 
 def test_query_person_by_id(persons, client):
     """Test the person by id query."""

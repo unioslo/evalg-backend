@@ -1,3 +1,4 @@
+import datetime
 import pytest
 
 import evalg.database.query
@@ -7,6 +8,7 @@ from evalg.models.election import ElectionGroup, Election
 from evalg.models.election_list import ElectionList
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import PollBook
+from evalg.models.voter import Voter
 
 pytest_plugins = ['pytest-flask-sqlalchemy']
 
@@ -19,7 +21,10 @@ def config():
         SQLALCHEMY_DATABASE_URI = 'sqlite://'
         AUTH_ENABLED = True
         AUTH_METHOD = 'feide_mock'
-        FEIDE_BASIC_REQUIRE = False
+        FEIDE_BASIC_REQUIRE = False,
+        BACKEND_PRIVATE_KEY = 'nnQjcDrXcIc8mpHabme8j7/xPBWqIkPElM8KtAJ4vgc='
+        BACKEND_PUBLIC_KEY = 'KLUDKkCPrAEcK9SrYDyMsrLEShm6axS9uSG/sOfibCA='
+        ENVELOPE_TYPE = 'base64-nacl'
 
     return Config()
 
@@ -50,7 +55,19 @@ def _db(app, database):
 
 
 @pytest.fixture
-def group_foo(db_session):
+def election_keys_foo():
+    return {
+        'public': 'bO1pw6/Bslji0XvXveSuVbe4vp93K1DcpqYgIxRhYAs=',
+        'private': 'FTVBa1ThHyKfE/LRYkRZ+79NyQw17PuD7gcD/ViJzYE=',
+    }
+
+
+@pytest.fixture
+def election_group_foo(db_session, election_keys_foo):
+    """
+    Election group fixture.
+
+    """
     data = {
         'name': {
             'nb': 'Foo',
@@ -60,28 +77,36 @@ def group_foo(db_session):
         'description': {
             'nb': 'Description foo',
             'en': 'Description foo',
-        }
+        },
+        'public_key': election_keys_foo['public'],
+
     }
-    group = evalg.database.query.get_or_create(
+    election_group = evalg.database.query.get_or_create(
         db_session, ElectionGroup, **data)
-    db_session.add(group)
+    election_group.publish()
+    election_group.announce()
+    db_session.add(election_group)
     db_session.flush()
-    return group
+    return election_group
 
 
 @pytest.fixture
-def election_bar(db_session, group_foo):
+def election_foo(db_session, election_group_foo):
+    """Election fixture."""
+
     data = {
         'name': {
-            'nb': 'Bar',
-            'en': 'Bar',
+            'nb': 'Valg av foo',
+            'en': 'Election of foo',
         },
         'type': 'single_election',
         'description': {
             'nb': 'Description foo',
             'en': 'Description foo',
         },
-        'group_id': group_foo.id,
+        'group_id': election_group_foo.id,
+        'start': datetime.datetime.now(datetime.timezone.utc),
+        'end': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
     }
     election = evalg.database.query.get_or_create(
         db_session, Election, **data)
@@ -91,18 +116,125 @@ def election_bar(db_session, group_foo):
 
 
 @pytest.fixture
-def pollbook_one(db_session, election_bar):
+def election_list_pref_foo(db_session, election_foo):
+    """Election list fixture, with candidates."""
     data = {
-        'name': {
-            'nb': 'Pollbook One',
-            'en': 'Pollbook One',
+        "name": {
+            "nb": "Vitenskapelig ansatte",
+            "nn": "Vitskapeleg tilsette",
+            "en": "Academic staff",
         },
-        'election_id': election_bar.id,
+        "description": {
+            "nb": "Vitenskapelig ansatte",
+            "nn": "Vitskapeleg tilsette",
+            "en": "Academic staff"
+        },
+        "information_url": "https://uio.no",
+        "election_id": election_foo.id,
+    }
+
+    election_list = evalg.database.query.get_or_create(
+        db_session, ElectionList, **data)
+
+    db_session.add(election_list)
+    db_session.flush()
+    return election_list
+
+
+@pytest.fixture
+def election_list_team_pref_foo(db_session, election_foo):
+    """Election list fixture, with candidates."""
+    data = {
+        "name": {
+            "nb": "Vitenskapelig ansatte",
+            "nn": "Vitskapeleg tilsette",
+            "en": "Academic staff",
+        },
+        "description": {
+            "nb": "Vitenskapelig ansatte",
+            "nn": "Vitskapeleg tilsette",
+            "en": "Academic staff"
+        },
+        "information_url": "https://uio.no",
+        "election_id": election_foo.id,
+    }
+
+    election_list = evalg.database.query.get_or_create(
+        db_session, ElectionList, **data)
+
+    db_session.add(election_list)
+    db_session.flush()
+    return election_list
+
+
+@pytest.fixture
+def pref_candidates_foo(db_session, election_list_pref_foo):
+    data = [
+        {
+            "name": "Peder Aas",
+            "meta": {
+                "gender": "Male"
+            },
+            "list_id": election_list_pref_foo.id,
+        },
+        {
+            "name": "Marte Kirkerud",
+            "meta": {
+                "gender": "female"
+            },
+            "list_id": election_list_pref_foo.id,
+        },
+    ]
+    candidates = [evalg.database.query.get_or_create(
+        db_session, Candidate, **x) for x in data]
+    for candidate in candidates:
+        db_session.add(candidate)
+        election_list_pref_foo.candidates.append(candidate)
+    db_session.flush()
+    return candidates
+
+
+@pytest.fixture
+def team_pref_candidates_foo(db_session, election_list_team_pref_foo):
+    data = [
+        {
+            "name": "Peder Aas",
+            "meta": {
+                "coCandidates": [
+                    {"name": "Marte Kirkerud"},
+                    {"name": "Lars Holm"},
+                ]
+            },
+            "information_url": "http://uio.no",
+            "priority": 0,
+            "pre_cumulated": True,
+            "user_cumulated": False,
+            "list_id": election_list_team_pref_foo.id,
+        },
+    ]
+    candidates = [evalg.database.query.get_or_create(
+        db_session, Candidate, **x) for x in data]
+    for candidate in candidates:
+        db_session.add(candidate)
+        election_list_team_pref_foo.candidates.append(candidate)
+    db_session.flush()
+    return candidates
+
+
+@pytest.fixture
+def pollbook_foo(db_session, election_foo):
+    data = {
+        "name": {
+            "nb": "Pollbook foo",
+            "en": "Pollbook foo",
+        },
+        "election_id": election_foo.id,
     }
     pollbook = evalg.database.query.get_or_create(
         db_session, PollBook, **data)
     db_session.add(pollbook)
     db_session.flush()
+
     return pollbook
 
 
@@ -174,105 +306,22 @@ def persons(db_session):
 
 
 @pytest.fixture
-def election_lists_foo(db_session, election_bar):
-    """Election lists fixture, with candidates."""
-    data = [
-        {
-            'name': {
-                "nb": "Vitenskapelig ansatte",
-                "nn": "Vitskapeleg tilsette",
-                'en': 'Academic staff',
-            },
-            "description": {
-                "nb": "Vitenskapelig ansatte",
-                "nn": "Vitskapeleg tilsette",
-                "en": "Academic staff"
-            },
-            "information_url": "https://uio.no",
-            'election_id': election_bar.id,
-        },
-        {
-            'name': {
-                "nb": "Studenter",
-                "nn": "Studentar",
-                'en': 'Students',
-            },
-            "description": {
-                "nb": "Studenter",
-                "nn": "Studentar",
-                "en": "students"
-            },
-            "information_url": "https://uio.no",
-            'election_id': election_bar.id,
-        }
-    ]
+def pollbook_voter_foo(db_session, persons, pollbook_foo):
+    person = next(iter(persons.values()))
 
-    candidate_data = [
-        {
-            "name": "Peder Aas",
-            "meta": {
-                "gender": "Male"
-            },
-            "information_url": "http://uio.no",
-            "priority": 0,
-            "pre_cumulated": True,
-            "user_cumulated": False
-        },
-        {
-            "name": "Marte Kirkerud",
-            "meta": {
-                "gender": "female"
-            },
-            "information_url": "http://uio.no",
-            "priority": 0,
-            "pre_cumulated": False,
-            "user_cumulated": False
-        },
-    ]
+    data = {
+        'id_type': person.identifiers[0].id_type,
+        'id_value': person.identifiers[0].id_value,
+        'pollbook_id': pollbook_foo.id,
+        'self_added': False,
+        'reviewed': False,
+        'verified': True,
+    }
 
-    candidate_team_data = [
-        {
-            "name": "Peder Aas",
-            "meta": {
-                "coCandidates": [
-                    {"name": "Marte Kirkerud"},
-                    {"name": "Lars Holm"},
-                ]
-            },
-            "information_url": "http://uio.no",
-            "priority": 0,
-            "pre_cumulated": True,
-            "user_cumulated": False
-        },
-    ]
+    pollbook_voter = evalg.database.query.get_or_create(
+        db_session, Voter, **data)
 
-    election_lists = [evalg.database.query.get_or_create(
-        db_session, ElectionList, **x) for x in data]
-
-    for election_list in election_lists:
-        db_session.add(election_list)
-
-    # We need to flush here to generate ids for the election lists
+    db_session.add(pollbook_voter)
     db_session.flush()
 
-    # Add candidates to first election list
-    for candidate in candidate_data:
-        candidate['list_id'] = str(election_lists[0].id)
-
-    # Add team candidates to the second election list
-    for candidate in candidate_team_data:
-        candidate['list_id'] = str(election_lists[1].id)
-
-    candidates = [evalg.database.query.get_or_create(
-        db_session, Candidate, **x) for x in candidate_data]
-    for candidate in candidates:
-        db_session.add(candidate)
-
-    team_candidates = [evalg.database.query.get_or_create(
-        db_session, Candidate, **x) for x in candidate_team_data]
-    for candidate in team_candidates:
-        db_session.add(candidate)
-
-    db_session.flush()
-
-    return {str(x.id): x for x in election_lists}
+    return pollbook_voter

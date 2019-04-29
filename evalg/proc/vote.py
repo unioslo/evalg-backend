@@ -4,6 +4,7 @@ This module implements interfaces for voting and getting vote statistics.
 import collections
 import logging
 
+from flask import current_app
 from sqlalchemy.sql import and_, select, func
 
 import evalg.database.query
@@ -13,6 +14,7 @@ from evalg.models.election import ElectionGroup, Election
 from evalg.models.voter import Voter, VERIFIED_STATUS_MAP
 from evalg.models.votes import Vote
 from evalg.models.person import PersonExternalId, Person
+from evalg.serializer import Base64NaClSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -23,16 +25,20 @@ class ElectionVotePolicy(object):
 
     def __init__(self, session):
         self.session = session
+        config = current_app.config
+        self._envelope_type = config.get('ENVELOPE_TYPE')
+        self._backend_private_key = config.get('BACKEND_PRIVATE_KEY')
 
     @property
     def envelope_type(self):
-        return 'test_envelope'
+        return self._envelope_type
 
     @property
     def ballot_type(self):
+        # TODO: get from ballot?
         return 'test_ballot'
 
-    def make_ballot(self, ballot_data):
+    def make_ballot(self, ballot_data, voter, election_public_key):
         """
         :type election: evalg.models.election.Election
         :type ballot_data: str
@@ -43,10 +49,23 @@ class ElectionVotePolicy(object):
         # TODO: Build a Ballot object and serialize.
         ballot_content = repr(ballot_data)
 
+        # TODO: create factory?
+
+        # Get keys
+
+        # TODO: verify ballot_data content
+
+        # TODO: get election key
+
+        serializer = Base64NaClSerializer(
+            backend_private_key=self._backend_private_key,
+            election_public_key=election_public_key,
+        )
+
         ballot = Envelope(
             envelope_type=self.envelope_type,
             ballot_type=self.ballot_type,
-            ballot_data=ballot_content,
+            ballot_data=serializer.serialize(ballot_data)
         )
         return ballot
 
@@ -66,6 +85,8 @@ class ElectionVotePolicy(object):
     def sign_ballot(self, envelope):
         """
         Sign ballot for an election.
+
+        remove? ballot is signed in the serializer
 
         :type election: evalg.models.election.Election
         :type ballot: evalg.models.ballot.Envelope
@@ -89,7 +110,19 @@ class ElectionVotePolicy(object):
         if not voter.pollbook.election.is_ongoing:
             raise Exception('inactive election')
 
-        envelope = self.make_ballot(ballot_data)
+        # TODO: verify ballot data
+
+        # TODO: get public key
+
+        election_public_key = voter.pollbook.election.election_group.public_key
+
+        if not election_public_key:
+            raise Exception('Election is missing key')
+
+        envelope = self.make_ballot(ballot_data,
+                                    voter,
+                                    election_public_key)
+
         self.session.add(envelope)
         self.session.flush()
 
