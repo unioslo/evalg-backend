@@ -21,7 +21,7 @@ def config():
         SQLALCHEMY_DATABASE_URI = 'sqlite://'
         AUTH_ENABLED = True
         AUTH_METHOD = 'feide_mock'
-        FEIDE_BASIC_REQUIRE = False,
+        FEIDE_BASIC_REQUIRE = False
         BACKEND_PRIVATE_KEY = 'nnQjcDrXcIc8mpHabme8j7/xPBWqIkPElM8KtAJ4vgc='
         BACKEND_PUBLIC_KEY = 'KLUDKkCPrAEcK9SrYDyMsrLEShm6axS9uSG/sOfibCA='
         ENVELOPE_TYPE = 'base64-nacl'
