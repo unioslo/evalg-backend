@@ -93,7 +93,7 @@ def test_base64_nacl_wrong_backend_public_key(ballot_serializer, ballot):
     """Try deserializing with the wrong backend public key."""
     ballot_serializer.backend_public_key = \
         "errorvWaLgFBEwpjxzQBxgaRlEprD0AlVHKw+3ImTnc="
-    serialized_ballot = ballot_serializer.serialize(ballot)
+    serialized_ballot = ballot_serializer.serialize(ballot.copy())
     assert serialized_ballot
     with pytest.raises(CryptoError):
         ballot_serializer.deserialize(serialized_ballot)
@@ -101,7 +101,7 @@ def test_base64_nacl_wrong_backend_public_key(ballot_serializer, ballot):
 
 def test_base64_nacl_corrupt_data(ballot_serializer, ballot):
     """Try deserializing corrupt data."""
-    serialized_ballot = ballot_serializer.serialize(ballot)
+    serialized_ballot = ballot_serializer.serialize(ballot.copy())
     assert serialized_ballot
     tmp = bytearray(serialized_ballot)
     tmp[-10] = 65 if tmp[-10] != 65 else 66
