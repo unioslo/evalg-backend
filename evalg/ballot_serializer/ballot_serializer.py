@@ -1,12 +1,12 @@
-"""Ballot serializer/deserializer."""
+"""
+Ballot serializer/deserializer.
 
-import json
+Abstract base of a ballot serializer/deserializer.
+The serialized result must be a bytestring.
+"""
 
 from abc import ABC, abstractmethod
-from base64 import b64decode, b64encode
 
-from nacl.encoding import Base64Encoder
-from nacl.public import Box, PublicKey, PrivateKey
 
 class BallotSerializerBase(ABC):
 
@@ -15,10 +15,22 @@ class BallotSerializerBase(ABC):
 
     @abstractmethod
     def serialize(self, ballot):
+        """
+        Serialize a ballot.
+
+        :param ballot: A ballot.
+        :return: The serialized ballot
+        """
         pass
 
     @abstractmethod
-    def deserialize(self, encrypted_ballot):
+    def deserialize(self, serialized_ballot):
+        """
+        Deserialize a ballot.
+
+        :param serialized_ballot: A bytestring representation of a ballot.
+        :return: The deserialized ballot
+        """
         pass
 
     @abstractmethod
@@ -33,6 +45,3 @@ class BallotSerializerBase(ABC):
     @abstractmethod
     def envelope_type(self):
         pass
-
-
-
