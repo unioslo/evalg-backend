@@ -29,6 +29,9 @@ class AbstractElection(ModelBase):
     description = db.Column(evalg.database.types.MutableJson)
     """ Translated text """
 
+    # TODO:
+    #   Why is ``type`` defined here? It seems to only be in use on the
+    #   ``ElectionGroup`` table and not on ``Election``.
     type = db.Column(db.UnicodeText)
     """ Internal use """
 

@@ -11,6 +11,8 @@ from evalg.models.pollbook import PollBook
 from evalg.models.election import ElectionGroup, Election
 from evalg.models.voter import Voter, VERIFIED_STATUS_MAP
 from evalg.models.votes import Vote
+from evalg.models.candidate import Candidate
+from evalg.models.election_list import ElectionList
 from evalg.models.person import PersonExternalId, Person
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 
@@ -26,6 +28,47 @@ class ElectionVotePolicy(object):
         self._envelope_type = config.get('ENVELOPE_TYPE')
         self._backend_private_key = config.get('BACKEND_PRIVATE_KEY')
         self._envelope_padded_len = config.get('ENVELOPE_PADDED_LEN')
+
+    def get_voter(self, voter_id):
+        try:
+            voter = evalg.database.query.lookup(self.session,
+                                                evalg.models.voter.Voter,
+                                                id=voter_id)
+        except evalg.database.query.TooFewError:
+            logger.error('Voter %r does not exist', voter_id)
+            return None
+        return voter
+
+    def verify_election_is_ongoing(self, voter):
+        logger.debug(voter.pollbook.election.id)
+        if not voter.pollbook.election.is_ongoing:
+            logger.error('Can not vote, election is closed')
+            return False
+        return True
+
+    def verify_candidates_exist(self, ballot_data, election_id):
+        ranked_candidate_ids = ballot_data['rankedCandidateIds']
+
+        if ranked_candidate_ids:
+            query = self.session.query(
+                 func.count(Candidate.id)
+            ).join(
+                ElectionList,
+                and_(
+                    ElectionList.id == Candidate.list_id
+                )
+            ).filter(
+                Candidate.id.in_(ranked_candidate_ids),
+                ElectionList.election_id == election_id
+            )
+            number_of_candidates = query.first()[0]
+
+            if number_of_candidates < len(ranked_candidate_ids):
+                logger.error('Selected candidate(s) does not exist (%r)',
+                             ranked_candidate_ids)
+                return False
+
+        return True
 
     @property
     def envelope_type(self):
@@ -72,11 +115,6 @@ class ElectionVotePolicy(object):
         """Add a vote to a given election."""
         logger.info("Adding vote in election/pollbook %r/%r",
                     voter.pollbook.election, voter.pollbook)
-
-        if not voter.pollbook.election.is_ongoing:
-            raise Exception('inactive election')
-
-        # TODO: add ballot verification.
 
         election_public_key = voter.pollbook.election.election_group.public_key
         if not election_public_key:
