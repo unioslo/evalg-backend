@@ -8,7 +8,7 @@ from nacl.encoding import Base64Encoder
 from nacl.hash import blake2b
 from nacl.public import Box, PublicKey, PrivateKey
 
-from evalg.ballot_serializer.ballot_serializer import BallotSerializerBase
+from evalg.ballot_serializer.ballot_serializer_base import BallotSerializerBase
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class Base64NaClSerializer(BallotSerializerBase):
         ballot_data = json.dumps(ballot, ensure_ascii=False).encode('utf-8')
         return blake2b(ballot_data, encoder=Base64Encoder)
 
-    def is_valid_hash(self, hash, ballot):
+    def is_valid_hash(self, ballot_hash, ballot):
         """Tests that a ballot hash is correct."""
         ballot_data = json.dumps(ballot, ensure_ascii=False).encode('utf-8')
         new_hash = blake2b(ballot_data, encoder=Base64Encoder)

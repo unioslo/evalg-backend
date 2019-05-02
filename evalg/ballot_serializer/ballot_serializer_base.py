@@ -38,7 +38,7 @@ class BallotSerializerBase(ABC):
         pass
 
     @abstractmethod
-    def is_valid_hash(self, hash, ballot):
+    def is_valid_hash(self, ballot_hash, ballot):
         pass
 
     @property
