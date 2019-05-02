@@ -26,7 +26,8 @@ def test_election_vote_policy(
         'rankedCandidateIds': [repr(x.id) for x in pref_candidates_foo]
     }
 
-    vote = election_vote_policy_foo.add_vote(pollbook_voter_foo, ballot_data)
+    vote = election_vote_policy_foo.add_vote(pollbook_voter_foo,
+                                             ballot_data.copy())
     assert vote
 
     # get and check vote

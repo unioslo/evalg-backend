@@ -25,6 +25,7 @@ def config():
         BACKEND_PRIVATE_KEY = 'nnQjcDrXcIc8mpHabme8j7/xPBWqIkPElM8KtAJ4vgc='
         BACKEND_PUBLIC_KEY = 'KLUDKkCPrAEcK9SrYDyMsrLEShm6axS9uSG/sOfibCA='
         ENVELOPE_TYPE = 'base64-nacl'
+        ENVELOPE_PADDED_LEN = 1000
 
     return Config()
 
