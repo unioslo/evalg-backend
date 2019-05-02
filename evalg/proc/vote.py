@@ -28,6 +28,7 @@ class ElectionVotePolicy(object):
         config = current_app.config
         self._envelope_type = config.get('ENVELOPE_TYPE')
         self._backend_private_key = config.get('BACKEND_PRIVATE_KEY')
+        self._envelope_padded_len = config.get('ENVELOPE_PADDED_LEN')
 
     @property
     def envelope_type(self):
@@ -52,6 +53,7 @@ class ElectionVotePolicy(object):
         serializer = Base64NaClSerializer(
             backend_private_key=self._backend_private_key,
             election_public_key=election_public_key,
+            envelop_padded_len=self._envelope_padded_len,
         )
 
         ballot = Envelope(
