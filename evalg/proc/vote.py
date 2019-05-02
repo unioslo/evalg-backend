@@ -1,6 +1,4 @@
-"""
-This module implements interfaces for voting and getting vote statistics.
-"""
+"""This module implements interfaces for voting and getting vote statistics."""
 import collections
 import logging
 
@@ -20,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class ElectionVotePolicy(object):
-    """
-    """
+    """Helper class used to create and store ballots correctly."""
 
     def __init__(self, session):
         self.session = session
@@ -32,30 +29,31 @@ class ElectionVotePolicy(object):
 
     @property
     def envelope_type(self):
+        """
+        Envelope type in use to serialize ballots.
+
+        Currently not used.
+        """
         return self._envelope_type
 
     @property
     def ballot_type(self):
-        # TODO: get from ballot?
+        """
+        Ballot type.
+
+        Is this in use?
+        TODO: Implement, get this from the election group maybe?
+        """
         return 'test_ballot'
 
-    def make_ballot(self, ballot_data, voter, election_public_key):
-        """
-        :type election: evalg.models.election.Election
-        :type ballot_data: str
-
-        :rtype: evalg.models.ballot.Envelope
-
-        """
-
-        # TODO: create serializer factory?
-
+    def make_ballot(self, ballot_data, election_public_key):
+        """Create a envelope object with containing the serialized ballot."""
+        # Future work: create serializer factory.
         serializer = Base64NaClSerializer(
             backend_private_key=self._backend_private_key,
             election_public_key=election_public_key,
             envelop_padded_len=self._envelope_padded_len,
         )
-
         ballot = Envelope(
             envelope_type=self.envelope_type,
             ballot_type=self.ballot_type,
@@ -64,25 +62,14 @@ class ElectionVotePolicy(object):
         return ballot
 
     def make_vote(self, voter, envelope):
-        """
-        Make a Vote object.
-
-        :type voter: evalg.models.voter.Voter
-        :type envelope: evalg.models.ballot.Envelope
-        """
+        """Create a Vote object mapping a envelope to a voter."""
         vote = evalg.database.query.get_or_create(
             self.session, Vote, voter_id=voter.id)
-
         vote.ballot_id = envelope.id
         return vote
 
     def add_vote(self, voter, ballot_data):
-        """
-        Add a vote for a given election.
-
-        :type election: evalg.models.election.Election
-        :type ballot: evalg.models.ballot.Envelope
-        """
+        """Add a vote to a given election."""
         logger.info("Adding vote in election/pollbook %r/%r",
                     voter.pollbook.election, voter.pollbook)
 
@@ -93,12 +80,9 @@ class ElectionVotePolicy(object):
 
         election_public_key = voter.pollbook.election.election_group.public_key
         if not election_public_key:
-            raise Exception('Election is missing key')
+            raise Exception('Election key is missing.')
 
-        envelope = self.make_ballot(ballot_data,
-                                    voter,
-                                    election_public_key)
-
+        envelope = self.make_ballot(ballot_data, election_public_key)
         self.session.add(envelope)
         self.session.flush()
         logger.info("Stored ballot %r", envelope)
