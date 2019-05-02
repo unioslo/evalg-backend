@@ -133,7 +133,7 @@ class Base64NaClSerializer(BallotSerializerBase):
         else:
             pad_length = self._envelope_padded_len - ballot_len
 
-        ballot['padding'] = "0" * pad_length
+        ballot['padding'] = '0' * pad_length
         return ballot
 
     def _remove_padding(self, ballot):
