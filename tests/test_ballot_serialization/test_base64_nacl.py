@@ -35,7 +35,6 @@ def test_base64_nacl_encryption(ballot_serializer):
 
 def test_base64_nacl_padding(ballot_serializer, ballot, config):
     """Test correct encoding and decoding."""
-
     padded_ballot = ballot_serializer._pad_ballot(ballot.copy())
     assert padded_ballot
     assert len(json.dumps(padded_ballot)) == config.ENVELOPE_PADDED_LEN
@@ -72,7 +71,7 @@ def test_base64_nacl_serializer(ballot_serializer, ballot):
 
 def test_base64_nacl_hashing(ballot_serializer, ballot):
     """Test hashing."""
-    ballot_hash = ballot_serializer.generate_hash(ballot)
+    ballot_hash = ballot_serializer.generate_hash(ballot.copy())
     assert ballot_hash
     ballot_hash2 = ballot_serializer.generate_hash(ballot)
     assert ballot_hash2
@@ -102,7 +101,7 @@ def test_base64_nacl_wrong_backend_public_key(ballot_serializer, ballot):
 
 def test_base64_nacl_corrupt_data(ballot_serializer, ballot):
     """Try deserializing corrupt data."""
-    serialized_ballot = ballot_serializer.serialize(ballot.copy())
+    serialized_ballot = ballot_serializer.serialize(ballot)
     assert serialized_ballot
     tmp = bytearray(serialized_ballot)
     tmp[-10] = 65 if tmp[-10] != 65 else 66

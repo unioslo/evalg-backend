@@ -1,7 +1,5 @@
 import json
 import logging
-import random
-import string
 
 from base64 import b64decode, b64encode
 from nacl.encoding import Base64Encoder
@@ -90,7 +88,7 @@ class Base64NaClSerializer(BallotSerializerBase):
         """Tests that a ballot hash is correct."""
         ballot_data = json.dumps(ballot, ensure_ascii=False).encode('utf-8')
         new_hash = blake2b(ballot_data, encoder=Base64Encoder)
-        if hash != new_hash:
+        if ballot_hash != new_hash:
             return False
         return True
 
@@ -135,9 +133,7 @@ class Base64NaClSerializer(BallotSerializerBase):
         else:
             pad_length = self._envelope_padded_len - ballot_len
 
-        ballot['padding'] = ''.join(
-            random.choices(string.ascii_letters + string.digits,
-                           k=pad_length))
+        ballot['padding'] = "0" * pad_length
         return ballot
 
     def _remove_padding(self, ballot):
