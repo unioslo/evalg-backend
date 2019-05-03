@@ -46,14 +46,14 @@ class GroupPrincipal(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = evalg.models.authorization.GroupPrincipal
 
 
-class ElectionRole(graphene_sqlalchemy.SQLAlchemyObjectType):
-    class Meta:
-        model = evalg.models.authorization.ElectionRole
+# class ElectionRole(graphene_sqlalchemy.SQLAlchemyObjectType):
+#     class Meta:
+#         model = evalg.models.authorization.ElectionRole
 
 
-class ElectionRoleList(graphene_sqlalchemy.SQLAlchemyObjectType):
-    class Meta:
-        model = evalg.models.authorization.ElectionRoleList
+# class ElectionRoleList(graphene_sqlalchemy.SQLAlchemyObjectType):
+#     class Meta:
+#         model = evalg.models.authorization.ElectionRoleList
 
 
 class ElectionGroupRole(graphene_sqlalchemy.SQLAlchemyObjectType):

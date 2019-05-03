@@ -88,7 +88,6 @@ def shell_context():
         'Election': models.election.Election,
         'ElectionGroup': models.election.ElectionGroup,
         'ElectionList': models.election_list.ElectionList,
-        'ElectionRole': models.authorization.ElectionRole,
         'ElectionGroupRole': models.authorization.ElectionGroupRole,
         'Envelope': models.ballot.Envelope,
         'Group': models.group.Group,
