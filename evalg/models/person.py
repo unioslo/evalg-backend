@@ -37,7 +37,9 @@ class Person(ModelBase):
         evalg.database.types.UtcDateTime,
         default=utcnow)
 
-    principals = db.relationship('PersonPrincipal')
+    principal = db.relationship(
+        'PersonPrincipal',
+        uselist=False)
 
     identifiers = db.relationship(
         'PersonExternalId',

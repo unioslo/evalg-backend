@@ -117,6 +117,10 @@ def create_app(config=None, config_file=None, flask_class=Flask):
     from evalg import authentication
     authentication.init_app(app)
 
+    # Authorization
+    from evalg import authorization
+    authorization.init_app(app=app)
+
     # Setup API
     from evalg import graphql
     graphql.init_app(app)
@@ -156,12 +160,12 @@ def create_app(config=None, config_file=None, flask_class=Flask):
             return authentication.user.person.id
         return None
 
-    @meta_plugin_source.register('feide_id')
-    def get_feide_id():
-        from evalg import authentication
-        if authentication.user.is_authenticated():
-            return authentication.user.dp_ids['feide']
-        return None
+    # @meta_plugin_source.register('feide_id')
+    # def get_feide_id():
+    #     from evalg import authentication
+    #     if authentication.user.is_authenticated():
+    #         return authentication.user.dp_ids['feide']
+    #     return None
 
     @meta_plugin_source.register('job_name')
     def get_job_name():

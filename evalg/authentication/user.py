@@ -70,8 +70,8 @@ class EvalgUser(object):
         self._auth_finished = True
 
     def find_person(self):
-        if (not self.gk_user.access_token and
-                current_app.config['AUTH_METHOD'] == 'feide'):
+        if (current_app.config['AUTH_METHOD'] == 'feide'
+                and not self.gk_user.access_token):
             logger.warning('No access token in headers')
             return None
         matches = PersonExternalId.find_ids(*self.flattened_dp_ids).all()
