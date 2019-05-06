@@ -20,6 +20,7 @@ RUN set -ex \
             musl-dev \
             linux-headers \
             postgresql-dev \
+            libffi-dev \
     && apk add --no-cache --virtual .evalg-deps \
             git \
             bash \
