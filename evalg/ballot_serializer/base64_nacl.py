@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 
 from base64 import b64decode, b64encode
 from nacl.encoding import Base64Encoder
@@ -129,7 +130,7 @@ class Base64NaClSerializer(BallotSerializerBase):
             logger.error('Found ballot that is bigger then the padded '
                          'total size. We can\'t hide the size of the ballot. '
                          'Increase ENVELOPE_PADDED_LEN to fix the problem.')
-            pad_length = 0
+            pad_length = random.randint(512, 1024)
         else:
             pad_length = self._envelope_padded_len - ballot_len
 
