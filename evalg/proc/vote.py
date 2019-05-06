@@ -1,9 +1,8 @@
-"""
-This module implements interfaces for voting and getting vote statistics.
-"""
+"""This module implements interfaces for voting and getting vote statistics."""
 import collections
 import logging
 
+from flask import current_app
 from sqlalchemy.sql import and_, select, func
 
 import evalg.database.query
@@ -13,92 +12,84 @@ from evalg.models.election import ElectionGroup, Election
 from evalg.models.voter import Voter, VERIFIED_STATUS_MAP
 from evalg.models.votes import Vote
 from evalg.models.person import PersonExternalId, Person
+from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 
 logger = logging.getLogger(__name__)
 
 
 class ElectionVotePolicy(object):
-    """
-    """
+    """Helper class used to create and store ballots correctly."""
 
     def __init__(self, session):
         self.session = session
+        config = current_app.config
+        self._envelope_type = config.get('ENVELOPE_TYPE')
+        self._backend_private_key = config.get('BACKEND_PRIVATE_KEY')
+        self._envelope_padded_len = config.get('ENVELOPE_PADDED_LEN')
 
     @property
     def envelope_type(self):
-        return 'test_envelope'
+        """
+        Envelope type in use to serialize ballots.
+
+        Currently not used.
+        """
+        return self._envelope_type
 
     @property
     def ballot_type(self):
+        """
+        Ballot type.
+
+        Is this in use?
+        TODO: Implement, get this from the election group maybe?
+        """
         return 'test_ballot'
 
-    def make_ballot(self, ballot_data):
-        """
-        :type election: evalg.models.election.Election
-        :type ballot_data: str
-
-        :rtype: evalg.models.ballot.Envelope
-
-        """
-        # TODO: Build a Ballot object and serialize.
-        ballot_content = repr(ballot_data)
-
+    def make_ballot(self, ballot_data, election_public_key):
+        """Create a envelope object with containing the serialized ballot."""
+        # Future work: create serializer factory.
+        serializer = Base64NaClSerializer(
+            backend_private_key=self._backend_private_key,
+            election_public_key=election_public_key,
+            envelop_padded_len=self._envelope_padded_len,
+        )
         ballot = Envelope(
             envelope_type=self.envelope_type,
             ballot_type=self.ballot_type,
-            ballot_data=ballot_content,
+            ballot_data=serializer.serialize(ballot_data)
         )
         return ballot
 
     def make_vote(self, voter, envelope):
-        """
-        Make a Vote object.
-
-        :type voter: evalg.models.voter.Voter
-        :type envelope: evalg.models.ballot.Envelope
-        """
+        """Create a Vote object mapping a envelope to a voter."""
         vote = evalg.database.query.get_or_create(
             self.session, Vote, voter_id=voter.id)
-
         vote.ballot_id = envelope.id
         return vote
 
-    def sign_ballot(self, envelope):
-        """
-        Sign ballot for an election.
-
-        :type election: evalg.models.election.Election
-        :type ballot: evalg.models.ballot.Envelope
-        """
-        # TODO: Get election key
-        key = ''
-
-        # Sign serialized ballot.
-        envelope.sign(key)
-
     def add_vote(self, voter, ballot_data):
-        """
-        Add a vote for a given election.
-
-        :type election: evalg.models.election.Election
-        :type ballot: evalg.models.ballot.Envelope
-        """
+        """Add a vote to a given election."""
         logger.info("Adding vote in election/pollbook %r/%r",
                     voter.pollbook.election, voter.pollbook)
 
         if not voter.pollbook.election.is_ongoing:
             raise Exception('inactive election')
 
-        envelope = self.make_ballot(ballot_data)
+        # TODO: add ballot verification.
+
+        election_public_key = voter.pollbook.election.election_group.public_key
+        if not election_public_key:
+            raise Exception('Election key is missing.')
+
+        envelope = self.make_ballot(ballot_data, election_public_key)
         self.session.add(envelope)
         self.session.flush()
-
         logger.info("Stored ballot %r", envelope)
 
         vote = self.make_vote(voter, envelope)
         self.session.add(vote)
         self.session.flush()
-
         logger.info("Stored vote %r", vote)
         return vote
 

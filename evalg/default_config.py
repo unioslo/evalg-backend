@@ -54,3 +54,10 @@ AUTH_METHOD = 'feide'
 FEIDE_BASIC_REQUIRE = True
 FEIDE_BASIC_REALM = None
 FEIDE_BASIC_USERS = []
+
+
+#
+# Ballot encryption/serialization
+#
+ENVELOPE_TYPE = 'base64-nacl'
+ENVELOPE_PADDED_LEN = 1000

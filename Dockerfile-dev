@@ -16,6 +16,7 @@ RUN set -ex \
             libc-dev \
             musl-dev \
             linux-headers \
+            libffi-dev \
     && apk add --no-cache --virtual .evalg-deps \
             git \
             bash \

@@ -23,6 +23,9 @@ htmlcov/*
 junit*.xml
 coverage*.xml
 
+# Pytest
+.pytest_cache/*
+
 # Build and docs folder/files
 build/*
 dist/*
@@ -47,3 +50,6 @@ node_modules/*
 
 # Junit
 junit-*.xml
+
+# pycharm
+.idea/*
