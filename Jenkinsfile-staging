@@ -4,7 +4,7 @@ pipeline {
     agent { label 'docker' }
     environment {
         project = 'it-usit-int-drift'
-        registry = 'harbor.uio.no'
+        registry = 'harbor.uio.no:433'
         image_version = sh( 
             returnStdout: true,
             script: 'git describe --dirty=+ --tags'
@@ -16,7 +16,7 @@ pipeline {
                 sh "docker build --no-cache \
                     -t '${project}/valg-backend' \
                     -f Dockerfile-staging ."
-                sh "docker tag '${project}/valg-backend' '${project}/valg-backend:${image_version}'"
+                sh "docker tag '${project}/valg-backend' '${registry}/${project}/valg-backend:${image_version}'"
             }
         }
         stage ('Push image to Harbor') {
