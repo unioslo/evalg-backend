@@ -21,7 +21,7 @@ pipeline {
         }
         stage ('Push image to Harbor') {
             steps {
-                sh "docker push '${registry}:${project}/valg-backend'"
+                sh "docker push '${registry}/${project}/valg-backend'"
             }
         }
         stage ('Cleanup after docker') {
