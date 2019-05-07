@@ -4,7 +4,7 @@ pipeline {
     agent { label 'docker' }
     environment {
         project = 'it-usit-int-drift'
-        registry = 'harbor.uio.no:433'
+        registry = 'harbor.uio.no'
         image_version = sh( 
             returnStdout: true,
             script: 'git describe --dirty=+ --tags'
