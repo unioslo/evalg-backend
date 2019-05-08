@@ -50,6 +50,8 @@ class ElectionGroup(AbstractElection):
     elections = db.relationship('Election')
     """ Organizational unit. """
 
+    election_group_counts = db.relationship('ElectionGroupCount')
+
     public_key = db.Column(db.Text)
     """ Public election key """
 
@@ -148,6 +150,8 @@ class Election(AbstractElection):
         'ElectionGroup',
         back_populates='elections',
         lazy='joined')
+
+    election_results = db.relationship('ElectionResult')
 
     lists = db.relationship('ElectionList')
 
