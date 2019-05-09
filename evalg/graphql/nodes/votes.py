@@ -121,8 +121,8 @@ class AddVote(graphene.Mutation):
         if not vote_policy.verify_election_is_ongoing(voter):
             return AddVote(ok=False)
 
-        if not vote_policy.verify_candidates_exist(ballot_data,
-                                                   voter.pollbook.election.id):
+        if not vote_policy.verify_ballot_content(ballot_data,
+                                                 voter.pollbook.election.id):
             return AddVote(ok=False)
 
         ballot_data['pollbookId'] = str(voter.pollbook.id)

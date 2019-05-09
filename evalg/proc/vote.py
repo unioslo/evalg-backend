@@ -36,7 +36,7 @@ class ElectionVotePolicy(object):
                                                 id=voter_id)
         except evalg.database.query.TooFewError:
             logger.error('Voter %r does not exist', voter_id)
-            return None
+            return
         return voter
 
     def verify_election_is_ongoing(self, voter):
@@ -45,9 +45,7 @@ class ElectionVotePolicy(object):
             return False
         return True
 
-    def verify_candidates_exist(self, ballot_data, election_id):
-        ranked_candidate_ids = ballot_data['rankedCandidateIds']
-
+    def verify_candidates_exist(self, ranked_candidate_ids, election_id):
         if ranked_candidate_ids:
             query = self.session.query(
                  func.count(Candidate.id)
@@ -63,9 +61,18 @@ class ElectionVotePolicy(object):
             number_of_candidates = query.first()[0]
 
             if number_of_candidates < len(ranked_candidate_ids):
-                logger.error('Selected candidate(s) does not exist (%r)',
-                             ranked_candidate_ids)
                 return False
+        return True
+
+    def verify_ballot_content(self, ballot_data, election_id):
+        ranked_candidate_ids = ballot_data['rankedCandidateIds']
+        if ranked_candidate_ids and ballot_data['isBlankVote']:
+            logger.error('A blank vote can not contain preferred candidates')
+            return False
+        if not self.verify_candidates_exist(ranked_candidate_ids, election_id):
+            logger.error('Selected candidate(s) does not exist (%r)',
+                         ranked_candidate_ids)
+            return False
         return True
 
     @property
