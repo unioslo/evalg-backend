@@ -9,6 +9,8 @@ from . import ballot
 from . import base
 from . import candidate
 from . import election_list
+from . import election_group_count
+from . import election_result
 from . import election
 from . import group
 from . import ou
@@ -23,6 +25,8 @@ __all__ = [
     'base',
     'candidate',
     'election_list',
+    'election_group_count',
+    'election_result',
     'election',
     'group',
     'ou',
