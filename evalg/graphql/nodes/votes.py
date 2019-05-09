@@ -99,10 +99,6 @@ def resolve_election_count_by_id(_, info, **args):
 #   2. Commit vote (e.g. create and store a Vote that binds a voter_id to the
 #      ballot_id)
 
-# TODO:
-#   Should we have a more structured BallotInputObject to validate the ballot
-#   content?
-
 class AddVote(graphene.Mutation):
     class Arguments:
         voter_id = graphene.UUID(required=True)
@@ -116,10 +112,20 @@ class AddVote(graphene.Mutation):
         voter_id = args['voter_id']
         ballot_data = args['ballot']
         session = get_session(info)
-        voter = evalg.database.query.lookup(session,
-                                            evalg.models.voter.Voter,
-                                            id=voter_id)
         vote_policy = evalg.proc.vote.ElectionVotePolicy(session)
+
+        voter = vote_policy.get_voter(voter_id)
+        if not voter:
+            return AddVote(ok=False)
+
+        if not vote_policy.verify_election_is_ongoing(voter):
+            return AddVote(ok=False)
+
+        if not vote_policy.verify_ballot_content(ballot_data,
+                                                 voter.pollbook.election.id):
+            return AddVote(ok=False)
+
+        ballot_data['pollbookId'] = str(voter.pollbook.id)
         vote = vote_policy.add_vote(voter, ballot_data)
         session.flush()
 
