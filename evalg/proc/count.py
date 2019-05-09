@@ -43,6 +43,14 @@ class ElectionGroupCounter(object):
             id=group_id
         )
 
+    def verify_election_statuses(self):
+        for election in self.group.elections:
+            if election.status not in ('closed', 'inactive'):
+                logger.error(Exception('Election(s) in election group not '
+                                       'closed'))
+                return False
+        return True
+
     def get_ballot_serializer(self, election_key):
         try:
             ballot_serializer = Base64NaClSerializer(
@@ -57,12 +65,11 @@ class ElectionGroupCounter(object):
             return None
         return ballot_serializer
 
-    def log_start_count(self, initiator_id):
+    def log_start_count(self):
         utc_now = datetime.datetime.now(datetime.timezone.utc)
 
         db_row = ElectionGroupCount(
                 group_id=self.group_id,
-                initiator_id=initiator_id,
                 initiated_at=utc_now,
             )
         self.session.add(db_row)
@@ -70,7 +77,12 @@ class ElectionGroupCounter(object):
         return db_row
 
     def log_finalize_count(self, db_row):
-        pass
+        utc_now = datetime.datetime.now(datetime.timezone.utc)
+        db_row.finished_at = utc_now
+
+        self.session.add(db_row)
+        self.session.commit()
+        return db_row
 
     def get_ballots_query(self, pollbook_id):
         query = self.session.query(
@@ -91,11 +103,7 @@ class ElectionGroupCounter(object):
         return query
 
     def deserialize_ballots(self, ballot_serializer):
-        ballots = defaultdict(
-            lambda: defaultdict(
-                dict
-            )
-        )
+        election_id2ballots = defaultdict(list)
         for election in self.group.elections:
             for pollbook in election.pollbooks:
                 envelopes = self.get_ballots_query(pollbook.id).all()
@@ -103,11 +111,11 @@ class ElectionGroupCounter(object):
                     ballot_data = ballot_serializer.deserialize(
                         envelope.ballot_data
                     )
-                    ballots[election.id][pollbook.id].update({
-                        envelope.id: ballot_data
-                    })
-        logger.debug(ballots)
-        return ballots
+                    election_id2ballots[election.id].append(ballot_data)
 
-    def count(self, ballots):
+        logger.debug(election_id2ballots)
+        return election_id2ballots
+
+    # TODO: replace this with counting algorithm
+    def count(self, election2ballots):
         pass

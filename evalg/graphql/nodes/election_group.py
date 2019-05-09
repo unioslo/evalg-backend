@@ -363,40 +363,23 @@ class CountElectionGroup(graphene.Mutation):
                 code='invalid-election-key',
                 message='The given election key is invalid')
 
-        if election_group_counter.group.status is not 'closed':
+        if not election_group_counter.verify_election_statuses():
             return CountElectionGroupResponse(
                 success=False,
                 code='cannot-count-before-all-elections-are-closed',
-                message='All of the elections in a election group must be '
-                        'closed to count votes')
+                message='All of the elections in an election group must be'
+                        ' closed to count votes')
 
         # Creating an election_group_count entry in the db
-        db_row = election_group_counter.log_start_count(
-            initiator_id=info.context['user'].person.id
-        )
-        ballots = election_group_counter.deserialize_ballots(ballot_serializer)
-        results = election_group_counter.count(ballots)
-
-        # counts = group.election_group_counts
-        # logger.debug(counts)
-        # if counts:
-        #     for count in counts:
-        #         logger.debug(count.status)
-        #         if count.status is 'ongoing':
-        #             return CountElectionGroupResponse(
-        #                 success=False,
-        #                 code='count-already-ongoing',
-        #                 message='All of the elections in an election group '
-        #                         'must be closed to count votes')
+        db_row = election_group_counter.log_start_count()
+        election_id2ballots = election_group_counter.deserialize_ballots(
+            ballot_serializer)
 
         # TODO
-        #   (2. Check if election group is being counted)
-        #   3. Log that counting is in progress, by who, date etc
-        #   (election_group_count)
-        #   4. Get ballots for election and decrypt
-        #   5. Format votes for counting
-        #   6. Start counting...
-        #   7. Store result and ballots in election_result table
-        #   8. Mark election_group_count entry as finished
+        #   1. Do the actual counting
+        #   2. Store result, ballots and protocol in election_result table
+
+        results = election_group_counter.count(election_id2ballots)
+        db_row = election_group_counter.log_finalize_count(db_row)
 
         return CountElectionGroupResponse(success=True)

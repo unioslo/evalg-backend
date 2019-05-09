@@ -195,7 +195,12 @@ class Election(AbstractElection):
 
     @hybrid_property
     def status(self):
-        """ draft → announced → published → ongoing/closed/cancelled """
+        """
+        inactive → draft → announced → published → ongoing/closed/cancelled
+
+        """
+        if not self.active:
+            return 'inactive'
         if self.election_group.cancelled_at:
             return 'cancelled'
         if self.election_group.published_at:
@@ -211,6 +216,7 @@ class Election(AbstractElection):
     @status.expression
     def status(cls):
         return case([
+            (cls.active == False, 'inactive'),
             (cls.cancelled_at.isnot(None), 'cancelled'),
             (and_(cls.published_at.isnot(None),
                   cls.end <= func.now()), 'closed'),
