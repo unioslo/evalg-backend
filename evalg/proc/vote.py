@@ -40,7 +40,6 @@ class ElectionVotePolicy(object):
         return voter
 
     def verify_election_is_ongoing(self, voter):
-        logger.debug(voter.pollbook.election.id)
         if not voter.pollbook.election.is_ongoing:
             logger.error('Can not vote, election is closed')
             return False
@@ -67,7 +66,6 @@ class ElectionVotePolicy(object):
                 logger.error('Selected candidate(s) does not exist (%r)',
                              ranked_candidate_ids)
                 return False
-
         return True
 
     @property
