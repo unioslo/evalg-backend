@@ -20,6 +20,7 @@ from evalg.election_templates import election_template_builder
 from evalg.graphql import types
 from evalg.graphql.nodes.base import get_session, MutationResponse
 from evalg.graphql.nodes.person import Person
+from evalg.graphql.nodes.election import ElectionResult
 from evalg.utils import convert_json
 
 
@@ -37,6 +38,12 @@ from evalg.utils import convert_json
 # Query
 #
 
+class ElectionGroupCount(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = evalg.models.election_group_count.ElectionGroupCount
+
+    election_results = graphene.List(ElectionResult)
+
 
 class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
     """
@@ -52,6 +59,7 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
     publication_blockers = graphene.List(graphene.String)
     published = graphene.Boolean()
     announced = graphene.Boolean()
+    election_group_counts = graphene.List(ElectionGroupCount)
 
     def resolve_announcement_blockers(self, info):
         return evalg.proc.election.get_group_announcement_blockers(self)
@@ -383,3 +391,4 @@ class CountElectionGroup(graphene.Mutation):
         db_row = election_group_counter.log_finalize_count(db_row)
 
         return CountElectionGroupResponse(success=True)
+

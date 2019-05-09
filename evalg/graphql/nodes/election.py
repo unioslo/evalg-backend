@@ -27,6 +27,10 @@ from .. import types
 # Query
 #
 
+class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = evalg.models.election_result.ElectionResult
+
 
 class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
@@ -41,6 +45,7 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
     # TODO: Wouldn't we have to do this for our other models as well?
     pollbooks = graphene.List(pollbook.PollBook)
     vote_count = graphene.Field(lambda: ElectionVoteCounts)
+    election_results = graphene.List(ElectionResult)
 
     def resolve_vote_count(self, info):
         return resolve_election_count_by_id(None, info, id=self.id)
