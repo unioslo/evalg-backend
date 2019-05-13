@@ -4,6 +4,7 @@ import pytest
 
 import evalg.database.query
 from evalg import create_app, db
+from evalg.authentication import user
 from evalg.models.candidate import Candidate
 from evalg.models.election import ElectionGroup, Election
 from evalg.models.election_group_count import ElectionGroupCount
@@ -25,6 +26,29 @@ def config():
         AUTH_ENABLED = True
         AUTH_METHOD = 'feide_mock'
         FEIDE_BASIC_REQUIRE = False
+        FEIDE_MOCK_LOGIN_AS = 'a6733d24-8987-44b6-8cd0-308030710aa2'
+        FEIDE_MOCK_DATA = {
+            'client_id': 'f7a0afcd-2b9a-461d-b82c-816d637b68da',
+            'users': {
+                'a6733d24-8987-44b6-8cd0-308030710aa2': {
+                    'id': 'a6733d24-8987-44b6-8cd0-308030710aa2',
+                    'sec': {
+                        'feide': ('foo@example.org', ),
+                        'nin': ('12128812345', ),
+                    },
+                    'dp_user_info': {
+                        'user': {
+                            'name': 'Foo Foo',
+                            'email': 'foo@example.org',
+                        },
+                        'audience': 'mock',
+                    },
+                    # 'feide_user_info': {
+                    #     'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
+                    # }
+                },
+            },
+        }
         BACKEND_PRIVATE_KEY = 'nnQjcDrXcIc8mpHabme8j7/xPBWqIkPElM8KtAJ4vgc='
         BACKEND_PUBLIC_KEY = 'KLUDKkCPrAEcK9SrYDyMsrLEShm6axS9uSG/sOfibCA='
         ENVELOPE_TYPE = 'base64-nacl'
@@ -53,9 +77,16 @@ def _db(app, database):
     Provide the transactional fixtures with access to the database via a
     Flask-SQLAlchemy database connection.
 
-    This fixture is expected by `pytest-flask-sqlalchemy
+    This fixture is expected by `pytest-flask-sqlalchemy`
     """
     return database
+
+
+@pytest.yield_fixture(scope='function')
+def logged_in_user(db_session, app, config):
+    with app.test_request_context():
+        app.preprocess_request()
+        yield user
 
 
 @pytest.fixture
@@ -260,7 +291,7 @@ def persons(db_session):
         [
             {
                 "id_type": "feide_id",
-                "id_value": "foo@bar.org",
+                "id_value": "foo@example.org",
             },
             {
                 "id_type": "feide_user_id",
@@ -278,11 +309,11 @@ def persons(db_session):
         [
             {
                 "id_type": "feide_id",
-                "id_value": "bar@baz.org",
+                "id_value": "bar@example.org",
             },
             {
                 "id_type": "feide_user_id",
-                "id_value": "a6733d24-8987-55b6-8cd0-308030710aa2",
+                "id_value": "02d9d5fc-3efe-4d13-a5d8-09fb09afcbe2",
             },
             {
                 "id_type": "uid",

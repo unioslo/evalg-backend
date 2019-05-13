@@ -8,36 +8,36 @@ from collections import defaultdict
 from sqlalchemy import func, or_
 from evalg import db
 from .models.person import Person, PersonExternalId
-from .authorization import check_perms, all_perms, PermissionDenied
+# from .authorization import check_perms, all_perms, PermissionDenied
 
 
 class NotFoundError(Exception):
     pass
 
 
-def perm(*permission):
-    """Check perms function"""
-    for perm in permission:
-        assert perm in all_perms, '{} not valid'.format(permission)
+# def perm(*permission):
+#     """Check perms function"""
+#     for perm in permission:
+#         assert perm in all_perms, '{} not valid'.format(permission)
 
-    def fun(f):
-        @wraps(f)
-        def gun(*args, **kw):
-            if 'principals' in kw:
-                principals = kw['principals']
-                del kw['principals']
-            else:
-                principals = ()
-            if not check_perms(principals, permission):
-                raise PermissionDenied()
-            return f(*args, **kw)
+#     def fun(f):
+#         @wraps(f)
+#         def gun(*args, **kw):
+#             if 'principals' in kw:
+#                 principals = kw['principals']
+#                 del kw['principals']
+#             else:
+#                 principals = ()
+#             if not check_perms(principals, permission):
+#                 raise PermissionDenied()
+#             return f(*args, **kw)
 
-        gun.is_protected = True
-        return gun
-    return fun
+#         gun.is_protected = True
+#         return gun
+#     return fun
 
 
-@perm('view-election', 'grant-role', 'upload-voters', 'vote-for', 'change-person')
+# @perm('view-election', 'grant-role', 'upload-voters', 'vote-for', 'change-person')
 def list_persons(**kw):
     return Person.query.filter_by(**kw)
 
@@ -55,7 +55,7 @@ def search_person(filter_string):
 #        func.lower(Person.nin).like(filter_lc)).all()
 
 
-@perm('change-person')
+# @perm('change-person')
 def make_person(**args):
     return Person(**args)
 
@@ -85,7 +85,7 @@ def _update_person(person, kwargs):
     return person
 
 
-@perm('change-person')
+# @perm('change-person')
 def update_person(person, **updates):
     return _update_person(person, updates)
 
@@ -95,6 +95,6 @@ def update_self(person, **updates):
     return _update_person(person, updates)
 
 
-@perm('change-person')
+# @perm('change-person')
 def delete_person(person):
     db.session.delete(person)

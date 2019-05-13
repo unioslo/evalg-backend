@@ -7,13 +7,13 @@ from evalg import db
 from .models.ou import OrganizationalUnit
 from .models.group import Group
 from .models.person import Person
-from .models.authorization import (Permission,
-                                   ElectionRole,
+from .models.authorization import (# Permission,
+                                   # ElectionRole,
                                    ElectionGroupRole,
                                    Principal,
                                    PersonPrincipal,
                                    GroupPrincipal,
-                                   RoleList,
+                                   # RoleList,
                                    get_principals_for)
 from .auth import check_perms, all_permissions
 
@@ -106,15 +106,15 @@ def grant_role(role_list, **kw):
     return ret
 
 
-@perm('grant-role')
-def get_grant(role, principal_type, principal_id, **kw):
-    role = get_role(role) if isinstance(role, str) else role
-    c = role.role_class
-    if c is ElectionRole and 'group_id' in kw:
-        c = ElectionGroupRole
-    more = [getattr(c, k) == v for k, v in kw.items()]
-    return c.query.filter(c.trait == role, c.principal_id == principal_id,
-                          *more).one()
+# @perm('grant-role')
+# def get_grant(role, principal_type, principal_id, **kw):
+#     role = get_role(role) if isinstance(role, str) else role
+#     c = role.role_class
+#     if c is ElectionRole and 'group_id' in kw:
+#         c = ElectionGroupRole
+#     more = [getattr(c, k) == v for k, v in kw.items()]
+#     return c.query.filter(c.trait == role, c.principal_id == principal_id,
+#                           *more).one()
 
 
 @perm('grant-role')
@@ -123,16 +123,16 @@ def delete_grant(grant):
     db.session.commit()
 
 
-def list_perms():
-    return Permission.query.all()
+# def list_perms():
+#     return Permission.query.all()
 
 
-def list_roles():
-    return RoleList.query.all()
+# def list_roles():
+#     return RoleList.query.all()
 
 
-def list_election_roles(election):
-    return ElectionRole.query.filter(ElectionRole.election_id == election.id)
+# def list_election_roles(election):
+#     return ElectionRole.query.filter(ElectionRole.election_id == election.id)
 
 
 def list_election_group_roles(group):
