@@ -33,7 +33,7 @@ def resolve_group_search(_, info, **args):
     Search for groups by name
     """
     session = get_session(info)
-    return evalg.proc.group.search_group(session, args['val'])
+    return evalg.proc.group.search_groups(session, args['val']).all()
 
 
 search_groups_query = graphene.List(
