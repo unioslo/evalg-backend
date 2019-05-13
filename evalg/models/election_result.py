@@ -21,19 +21,21 @@ class ElectionResult(ModelBase):
         evalg.database.types.UuidType,
         db.ForeignKey('election.id'))
 
-    group = db.relationship(
-        'ElectionGroupCount',
-        back_populates='election_results',
-        lazy='joined')
-
+    # TODO, add a hybrid property that returns the last election result?
     election = db.relationship(
         'Election',
         back_populates='election_results',
         lazy='joined')
 
-    count_id = db.Column(
+    election_group_count_id = db.Column(
         evalg.database.types.UuidType,
         db.ForeignKey('election_group_count.id'))
+
+    election_group_count = db.relationship(
+        'ElectionGroupCount',
+        back_populates='election_results',
+        lazy='joined')
+
     """ election group count that the result belongs to """
 
     # TODO: maybe change this to a file column
