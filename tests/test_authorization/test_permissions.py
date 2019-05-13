@@ -9,10 +9,11 @@ from evalg.models.authorization import (ElectionGroupRole,
 
 
 def test_requirements_throw_PermissionDenied_on_deny(
-        db_session, logged_in_user, group_foo):
+        db_session, logged_in_user, election_group_foo):
     with pytest.raises(PermissionDenied):
         allows.run([
-            permissions.IsElectionGroupAdmin(election_group_id=group_foo.id)
+            permissions.IsElectionGroupAdmin(
+                election_group_id=election_group_foo.id)
         ])
 
 

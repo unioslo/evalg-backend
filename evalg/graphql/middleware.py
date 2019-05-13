@@ -4,6 +4,9 @@ import time
 from flask import current_app
 from graphql import GraphQLError
 
+from evalg.authentication import user
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +24,6 @@ class Timer(object):
                      self.operation, self.field, self.get_millis())
         return result_or_error
 
-from evalg.authentication import user
 
 def timing_middleware(next, root, info, **args):
     """

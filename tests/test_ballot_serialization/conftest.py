@@ -19,8 +19,8 @@ def ballot_serializer(config, election_keys):
         election_private_key=election_keys['election_private_key'],
         backend_public_key=election_keys['backend_public_key'],
         backend_private_key=election_keys['backend_private_key'],
-        envelop_padded_len=config.ENVELOPE_PADDED_LEN,
-        )
+        envelope_padded_len=config.ENVELOPE_PADDED_LEN,
+    )
 
 
 @pytest.fixture

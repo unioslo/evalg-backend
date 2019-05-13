@@ -100,7 +100,7 @@ class ElectionVotePolicy(object):
         serializer = Base64NaClSerializer(
             backend_private_key=self._backend_private_key,
             election_public_key=election_public_key,
-            envelop_padded_len=self._envelope_padded_len,
+            envelope_padded_len=self._envelope_padded_len,
         )
         ballot = Envelope(
             envelope_type=self.envelope_type,

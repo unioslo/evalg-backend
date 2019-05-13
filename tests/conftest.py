@@ -3,6 +3,7 @@ import pytest
 
 import evalg.database.query
 from evalg import create_app, db
+from evalg.authentication import user
 from evalg.models.candidate import Candidate
 from evalg.models.election import ElectionGroup, Election
 from evalg.models.election_list import ElectionList

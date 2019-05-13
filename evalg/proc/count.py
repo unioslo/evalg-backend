@@ -7,16 +7,14 @@ import nacl.exceptions
 import datetime
 
 from sqlalchemy.sql import and_
+from flask import current_app
 
 import evalg.database.query
-from evalg.models.person import Person
 from evalg.models.ballot import Envelope
 from evalg.models.votes import Vote
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.voter import Voter
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
-from instance.evalg_config import (BACKEND_PRIVATE_KEY, BACKEND_PUBLIC_KEY,
-                                   ENVELOPE_PADDED_LEN)
 from collections import defaultdict
 logger = logging.getLogger(__name__)
 
@@ -36,6 +34,7 @@ def verify_election_key(ballot_serializer):
 
 class ElectionGroupCounter(object):
     def __init__(self, session, group_id):
+        self.app_config = current_app.config
         self.session = session
         self.group_id = group_id
         self.group = evalg.database.query.lookup(
@@ -49,9 +48,9 @@ class ElectionGroupCounter(object):
             ballot_serializer = Base64NaClSerializer(
                 election_private_key=election_key,
                 election_public_key=self.group.public_key,
-                backend_private_key=BACKEND_PRIVATE_KEY,
-                backend_public_key=BACKEND_PUBLIC_KEY,
-                envelop_padded_len=ENVELOPE_PADDED_LEN,
+                backend_private_key=self.app_config.BACKEND_PRIVATE_KEY,
+                backend_public_key=self.app_config.BACKEND_PUBLIC_KEY,
+                envelope_padded_len=self.app_config.ENVELOPE_PADDED_LEN,
             )
         except Exception as e:
             logger.error(e)

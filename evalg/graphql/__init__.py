@@ -41,6 +41,14 @@ class EvalgGraphQLView(ContextGraphQLView, FileUploadGraphQLView):
     pass
 
 
+def get_context():
+    return {
+        'session': db.session,
+        'request': flask.request,
+        'user': user,
+    }
+
+
 def init_app(app):
     from evalg.graphql import middleware
 
@@ -57,11 +65,7 @@ def init_app(app):
             'graphql',
             schema=schema,
             batch=True,
-            context={
-                'session': db.session,
-                'request': flask.request,
-                'user': user,
-            },
+            context=get_context(),
             graphiql=True,
             middleware=mw
         ))
