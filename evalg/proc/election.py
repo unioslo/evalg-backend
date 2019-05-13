@@ -1,140 +1,36 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Functional API for handling election metadata."""
+"""
+This module implements election and election group maintenance.
+"""
 import datetime
+import functools
 
 import aniso8601
 from flask import current_app
-from functools import wraps
-from .models.election import ElectionGroup, Election
-from .models.pollbook import PollBook
-from .models.election_list import ElectionList
-# from .authorization import check_perms, all_perms, PermissionDenied
-from evalg import db
+
+from evalg.models.election import ElectionGroup, Election
+from evalg.models.pollbook import PollBook
+from evalg.models.election_list import ElectionList
+from evalg.utils import utcnow
 
 
-class NotFoundError(Exception):
-    pass
-
-class BadRequest(Exception):
-    pass
-
-
-# def eperm(permission, arg=0):
-#     """Check perms function for election"""
-#     assert permission in all_perms, '{} not valid'.format(permission)
-#     if isinstance(arg, int):
-#         def election(args, kw):
-#             return args[arg]
-#     else:
-#         def election(args, kw):
-#             return kw[arg]
-
-#     def fun(f):
-#         @wraps(f)
-#         def gun(*args, **kw):
-#             if 'principals' in kw:
-#                 principals = kw['principals']
-#                 del kw['principals']
-#             else:
-#                 principals = ()
-#             e = election(args, kw)
-#             if current_app.config['AUTH_ENABLED'] \
-#                     and not check_perms(principals,
-#                                         permission,
-#                                         election=e,
-#                                         ou=e.ou):
-#                 raise PermissionDenied()
-#             return f(*args, **kw)
-
-#         gun.is_protected = True
-#         return gun
-#     return fun
-
-
-# def rperm(*permission):
-#     """Check if user has perms on return value. """
-#     for perm in permission:
-#         assert perm in all_perms
-
-#     def fun(f):
-#         @wraps(f)
-#         def gun(*args, **kw):
-#             if 'principals' in kw:
-#                 principals = kw['principals']
-#                 del kw['principals']
-#             else:
-#                 principals = ()
-#             ret = f(*args, **kw)
-#             if ret is not None:
-#                 if not check_perms(principals, permission, election=ret,
-#                                    ou=ret.ou):
-#                     raise PermissionDenied()
-#             return ret
-#         gun.is_protected = True
-#         return gun
-#     return fun
-
-
-# @rperm('view-election')
-def get_group(group_id):
-    """Look up election group."""
-    group = ElectionGroup.query.get(group_id)
-    if group is None:
-        raise NotFoundError(
-            details="No such election group with id={uuid}".format(
-                uuid=group_id))
-    return group
-
-
-# @rperm('view-election')
-def get_election(election_id):
-    """Look up election."""
-    election = Election.query.get(election_id)
-    if election is None:
-        raise NotFoundError(
-            details="No such election with id={uuid}".format(
-                uuid=election_id))
-    return election
-
-
-def list_elections(group=None):
-    """List all elections or elections in group."""
-    if group is None:
-        return Election.query.all()
-    else:
-        return group.elections
-
-
-# @eperm('change-election-metadata')
-def update_election(election, **fields):
-    """Update election fields"""
-    for k, v in fields.items():
-        if not hasattr(election, k):
-            continue
-        if getattr(election, k) != v:
-            setattr(election, k, v)
-    db.session.commit()
-    return election
-
-
-# @eperm('announce-election')
-def announce_group(group, **fields):
+def announce_group(session, group, **fields):
     """Announce an election group."""
     blockers = group_announcement_blockers(group)
     if blockers:
-        raise BadRequest(details=blockers[0])
+        # TODO: how to handle this in the above layer?
+        raise Exception(blockers[0])
     group.announce()
-    db.session.commit()
+    session.commit()
     return group
 
 
-# @eperm('announce-election')
-def unannounce_group(group, **fields):
+def unannounce_group(session, group, **fields):
     """Unannounce an election group."""
     group.unannounce()
-    db.session.commit()
+    session.commit()
     return group
 
 
@@ -152,26 +48,25 @@ def group_announcement_blockers(group):
     return blockers
 
 
-# @eperm('publish-election')
-def publish_group(group, **fields):
+def publish_group(session, group, **fields):
     """Publish an election group."""
-    blockers = group_publication_blockers(group)
+    blockers = get_group_publication_blockers(group)
     if blockers:
-        raise BadRequest(details=blockers[0])
+        # TODO: how to handle this in the above layer?
+        raise Exception(blockers[0])
     group.publish()
-    db.session.commit()
+    session.commit()
     return group
 
 
-# @eperm('publish-election')
-def unpublish_group(group, **fields):
+def unpublish_group(session, group, **fields):
     """Unpublish an election group."""
     group.unpublish()
-    db.session.commit()
+    session.commit()
     return group
 
 
-def group_publication_blockers(group):
+def get_group_publication_blockers(group):
     """Check whether an election group can be published."""
     blockers = []
     if group.published:
@@ -197,62 +92,16 @@ def start_after_end(election):
     return election.start > election.end
 
 
-# @eperm('change-election-metadata')
-def update_group(group, **fields):
-    """Update group fields. """
-    for k, v in fields.items():
-        if not hasattr(group, k):
-            continue
-        if getattr(group, k) != v:
-            setattr(group, k, v)
-    db.session.commit()
-    return group
-
-
-# @eperm('change-election-metadata')
-def delete_election(election):
-    """Delete election"""
-    election.delete()
-    db.session.commit()
-
-
-# @eperm('change-election-metadata')
-def delete_group(group):
-    """Delete election"""
-    group.delete()
-    db.session.commit()
-
-
-def list_groups(running=None):
-    """List election groups"""
-    return ElectionGroup.query.all()
-
-
-# @rperm('create-election')
-def make_election(**kw):
-    """Create election."""
-    return Election(**kw)
-
-
-# @rperm('create-election')
-def make_group(**kw):
-    """Create election group."""
-    return ElectionGroup(**kw)
-
-
 default_start_time = datetime.time(7, 0)
 default_end_time = datetime.time(11, 0)
 default_duration = datetime.timedelta(days=7)
 
 
-def make_group_from_template(template_name, ou, principals=()):
+def make_group_from_template(session, template_name, ou, principals=()):
     """Create election with elections from template"""
     current_app.logger.info('Make election group %s for %s',
                             template_name,
                             ou)
-    import datetime
-    import functools
-
     election_templates = current_app.config.get('ELECTION_TEMPLATES')
 
     #if current_app.config['AUTH_ENABLED'] and not \
@@ -266,7 +115,7 @@ def make_group_from_template(template_name, ou, principals=()):
     elections = template['settings']['elections']
     metadata = template['settings']['rule_set']
 
-    now = datetime.datetime.utcnow()
+    now = utcnow()
 
     def candidate_type(e):
         return metadata['candidate-type']
@@ -342,10 +191,6 @@ def make_group_from_template(template_name, ou, principals=()):
         return election
 
     group.elections = list(map(make_election, elections))
-
-    db.session.add(group)
-    db.session.commit()
+    session.add(group)
+    session.commit()
     return group
-
-
-make_group_from_template.is_protected = True

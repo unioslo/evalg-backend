@@ -10,7 +10,7 @@ from graphql import GraphQLError
 from graphene.types.generic import GenericScalar
 from sqlalchemy_continuum import version_class
 
-import evalg.metadata
+import evalg.proc.election
 import evalg.models.election
 import evalg.models.election_group_count
 import evalg.proc.vote
@@ -54,10 +54,10 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
     announced = graphene.Boolean()
 
     def resolve_announcement_blockers(self, info):
-        return evalg.metadata.group_announcement_blockers(self)
+        return evalg.proc.election.get_group_announcement_blockers(self)
 
     def resolve_publication_blockers(self, info):
-        return evalg.metadata.group_publication_blockers(self)
+        return evalg.proc.election.get_group_publication_blockers(self)
 
 
 def resolve_election_groups_by_fields(_, info):
@@ -146,8 +146,9 @@ class CreateNewElectionGroup(graphene.Mutation):
     def mutate(self, info, ou_id, template, template_name):
         # TODO: Looks like template_name is required?
         ou = evalg.models.ou.OrganizationalUnit.query.get(ou_id)
-        election_group = evalg.metadata.make_group_from_template(template_name,
-                                                                 ou)
+        session = get_session(info)
+        election_group = evalg.proc.election.make_group_from_template(
+            session, template_name, ou)
         return CreateNewElectionGroup(
             election_group=election_group,
             ok=True)
@@ -202,8 +203,9 @@ class PublishElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
-        evalg.metadata.publish_group(el_grp)
+        session = get_session(info)
+        election_group = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        evalg.proc.election.publish_group(session, election_group)
         return PublishElectionGroup(ok=True)
 
 
@@ -217,8 +219,9 @@ class UnpublishElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
-        evalg.metadata.unpublish_group(el_grp)
+        session = get_session(info)
+        election_group = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        evalg.proc.election.unpublish_group(session, election_group)
         return UnpublishElectionGroup(ok=True)
 
 
@@ -229,8 +232,9 @@ class AnnounceElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
-        evalg.metadata.announce_group(el_grp)
+        session = get_session(info)
+        election_group = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        evalg.proc.election.announce_group(session, election_group)
         return AnnounceElectionGroup(ok=True)
 
 
@@ -241,8 +245,9 @@ class UnannounceElectionGroup(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
-        evalg.metadata.unannounce_group(el_grp)
+        session = get_session(info)
+        election_group = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        evalg.proc.election.unannounce_group(session, election_group)
         return UnannounceElectionGroup(ok=True)
 
 
