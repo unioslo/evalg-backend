@@ -226,9 +226,6 @@ def test_update_pref_elec_candidate_mutation(pref_candidates_foo,
         }
     }
     """
-    print('----------------------------------')
-    for candidate in pref_candidates_foo:
-        print(candidate.name)
     execution = client.execute(mutation, variables=variables)
     assert not execution.get('errors')
     response = execution['data']['updatePrefElecCandidate']
@@ -236,10 +233,6 @@ def test_update_pref_elec_candidate_mutation(pref_candidates_foo,
 
     # Get new election list
     election_list_after = ElectionList.query.get(candidate_before.list.id)
-
-    for candidate in election_list_after.candidates:
-        print(candidate.name)
-    print('----------------------------------')
 
     assert election_list_after is not None
     assert len(election_list_after.candidates) == len(

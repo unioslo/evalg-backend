@@ -1,11 +1,14 @@
 import datetime
+import json
 import pytest
 
 import evalg.database.query
 from evalg import create_app, db
 from evalg.models.candidate import Candidate
 from evalg.models.election import ElectionGroup, Election
+from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.election_list import ElectionList
+from evalg.models.election_result import ElectionResult
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import PollBook
 from evalg.models.voter import Voter
@@ -326,3 +329,47 @@ def pollbook_voter_foo(db_session, persons, pollbook_foo):
     db_session.flush()
 
     return pollbook_voter
+
+
+@pytest.fixture
+def election_group_count_foo(db_session, election_group_foo):
+
+    data = {
+        'group_id': election_group_foo.id,
+    }
+
+    election_group_count = evalg.database.query.get_or_create(
+        db_session,
+        ElectionGroupCount,
+        **data,
+    )
+
+    db_session.add(election_group_count)
+    db_session.flush()
+
+    return election_group_count
+
+
+@pytest.fixture
+def election_result_foo(db_session, election_foo, election_group_count_foo):
+
+    data = {
+        'election_id': election_foo.id,
+        'election_group_count_id': election_group_count_foo.id,
+        'path_to_election_protocol': '/test/123',
+        'votes': {
+            'votes': [{'vote': 'test'}, {'vote': 'test2'}]
+        },
+        'result': {"winner": "test"}
+    }
+
+    election_result = evalg.database.query.get_or_create(
+        db_session,
+        ElectionResult,
+        **data,
+    )
+
+    db_session.add(election_result)
+    db_session.flush()
+
+    return election_result
