@@ -124,7 +124,7 @@ class EvalgUser(object):
         if diff:
             logger.info('Updated fields %r for person_id=%r',
                         diff, person.id)
-        # TODO: use evalg.person._update_person?
+        # TODO: use evalg.proc.person.update_person?
 
     def update_person_ids(self, person):
         logger.info('Updating identifiers for person_id=%r', person.id)

@@ -4,7 +4,7 @@ GraphQL ObjectType representing users.
 import graphene
 import graphene_sqlalchemy
 
-import evalg.person
+import evalg.proc.person
 import evalg.proc.vote
 import evalg.models.person
 import evalg.authentication.user
@@ -22,7 +22,7 @@ from evalg.graphql.nodes.base import get_session
 
 # TODO:
 #   All Queries and Mutations should be implemented using functionality from
-#   evalg.person in order to show or mutate objects.
+#   evalg.proc.person in order to show or mutate objects.
 
 
 class PersonIdentifier(graphene_sqlalchemy.SQLAlchemyObjectType):
@@ -47,7 +47,8 @@ def resolve_person_by_id(_, info, **args):
 
 def resolve_person_search(_, info, **args):
     # TODO: arg should be renamed *search_term* or somethign similar
-    return evalg.person.search_person(args['val'])
+    session = get_session(info)
+    return evalg.proc.person.search_persons(session, args['val'])
 
 
 def resolve_get_person_for_voter(_, info, **args):

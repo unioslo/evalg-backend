@@ -4,8 +4,9 @@ GraphQL ObjectType representing user groups.
 import graphene
 import graphene_sqlalchemy
 
-import evalg.group
 import evalg.models.group
+import evalg.proc.group
+from evalg.graphql.nodes.base import get_session
 
 
 # TODO:
@@ -31,7 +32,8 @@ def resolve_group_search(_, info, **args):
     """
     Search for groups by name
     """
-    return evalg.group.search_group(args['val'])
+    session = get_session(info)
+    return evalg.proc.group.search_groups(session, args['val']).all()
 
 
 search_groups_query = graphene.List(
