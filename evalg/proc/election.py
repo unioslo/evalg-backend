@@ -18,7 +18,7 @@ from evalg.utils import utcnow
 
 def announce_group(session, group, **fields):
     """Announce an election group."""
-    blockers = group_announcement_blockers(group)
+    blockers = get_group_announcement_blockers(group)
     if blockers:
         # TODO: how to handle this in the above layer?
         raise Exception(blockers[0])
@@ -34,7 +34,7 @@ def unannounce_group(session, group, **fields):
     return group
 
 
-def group_announcement_blockers(group):
+def get_group_announcement_blockers(group):
     """Check whether an election group can be announced."""
     blockers = []
     if group.announced:
