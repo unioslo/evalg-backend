@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Legacy classes for handleing eValg 2 count (.zip) files"""
-
 import collections
 import decimal
 import enum

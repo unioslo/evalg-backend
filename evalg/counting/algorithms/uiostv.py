@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 """Implementations of several counting algorithms"""
-
 import collections
 import decimal
 import logging
@@ -36,14 +34,14 @@ class SubstituteCandidateElected(Exception):
     pass
 
 
-class UiOSTVRoundState:
+class RoundState:
     """
-    UiOSTVRoundState-class.
+    RoundState-class.
 
     Represents the state of the round after a the count is performed.
 
-    This class should inherit from RoundState that is agnostic to counting
-    method(s).
+    This class should inherit from abstract RoundState that is agnostic to
+    counting method(s).
     """
 
     def __init__(self, round_obj):
@@ -191,7 +189,7 @@ class UiOSTVRoundState:
         self._transferred_candidate_ballots.update(candidate_ballots)
 
 
-class UiOSTVRegularRound:
+class RegularRound:
     """
     Regular round class.
 
@@ -204,7 +202,7 @@ class UiOSTVRegularRound:
         :type counter: UiOSTVCounter
 
         :param parent: The parent (recursive) object
-        :type parent: UiOSTVRegularRound
+        :type parent: RegularRound
         """
         self._counter_obj = counter
         self._parent = parent
@@ -225,7 +223,7 @@ class UiOSTVRegularRound:
         # the vote count of the remaining candidates
         self._vcount_results_remaining = collections.Counter()
         self._surplus_per_elected_candidate = collections.Counter()
-        self._state = UiOSTVRoundState(self)  # we store the state of the round
+        self._state = RoundState(self)  # we store the state of the round
         self._counter_obj.append_state_to_current_path(self._state)
         if self._parent is None:
             # first round
@@ -320,7 +318,7 @@ class UiOSTVRegularRound:
         return self._vcount_results_remaining
 
     def __str__(self):
-        return 'UiOSTVRegularRound: {id}/{total_count}'.format(
+        return 'RegularRound: {id}/{total_count}'.format(
             id=self._round_id,
             total_count=self._round_cnt)
 
@@ -332,7 +330,7 @@ class UiOSTVRegularRound:
         instanciated object. (resurse until final state is returned)
 
         :return: A state (result) for this count
-        :rtype: UiOSTVRoundState
+        :rtype: RoundState
         """
         logger.debug("---")
         if self._parent is None:
@@ -358,7 +356,7 @@ class UiOSTVRegularRound:
             if self._parent is None:
                 logger.debug("First round. No surplus here.")
                 self._initiate_new_count()
-                new_round = UiOSTVRegularRound(self._counter_obj, self)
+                new_round = RegularRound(self._counter_obj, self)
                 return new_round.count()
             # Checking if someone should be eliminated because of
             # max. value quota reached in previous round (§29). This is
@@ -425,8 +423,8 @@ class UiOSTVRegularRound:
                         # all bottom candidates are "quota-protected"
                         logger.warning("No bottom candidates to exclude. "
                                        "Starting a new round")
-                        new_round = UiOSTVRegularRound(self._counter_obj,
-                                                       self)
+                        new_round = RegularRound(self._counter_obj,
+                                                 self)
                         return new_round.count()
                     if len(bottom_candidates) == 1:
                         # great! only one bottom candidate not protected
@@ -459,7 +457,7 @@ class UiOSTVRegularRound:
             self._transfer_ballots_from_excluded_candidates()
             if not excludable_candidates:
                 self._initiate_new_count()
-            new_round = UiOSTVRegularRound(self._counter_obj, self)
+            new_round = RegularRound(self._counter_obj, self)
             return new_round.count()
         except NoMoreElectableCandidates:
             # §19.1
@@ -488,7 +486,7 @@ class UiOSTVRegularRound:
         :type candidate: object
 
         :return: The round-state or None
-        :rtype: UiOSTVRoundState, None
+        :rtype: RoundState, None
         """
         if candidate in self._state.elected:
             return self._state
@@ -1151,7 +1149,7 @@ class UiOSTVRegularRound:
         from a `return` statement
 
         :return: The last state
-        :rtype: UiOSTVRoundState
+        :rtype: RoundState
         """
         self._state.final = True
         logger.info("Regular count completed")
@@ -1162,7 +1160,7 @@ class UiOSTVRegularRound:
         logger.debug("-" * 8)
         logger.debug("-" * 8)
         logger.info("Starting substitute count")
-        new_substitute_round = UiOSTVSubstituteRound(self._counter_obj, self)
+        new_substitute_round = SubstituteRound(self._counter_obj, self)
         return new_substitute_round.count()
 
     def _transfer_ballots_from_excluded_candidates(self):
@@ -1325,7 +1323,7 @@ class UiOSTVRegularRound:
                     surplus)
 
 
-class UiOSTVSubstituteRound(UiOSTVRegularRound):
+class SubstituteRound(RegularRound):
     """
     Substitute round class.
 
@@ -1338,7 +1336,7 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
         :type counter: UiOSTVCounter
 
         :param parent: The parent (recursive) object
-        :type parent: UiOSTVRegularRound, UiOSTVSubstituteRound or None
+        :type parent: RegularRound, SubstituteRound or None
         """
         self._round_cnt = 1
         self._round_id = 1
@@ -1358,14 +1356,14 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
         # the vote count of the remaining candidates
         self._vcount_results_remaining = collections.Counter()
         self._surplus_per_elected_candidate = collections.Counter()
-        self._state = UiOSTVRoundState(self)
+        self._state = RoundState(self)
         self._counter_obj.append_state_to_current_path(self._state)
         if self._parent is None:
             # There were no regular round(s)
             self._first_substitute_count = True
             self._election_number = self._get_election_number()
             self._set_initial_ballot_state()
-        elif not isinstance(self._parent, UiOSTVSubstituteRound):
+        elif not isinstance(self._parent, SubstituteRound):
             # The first round after a regular round
             self._elected = list(self._parent.elected)
             self._round_cnt = self._parent.round_cnt + 1
@@ -1429,7 +1427,7 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
         instanciated object. (resurse until final state is returned)
 
         :return: A state (result) for this count
-        :rtype: UiOSTVRoundState
+        :rtype: RoundState
         """
         logger.debug("---")
         logger.info("Counting substitute %d round: %d (%d)",
@@ -1455,7 +1453,7 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
                 # First substitute, first round
                 logger.debug("First round. No surplus here.")
                 self._initiate_new_count()
-                new_round = UiOSTVSubstituteRound(self._counter_obj, self)
+                new_round = SubstituteRound(self._counter_obj, self)
                 return new_round.count()
             # calculate surplus
             total_surplus = self._get_total_surplus()
@@ -1503,8 +1501,8 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
                         # all bottom candidates are "quota-protected"
                         logger.warning("No bottom candidates to exclude. "
                                        "Starting a new round")
-                        new_round = UiOSTVRegularRound(self._counter_obj,
-                                                       self)
+                        new_round = RegularRound(self._counter_obj,
+                                                 self)
                         return new_round.count()
                     if len(bottom_candidates) == 1:
                         # great! only one bottom candidate not protected
@@ -1537,7 +1535,7 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
             self._transfer_ballots_from_excluded_candidates()
             if not excludable_candidates:
                 self._initiate_new_count()
-            new_round = UiOSTVSubstituteRound(self._counter_obj, self)
+            new_round = SubstituteRound(self._counter_obj, self)
             return new_round.count()
         except SubstituteCandidateElected:
             logger.info("Terminating election of substitute %d",
@@ -1565,7 +1563,7 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
             return self._terminate_substitute_count()
 
     def __str__(self):
-        return ('UiOSTVSubstituteRound: {substitute_nr}-{id}/'
+        return ('SubstituteRound: {substitute_nr}-{id}/'
                 '{total_count}'.format(
                     substitute_nr=self._substitute_nr,
                     id=self._round_id,
@@ -1915,7 +1913,7 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
         from a `return` statement
 
         :return: The last state
-        :rtype: UiOSTVRoundState
+        :rtype: RoundState
         """
         self._state.substitute_final = True
         self._state.final = True
@@ -1930,14 +1928,14 @@ class UiOSTVSubstituteRound(UiOSTVRegularRound):
         from a `return` statement
 
         :return: The last state
-        :rtype: UiOSTVRoundState
+        :rtype: RoundState
         """
         self._state.substitute_final = True
         logger.info("Substitute %d election completed", self._substitute_nr)
         try:
             # now check if the entire substitute count is done
             self._check_election_quota_reached()
-            new_round = UiOSTVSubstituteRound(self._counter_obj, self)
+            new_round = SubstituteRound(self._counter_obj, self)
             return new_round.count()
         except RequiredCandidatesElected:
             logger.info("All required candidates are elected. "

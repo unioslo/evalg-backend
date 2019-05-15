@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-"""CLI entry poing for the evalg.counting package"""
+"""
+CLI entry point for the evalg.counting package
 
-
+python -m evalg.counting --count <path to decrypted vote-xxx.zip>
+"""
 import argparse
 import logging
 import sys

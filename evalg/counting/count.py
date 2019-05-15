@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 """Tools for counting elections"""
-
 import collections
 import enum
 import decimal
@@ -11,8 +9,7 @@ import os
 # import random  # testing only
 import secrets
 
-from evalg.counting.algorithms import (UiOSTVRegularRound,
-                                       UiOSTVSubstituteRound)
+from evalg.counting.algorithms import uiostv
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -403,9 +400,9 @@ class Counter:
         # Now check election type and select the proper counting class (todo)
         # This method (and class) should remain algorithm agnostic.
         if self._election_obj.num_choosable > 0:
-            round_cls = UiOSTVRegularRound
+            round_cls = uiostv.RegularRound
         else:
-            round_cls = UiOSTVSubstituteRound
+            round_cls = uiostv.SubstituteRound
         election_round = round_cls(self)
         election_round.count()
         if self._drawing_nodes:
@@ -546,5 +543,6 @@ class Counter:
         on the type of election
         """
         # Only UiOSTV for now... No election-type checks yet
+        # if self._election_obj.type:
         return tuple([ballot for ballot in ballots if
                       ballot.candidates])
