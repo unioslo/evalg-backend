@@ -64,6 +64,21 @@ get_election_query = graphene.Field(
     id=graphene.Argument(graphene.UUID, required=True))
 
 
+class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = evalg.models.election_result.ElectionResult
+
+
+def resolve_election_result_by_id(_, info, **args):
+    return ElectionResult.get_query(info).get(args['id'])
+
+
+get_election_group_count_query = graphene.Field(
+    ElectionResult,
+    id=graphene.Argument(graphene.UUID, required=True),
+    resolver=resolve_election_result_by_id)
+
+
 #
 # Mutations
 #
