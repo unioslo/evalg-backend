@@ -126,6 +126,37 @@ get_election_key_meta_query = graphene.Field(
     id=graphene.Argument(graphene.UUID, required=True),
     resolver=resolve_election_key_meta)
 
+
+class ElectionGroupCount(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = evalg.models.election_group_count.ElectionGroupCount
+
+
+def resolve_election_group_count_by_id(_, info, **args):
+    return ElectionGroupCount.get_query(info).get(args['id'])
+
+
+get_election_group_count_query = graphene.Field(
+    ElectionGroupCount,
+    id=graphene.Argument(graphene.UUID, required=True),
+    resolver=resolve_election_group_count_by_id)
+
+
+def resolve_election_group_counting_results(_, info, **args):
+    query = ElectionGroupCount.get_query(info)
+
+    return query.filter(
+        evalg.models.election_group_count.ElectionGroupCount.group_id ==
+        args['id'])
+
+
+list_election_group_counting_results_query = graphene.List(
+    ElectionGroupCount,
+    id=graphene.Argument(graphene.UUID, required=True),
+    resolver=resolve_election_group_counting_results
+)
+
+
 #
 # Mutation
 #

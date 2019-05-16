@@ -31,10 +31,12 @@ def test_query_election_group_count_by_id(client, election_group_count_foo):
     assert str(election_group_count_foo.group_id) == response['groupId']
 
 
-def test_query_election_group_counts(client, election_group_count_foo):
+def test_query_election_group_counting_results(client,
+                                               election_group_count_foo):
+    variables = {'id': str(election_group_count_foo.group_id)}
     query = """
-    query electionGroupCounts {
-        electionGroupCounts {
+    query electionGroupCountingResults($id: UUID!) {
+        electionGroupCountingResults(id: $id) {
             id
             groupId
             electionGroup {
@@ -43,9 +45,9 @@ def test_query_election_group_counts(client, election_group_count_foo):
         }
     }
     """
-    execution = client.execute(query)
+    execution = client.execute(query, variables=variables)
     assert not execution.get('errors')
-    response = execution['data']['electionGroupCounts']
+    response = execution['data']['electionGroupCountingResults']
 
     assert len(response) == 1
     assert str(election_group_count_foo.id) == response[0]['id']
