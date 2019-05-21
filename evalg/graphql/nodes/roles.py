@@ -46,16 +46,6 @@ class GroupPrincipal(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = evalg.models.authorization.GroupPrincipal
 
 
-# class ElectionRole(graphene_sqlalchemy.SQLAlchemyObjectType):
-#     class Meta:
-#         model = evalg.models.authorization.ElectionRole
-
-
-# class ElectionRoleList(graphene_sqlalchemy.SQLAlchemyObjectType):
-#     class Meta:
-#         model = evalg.models.authorization.ElectionRoleList
-
-
 class ElectionGroupRole(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.authorization.ElectionGroupRole
@@ -71,24 +61,21 @@ class AddAdmin(graphene.Mutation):
     Add a user as administrator to a given election group.
     """
     class Arguments:
-        admin_id = graphene.UUID(required=True)
-        el_grp_id = graphene.UUID(required=True)
-        type = graphene.String(required=True)
+        principal_type = graphene.String(required=True)
+        principal_owner_id = graphene.UUID(required=True)
+        election_group_id = graphene.UUID(required=True)
 
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
         # TODO:
-        #   We should rework the argument names in these queries.
-        #   *admin_id*? *el_grp_id*?
-        # TODO:
         #   Should we check if the Principal objects already exists?
-        if args.get('type') == 'person':
+        if args.get('principal_type') == 'person':
             principal = evalg.models.authorization.PersonPrincipal(
-                person_id=args.get('admin_id'))
+                person_id=args.get('principal_owner_id'))
         else:
             principal = evalg.models.authorization.GroupPrincipal(
-                group_id=args.get('admin_id'))
+                group_id=args.get('principal_owner_id'))
         role = evalg.models.authorization.ElectionGroupRole(
             role='election-admin',
             principal=principal,

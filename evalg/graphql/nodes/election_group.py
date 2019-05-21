@@ -13,6 +13,7 @@ from sqlalchemy_continuum import version_class
 import evalg.proc.election
 import evalg.models.election
 import evalg.models.election_group_count
+import evalg.models.ou
 import evalg.proc.vote
 import evalg.proc.count
 from evalg import db
@@ -207,10 +208,20 @@ class CreateNewElectionGroup(graphene.Mutation):
 
     def mutate(self, info, ou_id, template, template_name):
         # TODO: Looks like template_name is required?
-        ou = evalg.models.ou.OrganizationalUnit.query.get(ou_id)
         session = get_session(info)
+        ou = evalg.database.query.lookup(
+            session, evalg.models.ou.OrganizationalUnit, id=ou_id)
         election_group = evalg.proc.election.make_group_from_template(
             session, template_name, ou)
+        current_user = info.context.get('user')
+        current_user_principal = evalg.proc.role.get_or_create_principal(
+            session, 'person', current_user.person.id)
+        evalg.proc.role.add_election_group_role(
+            session=session,
+            election_group=election_group,
+            principal=current_user_principal,
+            role_name='admin')
+        session.commit()
         return CreateNewElectionGroup(
             election_group=election_group,
             ok=True)
