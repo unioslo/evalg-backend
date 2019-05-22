@@ -117,6 +117,9 @@ class ElectionGroup(AbstractElection):
             return 'draft'
         if len(statuses) == 1:
             return statuses.pop()
+        if len(statuses) == 2 and 'inactive' in statuses:
+            statuses.discard('inactive')
+            return statuses.pop()
         return 'multipleStatuses'
 
     # @status.expression

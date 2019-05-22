@@ -330,7 +330,7 @@ class SetElectionGroupKey(graphene.Mutation):
 
 
 class CountElectionGroupResponse(MutationResponse):
-    pass
+    election_group_count_id = graphene.UUID()
 
 
 class CountElectionGroup(graphene.Mutation):
@@ -374,16 +374,16 @@ class CountElectionGroup(graphene.Mutation):
                         ' closed to count votes')
 
         # Creating an election_group_count entry in the db
-        db_row = election_group_counter.log_start_count()
+        count = election_group_counter.log_start_count()
         election_id2ballots = election_group_counter.deserialize_ballots(
             ballot_serializer)
 
-        # TODO
-        #   1. Do the actual counting
-        #   2. Store result, ballots and protocol in election_result table
+        for election in election_group_counter.group.elections:
+            ballots = election_id2ballots[election.id]
+            election_group_counter.generate_result(election, ballots, count)
 
-        results = election_group_counter.count(election_id2ballots)
-        db_row = election_group_counter.log_finalize_count(db_row)
+        count = election_group_counter.log_finalize_count(count)
 
-        return CountElectionGroupResponse(success=True)
+        return CountElectionGroupResponse(success=True,
+                                          election_group_count_id=count.id)
 

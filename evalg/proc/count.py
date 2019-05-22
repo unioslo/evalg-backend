@@ -12,10 +12,10 @@ from flask import current_app
 import evalg.database.query
 from evalg.models.ballot import Envelope
 from evalg.models.votes import Vote
+from evalg.models.election_result import ElectionResult
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.voter import Voter
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
-from collections import defaultdict
 logger = logging.getLogger(__name__)
 
 
@@ -103,8 +103,9 @@ class ElectionGroupCounter(object):
         return query
 
     def deserialize_ballots(self, ballot_serializer):
-        election_id2ballots = defaultdict(list)
+        election_id2ballots = dict()
         for election in self.group.elections:
+            election_id2ballots[election.id] = list()
             for pollbook in election.pollbooks:
                 envelopes = self.get_ballots_query(pollbook.id).all()
                 for envelope in envelopes:
@@ -116,6 +117,18 @@ class ElectionGroupCounter(object):
         logger.debug(election_id2ballots)
         return election_id2ballots
 
+    def generate_result(self, election, ballots, count):
+        result = self.count(election, ballots)
+
+        # TODO: generate result, protocol, statistics to put in db
+
+        db_row = ElectionResult(election_id=election.id,
+                                election_group_count_id=count.id,
+                                votes={'votes': ballots},
+                                result=result,)
+        self.session.add(db_row)
+        self.session.commit()
+
     # TODO: replace this with counting algorithm
-    def count(self, election2ballots):
+    def count(self, election, ballots):
         pass

@@ -6,6 +6,7 @@ import uuid
 import evalg.database.types
 from evalg import db
 from .base import ModelBase
+from sqlalchemy.orm import deferred
 
 
 class ElectionResult(ModelBase):
@@ -39,8 +40,9 @@ class ElectionResult(ModelBase):
     """ election group count that the result belongs to """
 
     # TODO: maybe change this to a file column
-    path_to_election_protocol = db.Column(db.UnicodeText)
+    election_protocol = deferred(db.Column(evalg.database.types.MutableJson))
 
-    votes = db.Column(evalg.database.types.MutableJson)
+    votes = deferred(db.Column(evalg.database.types.MutableJson))
+    """ These are deferred to avoid loading too much data """
 
     result = db.Column(evalg.database.types.MutableJson)
