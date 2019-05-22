@@ -56,9 +56,9 @@ class ElectionGroupCounter(object):
             ballot_serializer = Base64NaClSerializer(
                 election_private_key=election_key,
                 election_public_key=self.group.public_key,
-                backend_private_key=self.app_config.BACKEND_PRIVATE_KEY,
-                backend_public_key=self.app_config.BACKEND_PUBLIC_KEY,
-                envelope_padded_len=self.app_config.ENVELOPE_PADDED_LEN,
+                backend_private_key=self.app_config.get('BACKEND_PRIVATE_KEY'),
+                backend_public_key=self.app_config.get('BACKEND_PUBLIC_KEY'),
+                envelope_padded_len=self.app_config.get('ENVELOPE_PADDED_LEN'),
             )
         except Exception as e:
             logger.error(e)
