@@ -13,12 +13,14 @@ def test_requirements_throw_PermissionDenied_on_deny(
     with pytest.raises(PermissionDenied):
         allows.run([
             permissions.IsElectionGroupAdmin(
+                session=db_session,
                 election_group_id=election_group_foo.id)
         ])
 
 
 def test_can_manage_election_group_denies(db_session, logged_in_user, election_group_foo):
     assert not permissions.can_manage_election_group(
+        session=db_session,
         user=logged_in_user,
         election_group_id=election_group_foo.id)
 
@@ -39,5 +41,6 @@ def test_can_manage_election_group_allows(db_session, logged_in_user, election_g
     db_session.add(role)
     db_session.flush()
     assert permissions.can_manage_election_group(
+        session=db_session,
         user=logged_in_user,
         election_group_id=election_group_foo.id)

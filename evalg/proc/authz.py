@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """
-This module implements role maintenance.
+This module helps fethcing and manipulating authorization data
 """
 
-from collections import defaultdict
+from sqlalchemy import and_
 
 import evalg.database.query
 from evalg.models.authorization import (ElectionGroupRole,
                                         GroupPrincipal,
                                         PersonPrincipal)
-from evalg.models.election import ElectionGroup
 from evalg.models.person import PersonExternalId
+from evalg.models.authorization import PersonIdentifierPrincipal
 
 
 def get_or_create_principal(session, principal_type, principal_owner_id):
@@ -35,6 +35,39 @@ def get_or_create_principal(session, principal_type, principal_owner_id):
     return principal
 
 
+def get_principals_for_person(session, person):
+    # TODO: could and should cache here
+    principals = []
+    if person.principal:
+        principals.append(person.principal)
+    identifier_principals = get_person_identifier_principals(
+        session, person).all()
+    if identifier_principals:
+        principals.extend(identifier_principals)
+    # for group in person.groups
+    #     find group principal
+    #     principals.append(group.principal)
+    return [x for x in principals if x is not None]
+
+
+def get_person_identifier_principals(session, person):
+    """
+    Get all `PersonIdentifierPrincipal`s matching the external IDs of a person.
+    """
+    query = session.query(
+        PersonIdentifierPrincipal
+    ).join(
+        PersonExternalId,
+        person.id == PersonExternalId.person_id
+    ).filter(
+        and_(
+            PersonIdentifierPrincipal.id_type == PersonExternalId.id_type,
+            PersonIdentifierPrincipal.id_value == PersonExternalId.id_value,
+        )
+    )
+    return query
+
+
 def add_election_group_role(session, election_group, principal,
                             role_name):
     """
@@ -49,19 +82,3 @@ def add_election_group_role(session, election_group, principal,
     session.add(role)
     session.flush()
     return role
-
-
-def update_person(person, kwargs):
-    identifiers = kwargs.pop('identifiers', {})
-    if identifiers:
-        current = defaultdict(set)
-        map(lambda x: current[x.id_type].add(x.id_value),
-            person.identifiers)
-        for k, value in identifiers.items():
-            if value not in current[k]:
-                person.identifiers.append(
-                    PersonExternalId(id_type=k, id_value=value))
-    for k, v in kwargs.items():
-        if hasattr(person, k) and getattr(person, k) != v:
-            setattr(person, k, v)
-    return person

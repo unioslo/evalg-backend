@@ -1,4 +1,5 @@
 import datetime
+import json
 import pytest
 import random
 import string
@@ -51,8 +52,7 @@ def config():
                         'audience': 'mock',
                     },
                     # 'feide_user_info': {
-                    #     'eduPersonEntitlement': ('urn:mace:uio.no:
-                    #     evalg:valgadministrator', )
+                    #     'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
                     # }
                 },
             },
@@ -360,6 +360,14 @@ def persons(db_session, make_person):
     ]
 
     return {str(x.id): x for x in persons}
+
+
+@pytest.fixture
+def person_foo(persons):
+    for x in persons.values():
+        if x.email == 'foo@example.org':
+            return x
+    assert False
 
 
 @pytest.fixture

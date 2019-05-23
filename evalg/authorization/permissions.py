@@ -9,17 +9,9 @@ import logging
 
 from flask_allows import Permission, Requirement
 
+from evalg.proc.authz import get_principals_for_person
+
 logger = logging.getLogger(__name__)
-
-
-def get_principals_for(person):
-    # TODO: could and should cache here
-    principals = []
-    principals.append(person.principal)
-    # for group in person.groups
-    #     find group principal
-    #     principals.append(group.principal)
-    return [x for x in principals if x is not None]
 
 
 def role_in_principals(principals, **match):
@@ -33,11 +25,12 @@ def role_in_principals(principals, **match):
 
 
 class IsElectionGroupAdmin(Requirement):
-    def __init__(self, election_group_id):
+    def __init__(self, session, election_group_id):
+        self.session = session
         self.election_group_id = election_group_id
 
     def fulfill(self, user):
-        principals = get_principals_for(user.person)
+        principals = get_principals_for_person(self.session, user.person)
         return role_in_principals(
             principals,
             target_type='election-group-role',
@@ -45,7 +38,7 @@ class IsElectionGroupAdmin(Requirement):
             group_id=self.election_group_id)
 
 
-def can_manage_election_group(user, election_group_id):
+def can_manage_election_group(session, user, election_group_id):
     return Permission(
-        IsElectionGroupAdmin(election_group_id),
+        IsElectionGroupAdmin(session, election_group_id),
         identity=user)

@@ -10,10 +10,11 @@ from graphql import GraphQLError
 from graphene.types.generic import GenericScalar
 from sqlalchemy_continuum import version_class
 
-import evalg.proc.election
 import evalg.models.election
 import evalg.models.election_group_count
 import evalg.models.ou
+import evalg.proc.authz
+import evalg.proc.election
 import evalg.proc.vote
 import evalg.proc.count
 from evalg import db
@@ -214,9 +215,9 @@ class CreateNewElectionGroup(graphene.Mutation):
         election_group = evalg.proc.election.make_group_from_template(
             session, template_name, ou)
         current_user = info.context.get('user')
-        current_user_principal = evalg.proc.role.get_or_create_principal(
+        current_user_principal = evalg.proc.authz.get_or_create_principal(
             session, 'person', current_user.person.id)
-        evalg.proc.role.add_election_group_role(
+        evalg.proc.authz.add_election_group_role(
             session=session,
             election_group=election_group,
             principal=current_user_principal,
