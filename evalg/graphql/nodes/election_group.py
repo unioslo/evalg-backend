@@ -20,6 +20,7 @@ from evalg.election_templates import election_template_builder
 from evalg.graphql import types
 from evalg.graphql.nodes.base import get_session, MutationResponse
 from evalg.graphql.nodes.person import Person
+from evalg.graphql.nodes.election import ElectionResult
 from evalg.utils import convert_json
 
 
@@ -130,6 +131,8 @@ get_election_key_meta_query = graphene.Field(
 class ElectionGroupCount(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.election_group_count.ElectionGroupCount
+
+    election_results = graphene.List(ElectionResult)
 
 
 def resolve_election_group_count_by_id(_, info, **args):
@@ -327,7 +330,7 @@ class SetElectionGroupKey(graphene.Mutation):
 
 
 class CountElectionGroupResponse(MutationResponse):
-    pass
+    election_group_count_id = graphene.UUID()
 
 
 class CountElectionGroup(graphene.Mutation):
@@ -363,40 +366,24 @@ class CountElectionGroup(graphene.Mutation):
                 code='invalid-election-key',
                 message='The given election key is invalid')
 
-        if election_group_counter.group.status is not 'closed':
+        if not election_group_counter.verify_election_statuses():
             return CountElectionGroupResponse(
                 success=False,
                 code='cannot-count-before-all-elections-are-closed',
-                message='All of the elections in a election group must be '
-                        'closed to count votes')
+                message='All of the elections in an election group must be'
+                        ' closed to count votes')
 
         # Creating an election_group_count entry in the db
-        db_row = election_group_counter.log_start_count(
-            initiator_id=info.context['user'].person.id
-        )
-        ballots = election_group_counter.deserialize_ballots(ballot_serializer)
-        results = election_group_counter.count(ballots)
+        count = election_group_counter.log_start_count()
+        election_id2ballots = election_group_counter.deserialize_ballots(
+            ballot_serializer)
 
-        # counts = group.election_group_counts
-        # logger.debug(counts)
-        # if counts:
-        #     for count in counts:
-        #         logger.debug(count.status)
-        #         if count.status is 'ongoing':
-        #             return CountElectionGroupResponse(
-        #                 success=False,
-        #                 code='count-already-ongoing',
-        #                 message='All of the elections in an election group '
-        #                         'must be closed to count votes')
+        for election in election_group_counter.group.elections:
+            ballots = election_id2ballots[election.id]
+            election_group_counter.generate_result(election, ballots, count)
 
-        # TODO
-        #   (2. Check if election group is being counted)
-        #   3. Log that counting is in progress, by who, date etc
-        #   (election_group_count)
-        #   4. Get ballots for election and decrypt
-        #   5. Format votes for counting
-        #   6. Start counting...
-        #   7. Store result and ballots in election_result table
-        #   8. Mark election_group_count entry as finished
+        count = election_group_counter.log_finalize_count(count)
 
-        return CountElectionGroupResponse(success=True)
+        return CountElectionGroupResponse(success=True,
+                                          election_group_count_id=count.id)
+

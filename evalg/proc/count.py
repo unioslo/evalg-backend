@@ -12,10 +12,10 @@ from flask import current_app
 import evalg.database.query
 from evalg.models.ballot import Envelope
 from evalg.models.votes import Vote
+from evalg.models.election_result import ElectionResult
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.voter import Voter
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
-from collections import defaultdict
 logger = logging.getLogger(__name__)
 
 
@@ -43,26 +43,33 @@ class ElectionGroupCounter(object):
             id=group_id
         )
 
+    def verify_election_statuses(self):
+        for election in self.group.elections:
+            if election.status not in ('closed', 'inactive'):
+                logger.error(Exception('Election(s) in election group not '
+                                       'closed'))
+                return False
+        return True
+
     def get_ballot_serializer(self, election_key):
         try:
             ballot_serializer = Base64NaClSerializer(
                 election_private_key=election_key,
                 election_public_key=self.group.public_key,
-                backend_private_key=self.app_config.BACKEND_PRIVATE_KEY,
-                backend_public_key=self.app_config.BACKEND_PUBLIC_KEY,
-                envelope_padded_len=self.app_config.ENVELOPE_PADDED_LEN,
+                backend_private_key=self.app_config.get('BACKEND_PRIVATE_KEY'),
+                backend_public_key=self.app_config.get('BACKEND_PUBLIC_KEY'),
+                envelope_padded_len=self.app_config.get('ENVELOPE_PADDED_LEN'),
             )
         except Exception as e:
             logger.error(e)
             return None
         return ballot_serializer
 
-    def log_start_count(self, initiator_id):
+    def log_start_count(self):
         utc_now = datetime.datetime.now(datetime.timezone.utc)
 
         db_row = ElectionGroupCount(
                 group_id=self.group_id,
-                initiator_id=initiator_id,
                 initiated_at=utc_now,
             )
         self.session.add(db_row)
@@ -70,7 +77,12 @@ class ElectionGroupCounter(object):
         return db_row
 
     def log_finalize_count(self, db_row):
-        pass
+        utc_now = datetime.datetime.now(datetime.timezone.utc)
+        db_row.finished_at = utc_now
+
+        self.session.add(db_row)
+        self.session.commit()
+        return db_row
 
     def get_ballots_query(self, pollbook_id):
         query = self.session.query(
@@ -91,23 +103,32 @@ class ElectionGroupCounter(object):
         return query
 
     def deserialize_ballots(self, ballot_serializer):
-        ballots = defaultdict(
-            lambda: defaultdict(
-                dict
-            )
-        )
+        election_id2ballots = dict()
         for election in self.group.elections:
+            election_id2ballots[election.id] = list()
             for pollbook in election.pollbooks:
                 envelopes = self.get_ballots_query(pollbook.id).all()
                 for envelope in envelopes:
                     ballot_data = ballot_serializer.deserialize(
                         envelope.ballot_data
                     )
-                    ballots[election.id][pollbook.id].update({
-                        envelope.id: ballot_data
-                    })
-        logger.debug(ballots)
-        return ballots
+                    election_id2ballots[election.id].append(ballot_data)
 
-    def count(self, ballots):
+        logger.debug(election_id2ballots)
+        return election_id2ballots
+
+    def generate_result(self, election, ballots, count):
+        result = self.count(election, ballots)
+
+        # TODO: generate result, protocol, statistics to put in db
+
+        db_row = ElectionResult(election_id=election.id,
+                                election_group_count_id=count.id,
+                                votes={'votes': ballots},
+                                result=result,)
+        self.session.add(db_row)
+        self.session.commit()
+
+    # TODO: replace this with counting algorithm
+    def count(self, election, ballots):
         pass
