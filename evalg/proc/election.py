@@ -8,13 +8,22 @@ import datetime
 import functools
 
 import aniso8601
+from sqlalchemy.sql import and_
+
 from flask import current_app
 
 from evalg.models.election import ElectionGroup, Election
 from evalg.models.pollbook import PollBook
 from evalg.models.election_list import ElectionList
+from evalg.models.election_group_count import ElectionGroupCount
 from evalg.utils import utcnow
 
+def get_latest_election_group_count(session, group_id):
+    latest_count = session.query(ElectionGroupCount).filter(
+        and_(ElectionGroupCount.group_id == group_id)).order_by(
+            ElectionGroupCount.initiated_at.desc()).first()
+
+    return latest_count
 
 def announce_group(session, group, **fields):
     """Announce an election group."""
