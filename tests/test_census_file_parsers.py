@@ -23,6 +23,22 @@ def test_plain_text_usernames():
     assert sorted(result) == sorted(usernames)
 
 
+def test_plain_text_crlf_usernames():
+    """Plain text file, one username per line."""
+    usernames = ['pederaas', 'martekir', 'larsh', 'hansta']
+    builder = EnvironBuilder(method='POST', data={
+        'file': (io.BytesIO('\r\n'.join(usernames).encode('utf-8')),
+                 'usernames.txt')})
+    parser = cparser.CensusFileParser.factory(builder.files['file'])
+
+    assert parser is not None
+    assert isinstance(parser, cparser.PlainTextParser)
+    assert parser.id_type == 'uid'
+    result = [x for x in parser.parse()]
+    assert len(result) == len(usernames)
+    assert sorted(result) == sorted(usernames)
+
+
 def test_plain_text_fnrs():
     """Plain text file, one fnr per line."""
     fnrs = ['01028512332', '11235612345', '10100312345']
@@ -140,6 +156,23 @@ def test_csv_fs_usernames_no_header():
     usernames = ['pederaas', 'martekir', 'larsh', 'hansta']
     builder = EnvironBuilder(method='POST', data={
         'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
+                 'usernames.csv')})
+    parser = cparser.CensusFileParser.factory(builder.files['file'])
+
+    assert parser is not None
+    assert isinstance(parser, cparser.CvsParser)
+    assert not parser.has_fs_header
+    assert parser.id_type == 'uid'
+    result = [x for x in parser.parse()]
+    assert len(result) == len(usernames)
+    assert sorted(result) == sorted(usernames)
+
+
+def test_csv_crlf_fs_usernames_no_header():
+    """Csv file, one username per line."""
+    usernames = ['pederaas', 'martekir', 'larsh', 'hansta']
+    builder = EnvironBuilder(method='POST', data={
+        'file': (io.BytesIO('\r\n'.join(usernames).encode('utf-8')),
                  'usernames.csv')})
     parser = cparser.CensusFileParser.factory(builder.files['file'])
 

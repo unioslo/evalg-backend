@@ -1,7 +1,6 @@
 import abc
 import csv
 import io
-import logging
 import re
 
 
@@ -123,10 +122,10 @@ class PlainTextParser(CensusFileParser):
     def __init__(self, census_file):
         super().__init__(census_file)
         content = self.census_file.read().decode('utf-8')
-        self.fields = [x for x in content.split('\n') if x]
+        self.fields = content.splitlines()
 
         if len(self.fields) > 0 and self.is_fs_header(self.fields[0]):
-            # File is a csv file errorously save as .txt.
+            # File is a csv file erroneously save as .txt.
             self.census_file.seek(0)
             parser = CvsParser(self.census_file)
             self.fields = [x for x in parser.parse()]
@@ -175,7 +174,6 @@ class CvsParser(CensusFileParser):
 
         self.fields = [x[0] for x in csv.reader(csvfile) if x and x[0]]
         self._id_type = self.find_identifier_type(self.fields)
-
 
     @classmethod
     def get_mime_type(cls):
