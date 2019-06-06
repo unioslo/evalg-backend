@@ -160,7 +160,7 @@ def test_csv_fs_usernames_no_header():
     parser = cparser.CensusFileParser.factory(builder.files['file'])
 
     assert parser is not None
-    assert isinstance(parser, cparser.CvsParser)
+    assert isinstance(parser, cparser.CsvParser)
     assert not parser.has_fs_header
     assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
@@ -177,7 +177,7 @@ def test_csv_crlf_fs_usernames_no_header():
     parser = cparser.CensusFileParser.factory(builder.files['file'])
 
     assert parser is not None
-    assert isinstance(parser, cparser.CvsParser)
+    assert isinstance(parser, cparser.CsvParser)
     assert not parser.has_fs_header
     assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
@@ -196,7 +196,7 @@ def test_csv_fs_usernames_with_header():
     parser = cparser.CensusFileParser.factory(builder.files['file'])
 
     assert parser is not None
-    assert isinstance(parser, cparser.CvsParser)
+    assert isinstance(parser, cparser.CsvParser)
     assert parser.has_fs_header
     assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
@@ -241,7 +241,7 @@ def test_csv_fs_student_parlament_file():
     parser = cparser.CensusFileParser.factory(builder.files['file'])
 
     assert parser is not None
-    assert isinstance(parser, cparser.CvsParser)
+    assert isinstance(parser, cparser.CsvParser)
     assert parser.has_fs_header
     assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
@@ -267,7 +267,7 @@ def test_csv_fs_student_parlament_file_missing_field():
     parser = cparser.CensusFileParser.factory(builder.files['file'])
 
     assert parser is not None
-    assert isinstance(parser, cparser.CvsParser)
+    assert isinstance(parser, cparser.CsvParser)
     assert parser.has_fs_header
     assert parser.id_type == 'uid'
     result = [x for x in parser.parse()]
