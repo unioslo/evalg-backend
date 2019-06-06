@@ -387,7 +387,7 @@ def election_result_foo(db_session, election_foo, election_group_count_foo):
     data = {
         'election_id': election_foo.id,
         'election_group_count_id': election_group_count_foo.id,
-        'path_to_election_protocol': '/test/123',
+        'election_protocol': {'test123': '123123'},
         'votes': {
             'votes': [{'vote': 'test'}, {'vote': 'test2'}]
         },
