@@ -127,7 +127,7 @@ class PlainTextParser(CensusFileParser):
         if len(self.fields) > 0 and self.is_fs_header(self.fields[0]):
             # File is a csv file erroneously save as .txt.
             self.census_file.seek(0)
-            parser = CvsParser(self.census_file)
+            parser = CsvParser(self.census_file)
             self.fields = [x for x in parser.parse()]
             self.has_fs_header = True
         else:
@@ -160,7 +160,7 @@ class PlainTextParser(CensusFileParser):
             return None
 
 
-class CvsParser(CensusFileParser):
+class CsvParser(CensusFileParser):
 
     def __init__(self, census_file):
         super().__init__(census_file)
