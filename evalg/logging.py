@@ -132,13 +132,7 @@ def configure_logging(dict_config=None):
 
 
 def configure_sentry(config):
-    """
-    Configures and intitializes Sentry.
-
-    :param config: The app config
-    :type config: tofh.config.AppConfig
-    """
-
+    """Configures and initializes Sentry."""
     if not config.get('enable', False):
         return
     dsn = config.get('dsn')
