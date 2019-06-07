@@ -1,6 +1,7 @@
 """
 GraphQL ObjectType representing users.
 """
+import logging
 import graphene
 import graphene_sqlalchemy
 
@@ -24,6 +25,7 @@ from evalg.graphql.nodes.base import get_session
 #   All Queries and Mutations should be implemented using functionality from
 #   evalg.proc.person in order to show or mutate objects.
 
+logger = logging.getLogger(__name__)
 
 class PersonIdentifier(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
@@ -38,6 +40,7 @@ class Person(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 
 def resolve_persons_by_info(_, info):
+    logger.error('HALLO!')
     return Person.get_query(info).all()
 
 

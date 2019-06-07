@@ -5,6 +5,10 @@ import collections
 import logging
 import logging.config
 
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
+
 try:
     import pythonjsonlogger.jsonlogger
     has_jsonlogger = True
@@ -127,6 +131,40 @@ def configure_logging(dict_config=None):
     logging.config.dictConfig(dict_config)
 
 
+def configure_sentry(config):
+    """
+    Configures and intitializes Sentry.
+
+    :param config: The app config
+    :type config: tofh.config.AppConfig
+    """
+
+    if not config.get('enable', False):
+        return
+    dsn = config.get('dsn')
+    if not dsn:
+        raise Exception('Missing Sentry DSN')
+
+    name_to_integration = {
+        'logging': LoggingIntegration,
+        'flask': FlaskIntegration,
+    }
+
+    integrations = []
+
+    for name, kwargs in config.get('integrations', {}).items():
+        if not kwargs.pop('enable', False):
+            continue
+        klass = name_to_integration.get(name)
+        integrations.append(klass(**kwargs))
+
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=integrations,
+        default_integrations=True,
+    )
+
+
 def init_logging(app):
     """ Init logging.
 
@@ -142,6 +180,7 @@ def init_logging(app):
         if logger.level <= logging.NOTSET:
             logger.setLevel(default_level)
 
+    configure_sentry(app.config.get('SENTRY'))
     print("Logging: flask={flask_level} root={root_level}"
           .format(flask_level=_lname(app.logger.getEffectiveLevel()),
                   root_level=_lname(root_logger.getEffectiveLevel())))
