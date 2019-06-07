@@ -61,3 +61,21 @@ FEIDE_BASIC_USERS = []
 #
 ENVELOPE_TYPE = 'base64-nacl'
 ENVELOPE_PADDED_LEN = 1000
+
+#
+# Sentry config
+#
+SENTRY = {
+    'enable': False,
+    'dsn': '',
+    'integrations': {
+        'logging': {
+            'enable': True,
+            'level': 'INFO',
+            'event_level': 'ERROR',
+        },
+        'flask': {
+            'enable': True
+        }
+    }
+}
