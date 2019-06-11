@@ -55,6 +55,8 @@ class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     self_added_voters = graphene.List(lambda: Voter)
     admin_added_voters = graphene.List(lambda: Voter)
+    verified_voters_count = graphene.Int()
+    verified_voters_with_votes_count = graphene.Int()
 
     def resolve_self_added_voters(self, info):
         session = get_session(info)
@@ -67,6 +69,14 @@ class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
         return evalg.proc.vote.get_voters_by_self_added(session,
                                                         self.id,
                                                         self_added=False).all()
+
+    def resolve_verified_voters_count(self, info):
+        session = get_session(info)
+        return evalg.proc.vote.get_verified_voters_count(session, self.id)
+
+    def resolve_verified_voters_with_votes_count(self, info):
+        session = get_session(info)
+        return evalg.proc.vote.get_verified_voters_with_votes_count(session, self.id)
 
 
 def resolve_pollbooks_by_fields(_, info):
@@ -124,7 +134,7 @@ search_voters_query = graphene.List(
     resolver=resolve_search_voters,
     election_group_id=graphene.Argument(graphene.UUID, required=True),
     self_added=graphene.Argument(graphene.Boolean, required=False)
-    )
+)
 
 
 get_voter_query = graphene.Field(

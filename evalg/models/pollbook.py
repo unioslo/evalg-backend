@@ -16,8 +16,6 @@ represented in multiple poll books for a given election.
 
 import uuid
 
-from sqlalchemy.ext.hybrid import hybrid_property
-
 from evalg import db
 from evalg.database.types import NestedMutableJson
 from evalg.database.types import UuidType
@@ -62,12 +60,3 @@ class PollBook(ModelBase):
         lazy='joined')
 
     voters = db.relationship('Voter')
-
-    @hybrid_property
-    def n_verified_voters(self):
-        return len(list(filter(lambda voter: voter.verified, self.voters)))
-
-    @hybrid_property
-    def n_verified_voters_with_votes(self):
-        return len(list(filter(lambda voter: voter.verified and
-                               len(voter.votes) > 0, self.voters)))
