@@ -48,7 +48,7 @@ class ElectionVotePolicy(object):
     def verify_candidates_exist(self, ranked_candidate_ids, election_id):
         if ranked_candidate_ids:
             query = self.session.query(
-                 func.count(Candidate.id)
+                func.count(Candidate.id)
             ).join(
                 ElectionList,
                 and_(
@@ -249,3 +249,21 @@ def get_voters_by_self_added(session, pollbook_id, self_added):
         Voter.pollbook_id == pollbook_id
     )
     return query
+
+
+def get_verified_voters_count(session, pollbook_id):
+    return session.query(
+        func.count(Voter.id)
+    ).filter(
+        Voter.pollbook_id == pollbook_id,
+        Voter.verified,
+    ).scalar()
+
+def get_verified_voters_with_votes_count(session, pollbook_id):
+    return session.query(
+        func.count(Voter.id)
+    ).filter(
+        Voter.pollbook_id == pollbook_id,
+        Voter.verified,
+        Voter.votes
+    ).scalar()
