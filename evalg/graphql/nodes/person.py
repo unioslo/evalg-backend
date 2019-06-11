@@ -40,7 +40,6 @@ class Person(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 
 def resolve_persons_by_info(_, info):
-    logger.error('HALLO!')
     return Person.get_query(info).all()
 
 
