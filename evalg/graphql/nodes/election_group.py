@@ -53,12 +53,19 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
     publication_blockers = graphene.List(graphene.String)
     published = graphene.Boolean()
     announced = graphene.Boolean()
+    latest_election_group_count = graphene.Field(lambda: ElectionGroupCount)
 
     def resolve_announcement_blockers(self, info):
         return evalg.proc.election.get_group_announcement_blockers(self)
 
     def resolve_publication_blockers(self, info):
         return evalg.proc.election.get_group_publication_blockers(self)
+
+    def resolve_latest_election_group_count(self, info):
+        session = get_session(info)
+        group_id = self.id
+        return evalg.proc.election.get_latest_election_group_count(
+            session, group_id)
 
 
 def resolve_election_groups_by_fields(_, info):
