@@ -141,6 +141,27 @@ class ElectionGroupCount(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     election_results = graphene.List(ElectionResult)
 
+    initiated_by = graphene.Field(Person)
+
+    def resolve_initiated_by(self, info):
+        election_group_count_id = self.id
+        ElectionGroupCountVersion = version_class(
+            evalg.models.election_group_count.ElectionGroupCount)
+
+        electionGroupCountChanges = db.session.query(
+            ElectionGroupCountVersion
+        ).filter(
+            ElectionGroupCountVersion.id == election_group_count_id,
+        ).order_by(
+            ElectionGroupCountVersion.transaction_id).limit(1).all()
+
+        if electionGroupCountChanges and len(electionGroupCountChanges) > 0:
+            initiated_by = electionGroupCountChanges[0].transaction.user
+            return initiated_by
+
+        raise GraphQLError(
+            'Could not resolve initiated_by - change record not found')
+
 
 def resolve_election_group_count_by_id(_, info, **args):
     return ElectionGroupCount.get_query(info).get(args['id'])
@@ -245,7 +266,8 @@ class PublishElectionGroup(graphene.Mutation):
 
     def mutate(self, info, **args):
         session = get_session(info)
-        election_group = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        election_group = evalg.models.election.ElectionGroup.query.get(
+            args.get('id'))
         evalg.proc.election.publish_group(session, election_group)
         return PublishElectionGroup(ok=True)
 
@@ -261,7 +283,8 @@ class UnpublishElectionGroup(graphene.Mutation):
 
     def mutate(self, info, **args):
         session = get_session(info)
-        election_group = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        election_group = evalg.models.election.ElectionGroup.query.get(
+            args.get('id'))
         evalg.proc.election.unpublish_group(session, election_group)
         return UnpublishElectionGroup(ok=True)
 
@@ -274,7 +297,8 @@ class AnnounceElectionGroup(graphene.Mutation):
 
     def mutate(self, info, **args):
         session = get_session(info)
-        election_group = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        election_group = evalg.models.election.ElectionGroup.query.get(
+            args.get('id'))
         evalg.proc.election.announce_group(session, election_group)
         return AnnounceElectionGroup(ok=True)
 
@@ -287,7 +311,8 @@ class UnannounceElectionGroup(graphene.Mutation):
 
     def mutate(self, info, **args):
         session = get_session(info)
-        election_group = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        election_group = evalg.models.election.ElectionGroup.query.get(
+            args.get('id'))
         evalg.proc.election.unannounce_group(session, election_group)
         return UnannounceElectionGroup(ok=True)
 
@@ -393,4 +418,3 @@ class CountElectionGroup(graphene.Mutation):
 
         return CountElectionGroupResponse(success=True,
                                           election_group_count_id=count.id)
-
