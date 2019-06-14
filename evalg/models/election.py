@@ -10,6 +10,7 @@ import evalg.database.types
 from evalg import db
 from evalg.utils import utcnow
 from .base import ModelBase
+from evalg.rules.quotas import quota_name2method
 
 
 class AbstractElection(ModelBase):
@@ -29,9 +30,6 @@ class AbstractElection(ModelBase):
     description = db.Column(evalg.database.types.MutableJson)
     """ Translated text """
 
-    # TODO:
-    #   Why is ``type`` defined here? It seems to only be in use on the
-    #   ``ElectionGroup`` table and not on ``Election``.
     type = db.Column(db.UnicodeText)
     """ Internal use """
 
@@ -269,3 +267,26 @@ class Election(AbstractElection):
     @property
     def list_ids(self):
         return [l.id for l in self.lists if not l.deleted]
+
+    @property
+    def num_choosable(self):
+        return self.meta['candidate_rules']['seats']
+
+    @property
+    def num_substitutes(self):
+        return self.meta['candidate_rules']['substitutes']
+
+    @property
+    def candidates(self):
+        return self.lists[0].candidates
+
+    def get_quotas(self):
+        quotas = []
+        if self.meta['candidate_rules']['candidate_gender']:
+            quota_names = self.meta['counting_rules']['affirmative_action']
+            for quota in quota_names:
+                method = quota_name2method[quota]
+                quotas.extend(
+                    method(self.candidates, self.num_choosable)
+                )
+        return quotas
