@@ -136,9 +136,9 @@ class ElectionGroupCounter:
         utc_now = datetime.datetime.now(datetime.timezone.utc)
 
         db_row = ElectionGroupCount(
-                group_id=self.group_id,
-                initiated_at=utc_now,
-            )
+            group_id=self.group_id,
+            initiated_at=utc_now,
+        )
         self.session.add(db_row)
         self.session.commit()
         return db_row
