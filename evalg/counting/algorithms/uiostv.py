@@ -640,7 +640,7 @@ class RegularRound:
         #  * prec >= 2
         #  * prec is at least 2 * math.log(counting-ballots, 10)
         counting_ballot_census = (
-            [ballot.census.weight_per_census for
+            [ballot.pollbook.weight_per_pollbook for
              ballot in self._counter_obj.counting_ballots])
         prec = 2 * int(math.log(len(counting_ballot_census), 10))
         # the quotient should not have a greater precision than epsilon
@@ -1127,7 +1127,7 @@ class RegularRound:
             candidate_ballots[ballot.candidates[0]].append(ballot)
             transferred_candidate_ballots[ballot.candidates[0]].append(ballot)
             ballot_owner[ballot] = ballot.candidates[0]
-            ballot_weight[ballot] = ballot.census.weight_per_census
+            ballot_weight[ballot] = ballot.pollbook.weight_per_pollbook
         for candidate in self._counter_obj.candidates:
             if candidate not in candidate_ballots:
                 candidate_ballots[candidate] = list()
@@ -1642,7 +1642,7 @@ class SubstituteRound(RegularRound):
         :rtype: decimal.Decimal
         """
         counting_ballot_census = (
-            [ballot.census.weight_per_census for
+            [ballot.pollbook.weight_per_pollbook for
              ballot in self._counter_obj.counting_ballots])
         prec = 2 * int(math.log(len(counting_ballot_census), 10))
         quotient_precision = decimal.Decimal(10) ** -prec  # §18.3, §33

@@ -38,8 +38,8 @@ class EvalgSex(enum.Enum):
     FEMALE = 2
 
 
-class EvalgLegacyCensus:
-    """The census-class"""
+class EvalgLegacyPollbook:
+    """The pollbook-class"""
 
     def __init__(self, census_id, census_name, weight):
         """
@@ -95,7 +95,7 @@ class EvalgLegacyCensus:
         return self._name
 
     @property
-    def weight_per_census(self):
+    def weight_per_pollbook(self):
         """weight_per_census-property"""
         return self._weight_per_census
 
@@ -110,7 +110,7 @@ class EvalgLegacyCensus:
                                                 name=self._name,
                                                 weight=self._weight)
 
-    def set_weight_per_census(self, value):
+    def set_weight_per_pollbook(self, value):
         """
         Calculates and sets own weight_per_census based on the
         smallest (1.0) index weight per vote
@@ -228,7 +228,7 @@ class EvalgLegacyBallot:
         :type bellot_id: str
 
         :param census: The census the ballot bellongs to
-        :type census: EvalgLegacyCensus
+        :type census: EvalgLegacyPollbook
 
         :param candidates_list: The (ordered) sequence of candidates
         :type candidates_list: collections.abc.Sequence
@@ -268,8 +268,8 @@ class EvalgLegacyBallot:
         return self._raw_string
 
     @property
-    def census(self):
-        """census-property"""
+    def pollbook(self):
+        """pollbook-property"""
         return self._census_obj
 
     def __str__(self):
@@ -315,7 +315,7 @@ class EvalgLegacyElection:
         census_list = self._census_dict.values()
         min_wpv = min([census.weight_per_vote for census in census_list])
         for census in census_list:
-            census.set_weight_per_census(min_wpv)
+            census.set_weight_per_pollbook(min_wpv)
 
     @property
     def ballots(self):
@@ -332,16 +332,16 @@ class EvalgLegacyElection:
         return tuple(self._candidates_list)
 
     @property
-    def census_lists(self):
+    def pollbooks(self):
         """
-        census_lists-property
+        pollbooks-property
         """
         return self._census_dict.values()
 
     @property
-    def election_type(self):
+    def type(self):
         """
-        election_type-property
+        type-property
         """
         return self._election_type
 
@@ -448,7 +448,7 @@ class EvalgLegacyElection:
                 logger.info("Adding candidate: %s", candidate)
             elif child.tag.lower() == 'census':
                 self._census_dict[child.attrib.get('id')] = (
-                    EvalgLegacyCensus(
+                    EvalgLegacyPollbook(
                         child.attrib.get('id'),
                         child.attrib.get('name'),
                         decimal.Decimal(child.attrib.get('weight'))))
