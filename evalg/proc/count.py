@@ -111,14 +111,6 @@ class ElectionGroupCounter:
             return None
         return ballot_serializer
 
-    def verify_election_statuses(self):
-        for election in self.group.elections:
-            if election.status not in ('closed', 'inactive'):
-                logger.error(Exception('Election(s) in election group not '
-                                       'closed'))
-                return False
-        return True
-
     def verify_election_key(self):
         serialized_test_ballot = self.ballot_serializer.serialize(
             dict(a=1, b=2)

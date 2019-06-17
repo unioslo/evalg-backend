@@ -395,7 +395,7 @@ class CountElectionGroup(graphene.Mutation):
                 code='invalid-election-key',
                 message='The given election key is invalid')
 
-        if not election_group_counter.verify_election_statuses():
+        if not election_group_counter.group.status == 'closed':
             return CountElectionGroupResponse(
                 success=False,
                 code='cannot-count-before-all-elections-are-closed',
