@@ -380,19 +380,16 @@ class CountElectionGroup(graphene.Mutation):
         election_group_counter = evalg.proc.count.ElectionGroupCounter(
             session,
             group_id,
-        )
-
-        ballot_serializer = election_group_counter.get_ballot_serializer(
             election_key
         )
 
-        if not ballot_serializer:
+        if not election_group_counter.ballot_serializer:
             return CountElectionGroupResponse(
                 success=False,
                 code='invalid-election-key-wrong-format',
                 message='The given election key is invalid')
 
-        if not evalg.proc.count.verify_election_key(ballot_serializer):
+        if not election_group_counter.verify_election_key():
             return CountElectionGroupResponse(
                 success=False,
                 code='invalid-election-key',
@@ -407,7 +404,7 @@ class CountElectionGroup(graphene.Mutation):
 
         # Creating an election_group_count entry in the db
         count = election_group_counter.log_start_count()
-        election_group_counter.deserialize_ballots(ballot_serializer)
+        election_group_counter.deserialize_ballots()
         election_group_counter.process_for_count()
         election_group_counter.generate_results(count)
 

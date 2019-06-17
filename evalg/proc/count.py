@@ -77,21 +77,8 @@ def set_weight_per_pollbook(pollbook, lowest_weight_per_vote):
                                     lowest_weight_per_vote)
 
 
-def verify_election_key(ballot_serializer):
-    serialized_test_ballot = ballot_serializer.serialize(
-        dict(a=1, b=2)
-    )
-    try:
-        ballot_serializer.deserialize(
-            serialized_test_ballot)
-    except nacl.exceptions.CryptoError as e:
-        logger.error(e)
-        return False
-    return True
-
-
 class ElectionGroupCounter:
-    def __init__(self, session, group_id):
+    def __init__(self, session, group_id, election_key):
         self.app_config = current_app.config
         self.session = session
         self.group_id = group_id
@@ -100,6 +87,7 @@ class ElectionGroupCounter:
             evalg.models.election.ElectionGroup,
             id=group_id
         )
+        self.ballot_serializer = self._init_ballot_serializer(election_key)
         self.id2candidate = self._init_id2candidate()
 
     def _init_id2candidate(self):
@@ -109,15 +97,7 @@ class ElectionGroupCounter:
                 id2candidate[str(candidate.id)] = candidate
         return id2candidate
 
-    def verify_election_statuses(self):
-        for election in self.group.elections:
-            if election.status not in ('closed', 'inactive'):
-                logger.error(Exception('Election(s) in election group not '
-                                       'closed'))
-                return False
-        return True
-
-    def get_ballot_serializer(self, election_key):
+    def _init_ballot_serializer(self, election_key):
         try:
             ballot_serializer = Base64NaClSerializer(
                 election_private_key=election_key,
@@ -130,6 +110,26 @@ class ElectionGroupCounter:
             logger.error(e)
             return None
         return ballot_serializer
+
+    def verify_election_statuses(self):
+        for election in self.group.elections:
+            if election.status not in ('closed', 'inactive'):
+                logger.error(Exception('Election(s) in election group not '
+                                       'closed'))
+                return False
+        return True
+
+    def verify_election_key(self):
+        serialized_test_ballot = self.ballot_serializer.serialize(
+            dict(a=1, b=2)
+        )
+        try:
+            self.ballot_serializer.deserialize(
+                serialized_test_ballot)
+        except nacl.exceptions.CryptoError as e:
+            logger.error(e)
+            return False
+        return True
 
     def log_start_count(self):
         utc_now = datetime.datetime.now(datetime.timezone.utc)
@@ -169,7 +169,7 @@ class ElectionGroupCounter:
         )
         return query
 
-    def deserialize_ballots(self, ballot_serializer):
+    def deserialize_ballots(self):
         for election in self.group.elections:
             if election.status == 'closed':
                 election.ballots = []
@@ -177,7 +177,7 @@ class ElectionGroupCounter:
                     pollbook.ballots = []
                     envelopes = self.get_ballots_query(pollbook.id).all()
                     for envelope in envelopes:
-                        ballot_data = ballot_serializer.deserialize(
+                        ballot_data = self.ballot_serializer.deserialize(
                             envelope.ballot_data
                         )
                         ballot = Ballot(
