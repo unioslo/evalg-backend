@@ -13,6 +13,7 @@ from evalg.models.votes import Vote
 from evalg.models.election_result import ElectionResult
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.voter import Voter
+from evalg.proc.vote import get_verified_voters_count
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 from evalg.counting.count import Counter
 
@@ -20,9 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class Ballot:
-    def __init__(self, ballot_data, pollbook, id2candidate):
+    def __init__(self, ballot_data, id2pollbook, id2candidate):
         self.ballot_data = ballot_data
-        self.pollbook = pollbook
+        self.pollbook = id2pollbook[ballot_data['pollbookId']]
         self.candidates = [id2candidate[id] for id in
                            ballot_data['rankedCandidateIds']]
 
@@ -89,6 +90,7 @@ class ElectionGroupCounter:
         )
         self.ballot_serializer = self._init_ballot_serializer(election_key)
         self.id2candidate = self._init_id2candidate()
+        self.id2pollbook = self._init_id2pollbook()
 
     def _init_id2candidate(self):
         id2candidate = {}
@@ -96,6 +98,13 @@ class ElectionGroupCounter:
             for candidate in election.candidates:
                 id2candidate[str(candidate.id)] = candidate
         return id2candidate
+
+    def _init_id2pollbook(self):
+        id2pollbook = {}
+        for election in self.group.elections:
+            for pollbook in election.pollbooks:
+                id2pollbook[str(pollbook.id)] = pollbook
+        return id2pollbook
 
     def _init_ballot_serializer(self, election_key):
         try:
@@ -174,7 +183,7 @@ class ElectionGroupCounter:
                         )
                         ballot = Ballot(
                             ballot_data,
-                            pollbook,
+                            self.id2pollbook,
                             self.id2candidate
                         )
                         pollbook.ballots.append(ballot)
@@ -230,19 +239,25 @@ class ElectionGroupCounter:
                         [ballot.ballot_data for ballot in election.ballots]
                 }
 
+                pollbook_stats = {}
+                for pollbook in election.pollbooks:
+                    pollbook_stats[str(pollbook.id)] = {
+                        'verified_voters_count': get_verified_voters_count(
+                            self.session,
+                            pollbook.id
+                        ),
+                        'ballots_count': pollbook.ballots_count,
+                        'counting_ballots_count':
+                            pollbook.counting_ballots_count,
+                        'empty_ballots_count': pollbook.empty_ballots_count
+                    }
+
                 db_row = ElectionResult(
                     election_id=election.id,
                     election_group_count_id=count.id,
                     votes=ballots,
                     result=result,
+                    pollbook_stats=pollbook_stats,
                 )
                 self.session.add(db_row)
                 self.session.commit()
-                logger.debug(result)
-
-    #
-    #     # TODO:
-    #         - generate protocol and statistics to save in ElectionResult
-    #         - generate audit log to save in ElectionGroupCount.audit
-    #         - change name of ElectionResult.votes to ballots?
-    #
