@@ -3,6 +3,7 @@ The GraphQL Election ObjectType.
 """
 import graphene
 import graphene_sqlalchemy
+from graphene.types.generic import GenericScalar
 
 import evalg.models.election
 from evalg.graphql.nodes.votes import (resolve_election_count_by_id,
@@ -67,6 +68,42 @@ get_election_query = graphene.Field(
 class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.election_result.ElectionResult
+
+    ballots_with_metadata = graphene.Field(GenericScalar)
+
+    def resolve_ballots_with_metadata(self, info):
+        ballots_with_metadata = dict()
+
+        pollbook_names = dict()
+        for pollbook in self.election.pollbooks:
+            pollbook_names[str(pollbook.id)] = pollbook.name
+        ballots_with_metadata['pollbook_names'] = pollbook_names
+
+        if (self.election.meta['candidate_type'] == "single" or
+            self.election.meta['candidate_type'] == "single_team"):
+            candidate_names = dict()
+            for candidate in self.election.lists[0].candidates:
+                candidate_names[str(candidate.id)] = candidate.name
+            ballots_with_metadata['candidate_names'] = candidate_names
+
+        if (self.election.meta['candidate_type'] == "party_list"):
+            # TODO after implementing list elections:
+            # Handle this case according to how list and candidate names are
+            # stored, and according to what is needed to "decode" UUIDs in
+            # party_list ballots.
+            # This might work:
+            list_names = dict()
+            candidate_names = dict()
+            for list in self.election.lists:
+                list_names[str(list.id)] = list.name
+                for candidate in list.candidates:
+                    candidate_names[str(candidate.id)] = candidate.name
+            ballots_with_metadata['list_names'] = list_names
+            ballots_with_metadata['candidate_names'] = candidate_names
+
+        ballots_with_metadata['ballots'] = self.ballots
+
+        return convert_json(ballots_with_metadata)
 
 
 def resolve_election_result_by_id(_, info, **args):
