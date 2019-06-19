@@ -22,7 +22,6 @@ class ElectionResult(ModelBase):
         evalg.database.types.UuidType,
         db.ForeignKey('election.id'))
 
-    # TODO, add a hybrid property that returns the last election result?
     election = db.relationship(
         'Election',
         back_populates='election_results',
@@ -42,7 +41,9 @@ class ElectionResult(ModelBase):
     # TODO: maybe change this to a file column
     election_protocol = deferred(db.Column(evalg.database.types.MutableJson))
 
-    votes = deferred(db.Column(evalg.database.types.MutableJson))
+    ballots = deferred(db.Column(evalg.database.types.NestedMutableJson))
     """ These are deferred to avoid loading too much data """
 
     result = db.Column(evalg.database.types.MutableJson)
+
+    pollbook_stats = db.Column(evalg.database.types.MutableJson)

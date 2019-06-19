@@ -1,10 +1,8 @@
-"""
-This module implements counting of votes
-
-"""
+"""Module for pre processing data and initiating count"""
 import logging
 import nacl.exceptions
 import datetime
+import decimal
 
 from sqlalchemy.sql import and_
 from flask import current_app
@@ -15,25 +13,73 @@ from evalg.models.votes import Vote
 from evalg.models.election_result import ElectionResult
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.voter import Voter
+from evalg.proc.vote import get_verified_voters_count
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
+from evalg.counting.count import Counter
+
 logger = logging.getLogger(__name__)
 
 
-def verify_election_key(ballot_serializer):
-    serialized_test_ballot = ballot_serializer.serialize(
-        dict(a=1, b=2)
+class Ballot:
+    def __init__(self, ballot_data, id2pollbook, id2candidate):
+        self.ballot_data = ballot_data
+        self.pollbook = id2pollbook[ballot_data['pollbookId']]
+        self.candidates = [id2candidate[id] for id in
+                           ballot_data['rankedCandidateIds']]
+
+    @property
+    def raw_string(self):
+        return ' '.join(
+            [str(self.pollbook.id)] +
+            [str(candidate.id) for candidate in self.candidates]
+        )
+
+
+def get_counting_ballots(ballots):
+    return list(
+            filter(
+                lambda ballot: ballot.candidates != [],
+                ballots
+            )
+        )
+
+
+def get_empty_ballots(ballots):
+    return list(
+            filter(
+                lambda ballot: ballot.candidates == [],
+                ballots
+            )
+        )
+
+
+def get_weight_per_vote(pollbook):
+    return pollbook.weight / decimal.Decimal(
+        pollbook.ballots_count - pollbook.empty_ballots_count)
+
+
+def set_pollbook_stats(pollbook):
+    pollbook.ballots_count = len(pollbook.ballots)
+    pollbook.counting_ballots_count = len(
+        get_counting_ballots(
+            pollbook.ballots
+        )
     )
-    try:
-        ballot_serializer.deserialize(
-            serialized_test_ballot)
-    except nacl.exceptions.CryptoError as e:
-        logger.error(e)
-        return False
-    return True
+    pollbook.empty_ballots_count = len(
+        get_empty_ballots(
+            pollbook.ballots
+        )
+    )
+    pollbook.weight_per_vote = get_weight_per_vote(pollbook)
 
 
-class ElectionGroupCounter(object):
-    def __init__(self, session, group_id):
+def set_weight_per_pollbook(pollbook, lowest_weight_per_vote):
+    pollbook.weight_per_pollbook = (pollbook.weight_per_vote /
+                                    lowest_weight_per_vote)
+
+
+class ElectionGroupCounter:
+    def __init__(self, session, group_id, election_key):
         self.app_config = current_app.config
         self.session = session
         self.group_id = group_id
@@ -42,16 +88,25 @@ class ElectionGroupCounter(object):
             evalg.models.election.ElectionGroup,
             id=group_id
         )
+        self.ballot_serializer = self._init_ballot_serializer(election_key)
+        self.id2candidate = self._init_id2candidate()
+        self.id2pollbook = self._init_id2pollbook()
 
-    def verify_election_statuses(self):
+    def _init_id2candidate(self):
+        id2candidate = {}
         for election in self.group.elections:
-            if election.status not in ('closed', 'inactive'):
-                logger.error(Exception('Election(s) in election group not '
-                                       'closed'))
-                return False
-        return True
+            for candidate in election.candidates:
+                id2candidate[str(candidate.id)] = candidate
+        return id2candidate
 
-    def get_ballot_serializer(self, election_key):
+    def _init_id2pollbook(self):
+        id2pollbook = {}
+        for election in self.group.elections:
+            for pollbook in election.pollbooks:
+                id2pollbook[str(pollbook.id)] = pollbook
+        return id2pollbook
+
+    def _init_ballot_serializer(self, election_key):
         try:
             ballot_serializer = Base64NaClSerializer(
                 election_private_key=election_key,
@@ -64,6 +119,18 @@ class ElectionGroupCounter(object):
             logger.error(e)
             return None
         return ballot_serializer
+
+    def verify_election_key(self):
+        serialized_test_ballot = self.ballot_serializer.serialize(
+            dict(a=1, b=2)
+        )
+        try:
+            self.ballot_serializer.deserialize(
+                serialized_test_ballot)
+        except nacl.exceptions.CryptoError as e:
+            logger.error(e)
+            return False
+        return True
 
     def log_start_count(self):
         utc_now = datetime.datetime.now(datetime.timezone.utc)
@@ -98,37 +165,96 @@ class ElectionGroupCounter(object):
                 Voter.id == Vote.voter_id
             )
         ).filter(
-            Voter.pollbook_id == pollbook_id
+            Voter.pollbook_id == pollbook_id,
+            Voter.verified == True
         )
         return query
 
-    def deserialize_ballots(self, ballot_serializer):
-        election_id2ballots = dict()
+    def deserialize_ballots(self):
         for election in self.group.elections:
-            election_id2ballots[election.id] = list()
-            for pollbook in election.pollbooks:
-                envelopes = self.get_ballots_query(pollbook.id).all()
-                for envelope in envelopes:
-                    ballot_data = ballot_serializer.deserialize(
-                        envelope.ballot_data
+            if election.status == 'closed':
+                election.ballots = []
+                for pollbook in election.pollbooks:
+                    pollbook.ballots = []
+                    envelopes = self.get_ballots_query(pollbook.id).all()
+                    for envelope in envelopes:
+                        ballot_data = self.ballot_serializer.deserialize(
+                            envelope.ballot_data
+                        )
+                        ballot = Ballot(
+                            ballot_data,
+                            self.id2pollbook,
+                            self.id2candidate
+                        )
+                        pollbook.ballots.append(ballot)
+
+    def process_for_count(self):
+        for election in self.group.elections:
+            if election.status == 'closed':
+                [set_pollbook_stats(pollbook) for pollbook in
+                 election.pollbooks]
+
+                election.lowest_weight_per_vote = min(
+                    map(
+                        lambda pb: pb.weight_per_vote,
+                        election.pollbooks
                     )
-                    election_id2ballots[election.id].append(ballot_data)
+                )
+                election.ballots = []
+                election.total_amount_ballots = 0
+                election.total_amount_empty_ballots = 0
+                election.total_amount_counting_ballots = 0
 
-        logger.debug(election_id2ballots)
-        return election_id2ballots
+                for pollbook in election.pollbooks:
+                    set_weight_per_pollbook(
+                        pollbook,
+                        election.lowest_weight_per_vote
+                    )
+                    election.total_amount_ballots += pollbook.ballots_count
+                    election.total_amount_empty_ballots += (
+                        pollbook.empty_ballots_count)
+                    election.total_amount_counting_ballots += (
+                        pollbook.counting_ballots_count)
+                    election.ballots.extend(pollbook.ballots)
+                election.quotas = election.get_quotas()
 
-    def generate_result(self, election, ballots, count):
-        result = self.count(election, ballots)
+    def generate_results(self, count):
+        for election in self.group.elections:
+            if election.status == 'closed':
+                counter = Counter(election, election.ballots)
+                election_count_tree = counter.count()
+                election_path = election_count_tree.election_paths[0]
 
-        # TODO: generate result, protocol, statistics to put in db
+                result = {
+                    'elected_regular_candidates':
+                        [str(candidate.id) for candidate in
+                         election_path.get_elected_regular_candidates()],
+                    'elected_substitute_candidates':
+                        [str(candidate.id) for candidate in
+                         election_path.get_elected_substitute_candidates()]
+                }
 
-        db_row = ElectionResult(election_id=election.id,
-                                election_group_count_id=count.id,
-                                votes={'votes': ballots},
-                                result=result,)
-        self.session.add(db_row)
-        self.session.commit()
+                ballots = [ballot.ballot_data for ballot in election.ballots]
 
-    # TODO: replace this with counting algorithm
-    def count(self, election, ballots):
-        pass
+                pollbook_stats = {}
+                for pollbook in election.pollbooks:
+                    pollbook_stats[str(pollbook.id)] = {
+                        'verified_voters_count': get_verified_voters_count(
+                            self.session,
+                            pollbook.id
+                        ),
+                        'ballots_count': pollbook.ballots_count,
+                        'counting_ballots_count':
+                            pollbook.counting_ballots_count,
+                        'empty_ballots_count': pollbook.empty_ballots_count
+                    }
+
+                db_row = ElectionResult(
+                    election_id=election.id,
+                    election_group_count_id=count.id,
+                    ballots=ballots,
+                    result=result,
+                    pollbook_stats=pollbook_stats,
+                )
+                self.session.add(db_row)
+                self.session.commit()

@@ -9,6 +9,11 @@ Hopefully it will be updated on regular bases.
 import abc
 
 
+# TODO
+#  Maybe we should rename temporary variables called something
+#  with census to something with pollbook in uiostv.py, legacy.py and
+#  counting/count.py, so that we can avoid confusion around pollbook/census?
+#
 class EvalgCountingAbstractBase(abc.ABC):
     """
     Used only to illustrate that the following attributes should be present in
@@ -22,7 +27,7 @@ class EvalgCountingAbstractBase(abc.ABC):
         pass
 
 
-class AbstractCensus(EvalgCountingAbstractBase):
+class AbstractPollbook(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
@@ -45,13 +50,14 @@ class AbstractCensus(EvalgCountingAbstractBase):
     @property
     @abc.abstractmethod
     def name(self):
+        # TODO rename to id?
         """candidate_id-property"""
         pass
 
     @property
     @abc.abstractmethod
-    def weight_per_census(self):
-        """weight_per_census-property"""
+    def weight_per_pollbook(self):
+        """weight_per_pollbook-property"""
         pass
 
     @property
@@ -96,8 +102,8 @@ class AbstractBallot(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
-    def census(self):
-        """census-property"""
+    def pollbook(self):
+        """pollbook-property"""
         pass
 
     @property
@@ -126,15 +132,15 @@ class AbstractElection(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
-    def census_lists(self):
-        """census_lists-property"""
+    def pollbooks(self):
+        """pollbooks-property"""
         # for debugging in Count
         pass
 
     @property
     @abc.abstractmethod
-    def election_type(self):
-        """election_type-property"""
+    def type(self):
+        """type-property"""
         pass
 
     @property
