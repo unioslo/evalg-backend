@@ -3,6 +3,7 @@ import json
 import pytest
 
 import evalg.database.query
+
 from evalg import create_app, db
 from evalg.authentication import user
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
@@ -16,6 +17,7 @@ from evalg.models.election_result import ElectionResult
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import PollBook
 from evalg.models.voter import Voter
+from evalg.proc.vote import ElectionVotePolicy
 
 pytest_plugins = ['pytest-flask-sqlalchemy']
 
@@ -23,6 +25,7 @@ pytest_plugins = ['pytest-flask-sqlalchemy']
 @pytest.fixture(scope='session')
 def config():
     """ Application config. """
+
     class Config(object):
         TESTING = True
         SQLALCHEMY_DATABASE_URI = 'sqlite://'
@@ -36,8 +39,8 @@ def config():
                 'a6733d24-8987-44b6-8cd0-308030710aa2': {
                     'id': 'a6733d24-8987-44b6-8cd0-308030710aa2',
                     'sec': {
-                        'feide': ('foo@example.org', ),
-                        'nin': ('12128812345', ),
+                        'feide': ('foo@example.org',),
+                        'nin': ('12128812345',),
                     },
                     'dp_user_info': {
                         'user': {
@@ -101,56 +104,79 @@ def election_keys_foo():
 
 
 @pytest.fixture
-def election_group_foo(db_session, election_keys_foo):
-    """
-    Election group fixture.
-
-    """
-    data = {
-        'name': {
-            'nb': 'Foo',
-            'en': 'Foo',
-        },
-        'type': 'single_election',
-        'description': {
-            'nb': 'Description foo',
-            'en': 'Description foo',
-        },
-        'public_key': election_keys_foo['public'],
-
-    }
-    election_group = evalg.database.query.get_or_create(
-        db_session, ElectionGroup, **data)
-    election_group.publish()
-    election_group.announce()
-    db_session.add(election_group)
-    db_session.flush()
-    return election_group
+def election_vote_policy_foo(db_session):
+    return ElectionVotePolicy(db_session)
 
 
 @pytest.fixture
-def election_foo(db_session, election_group_foo):
-    """Election fixture."""
+def make_election_group(db_session, election_keys_foo):
+    """
+    Election group fixture.
+    """
+    def unannounced_election_group(name):
+        data = {
+            'name': {
+                'nb': name,
+                'en': name,
+            },
+            'type': 'single_election',
+            'description': {
+                'nb': 'Description foo',
+                'en': 'Description foo',
+            },
+            'public_key': election_keys_foo['public'],
+        }
 
-    data = {
-        'name': {
-            'nb': 'Valg av foo',
-            'en': 'Election of foo',
-        },
-        'type': 'single_election',
-        'description': {
-            'nb': 'Description foo',
-            'en': 'Description foo',
-        },
-        'group_id': election_group_foo.id,
-        'start': datetime.datetime.now(datetime.timezone.utc),
-        'end': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
-    }
-    election = evalg.database.query.get_or_create(
-        db_session, Election, **data)
-    db_session.add(election)
-    db_session.flush()
-    return election
+        election_group = evalg.database.query.get_or_create(
+            db_session, ElectionGroup, **data)
+        election_group.publish()
+        election_group.announce()
+
+        db_session.add(election_group)
+        db_session.flush()
+        return election_group
+
+    return unannounced_election_group
+
+
+@pytest.fixture
+def election_group_foo(make_election_group):
+    return make_election_group('Election group foo fixture')
+
+
+@pytest.fixture
+def make_election(db_session, election_group_foo):
+    def make_election(name, election_group=None):
+        if not election_group:
+            election_group = election_group_foo
+        data = {
+            'name': {
+                'nb': name,
+                'en': name,
+            },
+            'type': 'single_election',
+            'description': {
+                'nb': 'Description {0}'.format(name),
+                'en': 'Description {0}'.format(name),
+            },
+            'group_id': election_group.id,
+            'start': datetime.datetime.now(datetime.timezone.utc),
+            'end': datetime.datetime.now(
+                datetime.timezone.utc) + datetime.timedelta(days=1)
+        }
+        election = evalg.database.query.get_or_create(
+            db_session, Election, **data)
+        db_session.add(election)
+        db_session.flush()
+        return election
+
+    return make_election
+
+
+@pytest.fixture
+def election_foo(make_election):
+    """Election fixture."""
+    return make_election('Election foo')
 
 
 election_list_data = {
@@ -371,7 +397,6 @@ def pollbook_voter_foo(db_session, persons, pollbook_foo):
 
 @pytest.fixture
 def election_group_count_foo(db_session, election_group_foo):
-
     data = {
         'group_id': election_group_foo.id,
     }
@@ -389,8 +414,19 @@ def election_group_count_foo(db_session, election_group_foo):
 
 
 @pytest.fixture
-def election_result_foo(db_session, election_foo, election_group_count_foo):
+def election_pref_vote(pref_candidates_foo):
+    ballot_data = {
+        'voteType': 'prefElecVote',
+        'isBlankVote': False,
+        'rankedCandidateIds': [str(x.id) for x in pref_candidates_foo]
+    }
 
+    return ballot_data
+
+
+@pytest.fixture
+def election_result_foo(db_session, election_foo, election_group_count_foo):
+    # TODO: Dummy result, change to use a "real" election result
     data = {
         'election_id': election_foo.id,
         'election_group_count_id': election_group_count_foo.id,
