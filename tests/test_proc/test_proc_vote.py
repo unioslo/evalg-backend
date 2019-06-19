@@ -9,26 +9,18 @@ def test_election_vote_policy(
         config,
         pollbook_voter_foo,
         election_vote_policy_foo,
-        pref_candidates_foo,
+        election_pref_vote,
         election_keys_foo):
     """
     Test the election vote policy flow.
 
     Tests a normal vote, with at valid vote, valid election etc.
     """
-
     assert election_vote_policy_foo.envelope_type == config.ENVELOPE_TYPE
-
-    # Get ids from fixture
-    ballot_data = {
-        'voteType': 'prefElecVote',
-        'isBlankVote': False,
-        'rankedCandidateIds': [repr(x.id) for x in pref_candidates_foo]
-    }
-
     vote = election_vote_policy_foo.add_vote(pollbook_voter_foo,
-                                             ballot_data.copy())
+                                             election_pref_vote.copy())
     assert vote
+    assert election_vote_policy_foo.get_voter(vote.voter_id)
 
     # get and check vote
     vote_after = Vote.query.get(vote.voter_id)
@@ -48,5 +40,5 @@ def test_election_vote_policy(
     assert serializer
     ballot_after = serializer.deserialize(encrypted_ballot_data)
     assert ballot_after
-    assert ballot_after == ballot_data
+    assert ballot_after == election_pref_vote
 
