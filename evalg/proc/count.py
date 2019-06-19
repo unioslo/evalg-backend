@@ -234,10 +234,7 @@ class ElectionGroupCounter:
                          election_path.get_elected_substitute_candidates()]
                 }
 
-                ballots = {
-                    'ballots':
-                        [ballot.ballot_data for ballot in election.ballots]
-                }
+                ballots = [ballot.ballot_data for ballot in election.ballots]
 
                 pollbook_stats = {}
                 for pollbook in election.pollbooks:
@@ -255,7 +252,7 @@ class ElectionGroupCounter:
                 db_row = ElectionResult(
                     election_id=election.id,
                     election_group_count_id=count.id,
-                    votes=ballots,
+                    ballots=ballots,
                     result=result,
                     pollbook_stats=pollbook_stats,
                 )

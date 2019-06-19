@@ -41,7 +41,7 @@ class ElectionResult(ModelBase):
     # TODO: maybe change this to a file column
     election_protocol = deferred(db.Column(evalg.database.types.MutableJson))
 
-    votes = deferred(db.Column(evalg.database.types.MutableJson))
+    ballots = deferred(db.Column(evalg.database.types.NestedMutableJson))
     """ These are deferred to avoid loading too much data """
 
     result = db.Column(evalg.database.types.MutableJson)
