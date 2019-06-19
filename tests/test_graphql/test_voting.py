@@ -30,4 +30,4 @@ def test_vote(client, election_pref_vote, pollbook_voter_foo):
 
     ballot_after = Envelope.query.get(response['ballotId'])
     assert ballot_after
-    # TODO decrypty and check ballot contents.
+    # TODO decrypt and check ballot contents.
