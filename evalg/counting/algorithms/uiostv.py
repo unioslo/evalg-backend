@@ -642,7 +642,11 @@ class RegularRound:
         counting_ballot_pollbook = (
             [ballot.pollbook.weight_per_pollbook for
              ballot in self._counter_obj.counting_ballots])
-        prec = 2 * int(math.log(len(counting_ballot_pollbook), 10))
+        if len(counting_ballot_pollbook) < 10:
+            # avoid log(0) and large epsilon when 1 <= ballots < 10
+            prec = 2
+        else:
+            prec = 2 * int(math.log(len(counting_ballot_pollbook), 10))
         # the quotient should not have a greater precision than epsilon
         quotient_precision = decimal.Decimal(10) ** -prec  # §18.3, §33
         epsilon = decimal.Decimal((0, (1, ), -prec))
@@ -1645,7 +1649,11 @@ class SubstituteRound(RegularRound):
         counting_ballot_pollbook = (
             [ballot.pollbook.weight_per_pollbook for
              ballot in self._counter_obj.counting_ballots])
-        prec = 2 * int(math.log(len(counting_ballot_pollbook), 10))
+        if len(counting_ballot_pollbook) < 10:
+            # avoid log(0) and large epsilon when 1 <= ballots < 10
+            prec = 2
+        else:
+            prec = 2 * int(math.log(len(counting_ballot_pollbook), 10))
         quotient_precision = decimal.Decimal(10) ** -prec  # §18.3, §33
         epsilon = decimal.Decimal((0, (1, ), -prec))
         weight_counting_ballots = decimal.Decimal(
