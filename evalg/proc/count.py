@@ -54,8 +54,10 @@ def get_empty_ballots(ballots):
 
 
 def get_weight_per_vote(pollbook):
-    return pollbook.weight / decimal.Decimal(
-        pollbook.ballots_count - pollbook.empty_ballots_count)
+    if pollbook.counting_ballots_count == 0:
+        return decimal.Decimal(0)
+    return (decimal.Decimal(pollbook.weight) /
+            decimal.Decimal(pollbook.counting_ballots_count))
 
 
 def set_pollbook_stats(pollbook):
@@ -73,9 +75,18 @@ def set_pollbook_stats(pollbook):
     pollbook.weight_per_vote = get_weight_per_vote(pollbook)
 
 
-def set_weight_per_pollbook(pollbook, lowest_weight_per_vote):
-    pollbook.weight_per_pollbook = (pollbook.weight_per_vote /
-                                    lowest_weight_per_vote)
+def set_weight_per_pollbook(pollbook, min_wpv):
+    pollbook.weight_per_pollbook = pollbook.weight_per_vote / min_wpv
+
+
+def set_weight_per_pollbooks(pollbooks):
+    min_wpv = min(
+        [pollbook.weight_per_vote for pollbook in pollbooks if
+         pollbook.weight_per_vote],
+        default=decimal.Decimal(1)
+    )
+    for pollbook in pollbooks:
+        set_weight_per_pollbook(pollbook, min_wpv)
 
 
 class ElectionGroupCounter:
@@ -191,25 +202,16 @@ class ElectionGroupCounter:
     def process_for_count(self):
         for election in self.group.elections:
             if election.status == 'closed':
-                [set_pollbook_stats(pollbook) for pollbook in
-                 election.pollbooks]
+                for pollbook in election.pollbooks:
+                    set_pollbook_stats(pollbook)
+                set_weight_per_pollbooks(election.pollbooks)
 
-                election.lowest_weight_per_vote = min(
-                    map(
-                        lambda pb: pb.weight_per_vote,
-                        election.pollbooks
-                    )
-                )
                 election.ballots = []
                 election.total_amount_ballots = 0
                 election.total_amount_empty_ballots = 0
                 election.total_amount_counting_ballots = 0
 
                 for pollbook in election.pollbooks:
-                    set_weight_per_pollbook(
-                        pollbook,
-                        election.lowest_weight_per_vote
-                    )
                     election.total_amount_ballots += pollbook.ballots_count
                     election.total_amount_empty_ballots += (
                         pollbook.empty_ballots_count)

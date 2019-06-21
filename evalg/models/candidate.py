@@ -49,3 +49,6 @@ class Candidate(ModelBase):
     user_cumulated = db.Column(
         db.Boolean,
         default=False)
+
+    def __str__(self):
+        return self.name
