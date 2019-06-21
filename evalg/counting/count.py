@@ -323,22 +323,22 @@ class Counter:
                     self._election_obj.total_amount_empty_ballots)
         logger.info("Total number of counting votes: %d",
                     self._election_obj.total_amount_counting_ballots)
-        for census in self._election_obj.pollbooks:
+        for pollbook in self._election_obj.pollbooks:
             logger.info("Number of ballots from %s: %d",
-                        census.name,
-                        census.ballots_count)
+                        pollbook.name,
+                        pollbook.ballots_count)
             logger.info("Blank votes from %s: %d",
-                        census.name,
-                        census.empty_ballots_count)
+                        pollbook.name,
+                        pollbook.empty_ballots_count)
             logger.info("Counting votes from %s: %d",
-                        census.name,
-                        census.counting_ballots_count)
-            logger.info("Census %s has weight per vote: %s",
-                        census,
-                        census.weight_per_vote)
-            logger.info("Census %s has (adjusted) weight per vote: %s",
-                        census,
-                        census.weight_per_pollbook)
+                        pollbook.name,
+                        pollbook.counting_ballots_count)
+            logger.info("Pollbook %s has weight per vote: %s",
+                        pollbook,
+                        pollbook.weight_per_vote)
+            logger.info("Pollbook %s has (adjusted) weight per vote: %s",
+                        pollbook,
+                        pollbook.weight_per_pollbook)
         if not self._quotas:
             logger.info("No quota groups defined")
         for quota in self._quotas:
