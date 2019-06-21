@@ -639,14 +639,15 @@ class RegularRound:
         # Proposition:
         #  * prec >= 2
         #  * prec is at least 2 * math.log(counting-ballots, 10)
-        counting_ballot_census = (
+        counting_ballot_pollbook = (
             [ballot.pollbook.weight_per_pollbook for
              ballot in self._counter_obj.counting_ballots])
-        prec = 2 * int(math.log(len(counting_ballot_census), 10))
+        prec = 2 * int(math.log(len(counting_ballot_pollbook), 10))
         # the quotient should not have a greater precision than epsilon
         quotient_precision = decimal.Decimal(10) ** -prec  # §18.3, §33
         epsilon = decimal.Decimal((0, (1, ), -prec))
-        weight_counting_ballots = decimal.Decimal(sum(counting_ballot_census))
+        weight_counting_ballots = decimal.Decimal(
+            sum(counting_ballot_pollbook))
         quotient = (
             weight_counting_ballots /
             decimal.Decimal(self._counter_obj.election.num_choosable + 1)
@@ -1641,13 +1642,14 @@ class SubstituteRound(RegularRound):
         :return: The election number calculated for this round
         :rtype: decimal.Decimal
         """
-        counting_ballot_census = (
+        counting_ballot_pollbook = (
             [ballot.pollbook.weight_per_pollbook for
              ballot in self._counter_obj.counting_ballots])
-        prec = 2 * int(math.log(len(counting_ballot_census), 10))
+        prec = 2 * int(math.log(len(counting_ballot_pollbook), 10))
         quotient_precision = decimal.Decimal(10) ** -prec  # §18.3, §33
         epsilon = decimal.Decimal((0, (1, ), -prec))
-        weight_counting_ballots = decimal.Decimal(sum(counting_ballot_census))
+        weight_counting_ballots = decimal.Decimal(
+            sum(counting_ballot_pollbook))
         quotient = (weight_counting_ballots /
                     decimal.Decimal(
                         self._counter_obj.election.num_choosable +

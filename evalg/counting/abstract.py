@@ -9,11 +9,6 @@ Hopefully it will be updated on regular bases.
 import abc
 
 
-# TODO
-#  Maybe we should rename temporary variables called something
-#  with census to something with pollbook in uiostv.py, legacy.py and
-#  counting/count.py, so that we can avoid confusion around pollbook/census?
-#
 class EvalgCountingAbstractBase(abc.ABC):
     """
     Used only to illustrate that the following attributes should be present in

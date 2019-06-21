@@ -41,28 +41,28 @@ class EvalgSex(enum.Enum):
 class EvalgLegacyPollbook:
     """The pollbook-class"""
 
-    def __init__(self, census_id, census_name, weight):
+    def __init__(self, pollbook_id, pollbook_name, weight):
         """
-        :param census_id: The defined id
-        :type census_id: str
+        :param pollbook_id: The defined id
+        :type pollbook_id: str
 
-        :param census_name: The defined name
-        :type census_name: str
+        :param pollbook_name: The defined name
+        :type pollbook_name: str
 
         :param weight: The defined weight
         :type weight: decimal.Decimal
         """
-        self._census_id = census_id
-        self._name = census_name
+        self._pollbook_id = pollbook_id
+        self._name = pollbook_name
         self._weight = weight
         self._ballots_cnt = 0
         self._empty_ballots_cnt = 0
-        self._weight_per_census = decimal.Decimal('1.00')
+        self._weight_per_pollbook = decimal.Decimal('1.00')
 
     @property
-    def census_id(self):
-        """census_id-property"""
-        return self._census_id
+    def pollbook_id(self):
+        """pollbook_id-property"""
+        return self._pollbook_id
 
     @property
     def ballots_count(self):
@@ -96,8 +96,8 @@ class EvalgLegacyPollbook:
 
     @property
     def weight_per_pollbook(self):
-        """weight_per_census-property"""
-        return self._weight_per_census
+        """weight_per_pollbook-property"""
+        return self._weight_per_pollbook
 
     @property
     def weight_per_vote(self):
@@ -106,17 +106,17 @@ class EvalgLegacyPollbook:
             self._ballots_cnt - self._empty_ballots_cnt)
 
     def __str__(self):
-        return '{id}: {name} ({weight})'.format(id=self._census_id,
+        return '{id}: {name} ({weight})'.format(id=self._pollbook_id,
                                                 name=self._name,
                                                 weight=self._weight)
 
     def set_weight_per_pollbook(self, value):
         """
-        Calculates and sets own weight_per_census based on the
+        Calculates and sets own weight_per_pollbook based on the
         smallest (1.0) index weight per vote
         IV §32
         """
-        self._weight_per_census = self.weight_per_vote / value
+        self._weight_per_pollbook = self.weight_per_vote / value
 
 
 class EvalgLegacyCandidate:
@@ -222,13 +222,13 @@ class EvalgLegacyQuota:
 class EvalgLegacyBallot:
     """The ballot-class"""
 
-    def __init__(self, ballot_id, census, candidates_list):
+    def __init__(self, ballot_id, pollbook, candidates_list):
         """
         :param ballot_id: The ballot-id
         :type bellot_id: str
 
-        :param census: The census the ballot bellongs to
-        :type census: EvalgLegacyPollbook
+        :param pollbook: The pollbook the ballot bellongs to
+        :type pollbook: EvalgLegacyPollbook
 
         :param candidates_list: The (ordered) sequence of candidates
         :type candidates_list: collections.abc.Sequence
@@ -237,12 +237,12 @@ class EvalgLegacyBallot:
             raise TypeError(
                 'candidates_list must be if the type collections.abc.Sequence')
         self._ballot_id = ballot_id
-        self._census_obj = census
+        self._pollbook_obj = pollbook
         self._candidates_list = list(candidates_list)
         self._raw_string = None
-        self._census_obj.ballots_count += 1
+        self._pollbook_obj.ballots_count += 1
         if not self._candidates_list:  # empty ballot
-            self._census_obj.empty_ballots_count += 1
+            self._pollbook_obj.empty_ballots_count += 1
 
     @property
     def ballot_id(self):
@@ -262,7 +262,7 @@ class EvalgLegacyBallot:
         """
         if self._raw_string is None:
             self._raw_string = ' '.join(
-                [self._census_obj.census_id] +
+                [self._pollbook_obj.pollbook_id] +
                 [candidate.candidate_id for candidate in
                  self._candidates_list])
         return self._raw_string
@@ -270,12 +270,12 @@ class EvalgLegacyBallot:
     @property
     def pollbook(self):
         """pollbook-property"""
-        return self._census_obj
+        return self._pollbook_obj
 
     def __str__(self):
-        return '{ballot_id}/({census}): {votes}'.format(
+        return '{ballot_id}/({pollbook}): {votes}'.format(
             ballot_id=self._ballot_id,
-            census=self._census_obj,
+            pollbook=self._pollbook_obj,
             votes=' -> '.join([str(cand) for cand in self._candidates_list]))
 
 
@@ -291,7 +291,7 @@ class EvalgLegacyElection:
         self._num_substitutes = -1
         self._candidates_list = []
         self._candidates_dict = {}  # implements id -> candidate "caching"
-        self._census_dict = {}
+        self._pollbook_dict = {}
         self._voters_lists_dict = {}  # 'ballot_id': cansus_obj dict
         self._ballot_list = []
         self._quota_list = []
@@ -311,11 +311,11 @@ class EvalgLegacyElection:
                     continue
                 with zfile.open(ballot_file) as fp:
                     self._add_ballot_from_file(fp)
-        # set weight per census
-        census_list = self._census_dict.values()
-        min_wpv = min([census.weight_per_vote for census in census_list])
-        for census in census_list:
-            census.set_weight_per_pollbook(min_wpv)
+        # set weight per pollbook
+        pollbook_list = self._pollbook_dict.values()
+        min_wpv = min([pollbook.weight_per_vote for pollbook in pollbook_list])
+        for pollbook in pollbook_list:
+            pollbook.set_weight_per_pollbook(min_wpv)
 
     @property
     def ballots(self):
@@ -336,7 +336,7 @@ class EvalgLegacyElection:
         """
         pollbooks-property
         """
-        return self._census_dict.values()
+        return self._pollbook_dict.values()
 
     @property
     def type(self):
@@ -385,14 +385,15 @@ class EvalgLegacyElection:
         """
         ballots property
         """
-        return sum([c.empty_ballots_count for c in self._census_dict.values()])
+        return sum(
+            [c.empty_ballots_count for c in self._pollbook_dict.values()])
 
     @property
     def total_amount_ballots(self):
         """
         total_amount_ballots-property
         """
-        return sum([c.ballots_count for c in self._census_dict.values()])
+        return sum([c.ballots_count for c in self._pollbook_dict.values()])
 
     @property
     def total_amount_counting_ballots(self):
@@ -400,7 +401,7 @@ class EvalgLegacyElection:
         total_amount_counting_ballots-property
         """
         return sum(
-            [c.counting_ballots_count for c in self._census_dict.values()])
+            [c.counting_ballots_count for c in self._pollbook_dict.values()])
 
     @property
     def voters_lists(self):
@@ -419,7 +420,7 @@ class EvalgLegacyElection:
                     num_substitutes=self._num_substitutes))
 
     def _fetch_election_data(self, xml_file_fp):
-        """Loads election, candidate, census and quota metadata"""
+        """Loads election, candidate, pollbook and quota metadata"""
         tree = ET.parse(xml_file_fp)
         election_elem = tree.getroot()
         self._election_id = election_elem.attrib.get('id')
@@ -447,13 +448,13 @@ class EvalgLegacyElection:
                 self._candidates_list.append(candidate)
                 logger.info("Adding candidate: %s", candidate)
             elif child.tag.lower() == 'census':
-                self._census_dict[child.attrib.get('id')] = (
+                self._pollbook_dict[child.attrib.get('id')] = (
                     EvalgLegacyPollbook(
                         child.attrib.get('id'),
                         child.attrib.get('name'),
                         decimal.Decimal(child.attrib.get('weight'))))
-                logger.info("Adding census: %s",
-                            self._census_dict[child.attrib.get('id')])
+                logger.info("Adding pollbook: %s",
+                            self._pollbook_dict[child.attrib.get('id')])
         # quota
         # Be paranoid and do not assume that the quota node is at the end of
         # the election_elem. Start new iteration.
@@ -507,7 +508,7 @@ class EvalgLegacyElection:
         for line in voters_lists_file_fp:
             ballot_id, voter_list_id = line.decode().strip().split('/')
             self._voters_lists_dict[ballot_id] = (
-                self._census_dict[voter_list_id])
+                self._pollbook_dict[voter_list_id])
 
     def _add_ballot_from_file(self, ballot_file_fp):
         """Loads ballot metadata from file"""
