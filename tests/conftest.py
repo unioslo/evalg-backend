@@ -5,7 +5,10 @@ import pytest
 import evalg.database.query
 from evalg import create_app, db
 from evalg.authentication import user
+from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 from evalg.models.candidate import Candidate
+from evalg.models.ballot import Envelope
+from evalg.models.votes import Vote
 from evalg.models.election import ElectionGroup, Election
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.election_list import ElectionList
@@ -150,10 +153,7 @@ def election_foo(db_session, election_group_foo):
     return election
 
 
-@pytest.fixture
-def election_list_pref_foo(db_session, election_foo):
-    """Election list fixture, with candidates."""
-    data = {
+election_list_data = {
         "name": {
             "nb": "Vitenskapelig ansatte",
             "nn": "Vitskapeleg tilsette",
@@ -165,11 +165,16 @@ def election_list_pref_foo(db_session, election_foo):
             "en": "Academic staff"
         },
         "information_url": "https://uio.no",
-        "election_id": election_foo.id,
     }
 
+
+@pytest.fixture
+def election_list_pref_foo(db_session, election_foo):
+    """Election list fixture, with candidates."""
+    election_list_data["election_id"] = election_foo.id
+
     election_list = evalg.database.query.get_or_create(
-        db_session, ElectionList, **data)
+        db_session, ElectionList, **election_list_data)
 
     db_session.add(election_list)
     db_session.flush()
@@ -202,26 +207,28 @@ def election_list_team_pref_foo(db_session, election_foo):
     return election_list
 
 
-@pytest.fixture
-def pref_candidates_foo(db_session, election_list_pref_foo):
-    data = [
+pref_candidates_data = [
         {
             "name": "Peder Aas",
             "meta": {
                 "gender": "Male"
             },
-            "list_id": election_list_pref_foo.id,
         },
         {
             "name": "Marte Kirkerud",
             "meta": {
                 "gender": "female"
             },
-            "list_id": election_list_pref_foo.id,
         },
     ]
+
+
+@pytest.fixture
+def pref_candidates_foo(db_session, election_list_pref_foo):
+    [x.update({'list_id': election_list_pref_foo.id}) for x in
+     pref_candidates_data]
     candidates = [evalg.database.query.get_or_create(
-        db_session, Candidate, **x) for x in data]
+        db_session, Candidate, **x) for x in pref_candidates_data]
     for candidate in candidates:
         db_session.add(candidate)
         election_list_pref_foo.candidates.append(candidate)
@@ -388,9 +395,7 @@ def election_result_foo(db_session, election_foo, election_group_count_foo):
         'election_id': election_foo.id,
         'election_group_count_id': election_group_count_foo.id,
         'election_protocol': {'test123': '123123'},
-        'votes': {
-            'votes': [{'vote': 'test'}, {'vote': 'test2'}]
-        },
+        'ballots': [{'vote': 'test'}, {'vote': 'test2'}],
         'result': {"winner": "test"}
     }
 
@@ -404,3 +409,173 @@ def election_result_foo(db_session, election_foo, election_group_count_foo):
     db_session.flush()
 
     return election_result
+
+
+@pytest.fixture
+def election_group_bar(db_session, election_keys_foo):
+    data = {
+        'name': {
+            'nb': 'Bar',
+            'en': 'Bar',
+        },
+        'type': 'single_election',
+        'description': {
+            'nb': 'Description bar',
+            'en': 'Description bar',
+        },
+        'announced_at': (datetime.datetime.now(datetime.timezone.utc) -
+                         datetime.timedelta(days=3)),
+        'published_at': (datetime.datetime.now(datetime.timezone.utc) -
+                         datetime.timedelta(days=3)),
+        'public_key': election_keys_foo['public'],
+
+    }
+    election_group = evalg.database.query.get_or_create(
+        db_session, ElectionGroup, **data)
+    election_group.publish()
+    election_group.announce()
+    db_session.add(election_group)
+    db_session.flush()
+    return election_group
+
+
+@pytest.fixture
+def election_bar(db_session, election_group_bar):
+    data = {
+        'name': {
+            'nb': 'Valg av bar',
+            'en': 'Election of bar',
+        },
+        'type': 'single_election',
+        'description': {
+            'nb': 'Description bar',
+            'en': 'Description bar',
+        },
+        'meta': {
+            'candidate_rules': {'candidate_gender': True,
+                                'seats': 1},
+            'counting_rules': {'affirmative_action': ['gender_40']},
+        },
+        'active': True,
+        'group_id': election_group_bar.id,
+        'start': (datetime.datetime.now(datetime.timezone.utc) -
+                  datetime.timedelta(days=2)),
+        'end': (datetime.datetime.now(datetime.timezone.utc) -
+                datetime.timedelta(days=1)),
+
+    }
+    election = evalg.database.query.get_or_create(
+        db_session, Election, **data)
+    db_session.add(election)
+    db_session.flush()
+    return election
+
+
+@pytest.fixture
+def election_list_pref_bar(db_session, election_bar):
+    election_list_data['election_id'] = election_bar.id
+
+    election_list = evalg.database.query.get_or_create(
+        db_session, ElectionList, **election_list_data)
+
+    db_session.add(election_list)
+    db_session.flush()
+    return election_list
+
+
+@pytest.fixture
+def pref_candidates_bar(db_session, election_list_pref_bar):
+    [x.update({'list_id': election_list_pref_bar.id}) for x in
+     pref_candidates_data]
+    candidates = [evalg.database.query.get_or_create(
+        db_session, Candidate, **x) for x in pref_candidates_data]
+    for candidate in candidates:
+        db_session.add(candidate)
+        election_list_pref_bar.candidates.append(candidate)
+    db_session.flush()
+    return candidates
+
+
+@pytest.fixture
+def pollbook_bar(db_session, election_bar):
+    data = {
+        "name": {
+            "nb": "Pollbook bar",
+            "en": "Pollbook bar",
+        },
+        "election_id": election_bar.id,
+    }
+
+    pollbook = evalg.database.query.get_or_create(
+    db_session, PollBook, **data)
+
+    db_session.add(pollbook)
+    db_session.flush()
+    return pollbook
+
+
+@pytest.fixture
+def pollbook_voter_bar(db_session, persons, pollbook_bar):
+    person = next(iter(persons.values()))
+
+    data = {
+        'id_type': person.identifiers[0].id_type,
+        'id_value': person.identifiers[0].id_value,
+        'pollbook_id': pollbook_bar.id,
+        'self_added': False,
+        'reviewed': False,
+        'verified': True,
+    }
+
+    pollbook_voter = evalg.database.query.get_or_create(
+        db_session, Voter, **data)
+
+    db_session.add(pollbook_voter)
+    db_session.flush()
+
+    return pollbook_voter
+
+
+@pytest.fixture
+def envelope_bar(db_session, config, pref_candidates_bar, election_keys_foo,
+                 pollbook_bar):
+    ballot_serializer = Base64NaClSerializer(
+        election_public_key=election_keys_foo['public'],
+        backend_private_key=getattr(config, 'BACKEND_PRIVATE_KEY'),
+        envelope_padded_len=getattr(config, 'ENVELOPE_PADDED_LEN'),
+    )
+    ballot_data = {
+        'pollbookId': str(pollbook_bar.id),
+        'rankedCandidateIds': [str(candidate.id) for candidate in
+                               pref_candidates_bar]
+    }
+    data = {
+        'envelope_type': 'base64-nacl',
+        'ballot_type': 'test_ballot',
+        'ballot_data': ballot_serializer.serialize(ballot_data)
+    }
+    envelope = evalg.database.query.get_or_create(
+        db_session,
+        Envelope,
+        **data
+    )
+    db_session.add(envelope)
+    db_session.flush()
+    return envelope
+
+
+@pytest.fixture
+def vote_bar(db_session, pollbook_voter_bar, envelope_bar):
+    data = {
+        'voter_id': pollbook_voter_bar.id,
+        'ballot_id': envelope_bar.id,
+
+    }
+    vote = evalg.database.query.get_or_create(
+        db_session,
+        Vote,
+        **data
+    )
+    db_session.add(vote)
+    db_session.flush()
+    return vote
