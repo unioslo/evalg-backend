@@ -6,6 +6,8 @@ import logging
 import math
 import operator
 
+from evalg.counting import base
+
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
 DEFAULT_LOG_LEVEL = logging.DEBUG
@@ -32,6 +34,26 @@ class RequiredCandidatesElected(Exception):
 class SubstituteCandidateElected(Exception):
     """Raised when a single substitute candidate is elected"""
     pass
+
+
+class Result(base.Result):
+    """
+    UiOSTV Result
+    """
+    def __init__(self, meta, regular_candidates, substitute_candidates):
+        """
+        :param meta: The metadata for this result
+        :type meta: dict
+
+        :param regular_candidates: The elected regular candidates
+        :type regular_candidates: collections.abc.Sequence
+
+        :param substitute_candidates: The elected substitute candidates
+        :type substitute_candidates: collections.abc.Sequence
+        """
+        super().__init__(meta)
+        self.regular_candidates = regular_candidates
+        self.substitute_candidates = substitute_candidates
 
 
 class RoundState:
