@@ -127,7 +127,7 @@ def make_group_from_template(session, template_name, ou, principals=()):
     now = utcnow()
 
     def candidate_type(e):
-        return metadata['candidate-type']
+        return metadata['candidate_type']
 
     def common_candidate_type():
         return functools.reduce(lambda x, y: x if x == y else None,
@@ -174,8 +174,8 @@ def make_group_from_template(session, template_name, ou, principals=()):
                           meta=metadata,
                           ou=ou)
 
-    def make_candidate_list(c):
-        cand_list = ElectionList(name=c['name'])
+    def make_candidate_list(name):
+        cand_list = ElectionList(name=name)
         return cand_list
 
     def make_pollbook(kw):
@@ -195,7 +195,10 @@ def make_group_from_template(session, template_name, ou, principals=()):
                             mandate_period_end=mandate_period_end(e),
                             meta=metadata,
                             active=group_type == 'single_election',)
-        election.lists = list(map(make_candidate_list, e['voter_groups']))
+        if candidate_type(e) == 'party_list':
+            election.lists = list()
+        else:
+            election.lists = [make_candidate_list(name)]
         election.pollbooks = list(map(make_pollbook, e['voter_groups']))
         return election
 
