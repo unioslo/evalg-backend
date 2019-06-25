@@ -14,6 +14,7 @@ from sqlalchemy.sql import and_
 import evalg.database.query
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import PollBook
+from evalg.models.votes import Vote
 from evalg.models.voter import Voter
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,35 @@ def get_voter(session, voter_id):
         session,
         evalg.models.voter.Voter,
         id=voter_id)
+
+
+def get_voters_with_vote_in_pollbook(session, pollbook_id):
+    voters = session.query(
+        Voter
+    ).outerjoin(
+        Vote
+    ).filter(
+        and_(
+            ~ Vote.voter_id.is_(None),
+            Voter.pollbook_id == pollbook_id
+        )
+    ).all()
+    return voters
+
+
+def get_voters_without_vote_in_pollbook(session, pollbook_id):
+    voters = session.query(
+        Voter
+    ).outerjoin(
+        Vote
+    ).filter(
+        and_(
+            Vote.voter_id.is_(None),
+            Voter.pollbook_id == pollbook_id
+        )
+    ).all()
+
+    return voters
 
 
 class ElectionVoterPolicy(object):
