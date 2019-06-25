@@ -7,6 +7,7 @@ import math
 import operator
 
 from evalg.counting import base
+from evalg.counting.count import CountingFailure
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -16,13 +17,13 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
 
-class CountingFailure(Exception):
-    """General custom exception"""
+class NoMoreElectableCandidates(Exception):
+    """Raised when §19.1 is detected"""
     pass
 
 
-class NoMoreElectableCandidates(Exception):
-    """Raised when §19.1 is detected"""
+class NoMoreGloballyElectableCandidates(Exception):
+    """Raised when §19.1 is detected (globally)"""
     pass
 
 
@@ -282,6 +283,11 @@ class RegularRound:
         return self._candidate_ballots
 
     @property
+    def counter_obj(self):
+        """counter_obj-property"""
+        return self._counter_obj
+
+    @property
     def elected(self):
         """elected-property"""
         return self._elected
@@ -535,7 +541,7 @@ class RegularRound:
         minimum_group = min([self._counter_obj.election.num_choosable,
                              len(self._counter_obj.candidates)])
         if len(self._elected) == minimum_group:
-            raise RequiredCandidatesElected()
+            raise RequiredCandidatesElected
         return False
 
     def _check_remaining_candidates(self):
@@ -544,7 +550,7 @@ class RegularRound:
                 len(self._get_remaining_candidates()) <=
                 self._get_amount_remaining_to_be_elected()
         ):
-            raise NoMoreElectableCandidates()
+            raise NoMoreElectableCandidates
         return True
 
     def _clear_candidate_surplus(self, candidate):
@@ -1473,6 +1479,7 @@ class SubstituteRound(RegularRound):
                 "No substitute candidates to be elected. Terminating count.")
             return self._terminate_substitute_count()
         try:
+            self._check_total_remaining_candidates()  # 19.1
             self._check_remaining_candidates()  # §19.1
             self._check_election_quota_reached()  # §19.2
             logger.debug("Checking §19 - done")
@@ -1558,6 +1565,7 @@ class SubstituteRound(RegularRound):
                 logger.info("Excluding: %s", excludable_candidate)
                 self._exclude_candidate(excludable_candidate)
             # check §19.1 again
+            self._check_total_remaining_candidates()
             self._check_remaining_candidates()
             self._transfer_ballots_from_excluded_candidates()
             if not excludable_candidates:
@@ -1583,6 +1591,19 @@ class SubstituteRound(RegularRound):
                                 "Terminating count according to §19.2.")
                     return self._terminate_substitute_count()
             return self._terminate_substitute_election()
+        except NoMoreGloballyElectableCandidates:
+            # §19.1 - same as above, only result of a "global" check
+            # Only one last candidate remains unelected
+            logger.info("Only one globally unelected candidate remains")
+            try:
+                self._elect_candidate(
+                    self._get_globally_unelected_candidates()[0])
+            except SubstituteCandidateElected:
+                pass
+            except RequiredCandidatesElected:
+                logger.info("All required candidates are elected. "
+                            "Terminating count according to §19.2.")
+            return self._terminate_substitute_count()
         except RequiredCandidatesElected:
             # §19.2
             logger.info("All required candidates are elected. "
@@ -1602,13 +1623,19 @@ class SubstituteRound(RegularRound):
                               self._counter_obj.election.num_substitutes),
                              len(self._counter_obj.candidates)])
         if len(self._elected) == minimum_group:
-            raise RequiredCandidatesElected()
+            raise RequiredCandidatesElected
         return False
 
     def _check_remaining_candidates(self):
         """§19.1"""
         if len(self._get_remaining_candidates()) <= 1:
-            raise NoMoreElectableCandidates()
+            raise NoMoreElectableCandidates
+        return True
+
+    def _check_total_remaining_candidates(self):
+        """§19.1"""
+        if len(self._get_globally_unelected_candidates()) <= 1:
+            raise NoMoreGloballyElectableCandidates
         return True
 
     def _elect_candidate(self, candidate):
@@ -1647,7 +1674,7 @@ class SubstituteRound(RegularRound):
         self._state.all_elected_candidates = self._elected
         self._state.all_elected_substitutes = self._elected_substitutes
         self._check_election_quota_reached()
-        raise SubstituteCandidateElected()
+        raise SubstituteCandidateElected
 
     def _exclude_candidate(self, candidate):
         """Wraps the functionality of excluding a candidate"""
@@ -1787,6 +1814,12 @@ class SubstituteRound(RegularRound):
                 continue
             filtered_excludables.append(excludable)
         return tuple(filtered_excludables)
+
+    def _get_globally_unelected_candidates(self):
+        """Returns all unelected candidates (globally)"""
+        total = set(self._counter_obj.candidates)
+        elected = set(self._elected)
+        return tuple(total.difference(elected))
 
     def _get_remaining_candidates(self):
         """

@@ -44,6 +44,12 @@ class AbstractPollbook(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
+    def id(self):
+        """id-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
     def name(self):
         # TODO rename to id?
         """candidate_id-property"""
@@ -63,7 +69,12 @@ class AbstractPollbook(EvalgCountingAbstractBase):
 
 
 class AbstractCandidate(EvalgCountingAbstractBase):
-    pass
+
+    @property
+    @abc.abstractmethod
+    def id(self):
+        """candidate-id"""
+        pass
 
 
 class AbstractQuota(EvalgCountingAbstractBase):

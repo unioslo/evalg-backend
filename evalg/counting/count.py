@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
 
+class CountingFailure(Exception):
+    """General custom exception"""
+    pass
+
+
 class DrawingBranchState(enum.Enum):
     """DrawingBranch state types"""
     OPEN = 1  # never visited
@@ -284,6 +289,38 @@ class ElectionCountPath:
         if self._current_drawing_branch is None:
             return decimal.Decimal(1)
         return self._current_drawing_branch.get_branch_probability()
+
+    def get_result(self):
+        """
+        :return: The result-object for this path
+        :rtype: base.Result
+        """
+        # TODO: check election type
+        if not self._round_state_list or not self._round_state_list[-1].final:
+            raise CountingFailure('Empty or unfinished path')
+        counter_obj = self._round_state_list[-1].round_obj.counter_obj
+        election = counter_obj.election
+        meta = {
+            'election_id': election.id,
+            'election_name': election.name,
+            'num_regular': election.num_choosable,
+            'num_substitutes': election.num_substitutes,
+            'ballots_count': len(counter_obj.ballots)
+            'empty_ballots_count': (len(counter_obj.ballots) -
+                                    len(counter_obj.counting_ballots))}
+        pollbook_meta = []
+        for pollbook in election.pollbooks:
+            pollbook_meta.append(
+                {'id': pollbook.id,
+                 'ballots_count': pollbook.ballots_count,
+                 'empty_ballots_count': pollbook.empty_ballots_count})
+        meta['pollbooks'] = pollbook_meta
+        return uiostv.Result(
+            meta=meta,
+            regular_candidates=[cand.id for cand in
+                                self.get_elected_regular_candidates()],
+            substitute_candidates=[cand.id for cand in
+                                   self.get_elected_substitute_candidates()])
 
 
 class Counter:

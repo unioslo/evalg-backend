@@ -90,6 +90,11 @@ class EvalgLegacyPollbook:
         self._empty_ballots_cnt = value
 
     @property
+    def id(self):
+        """id-property"""
+        return self._pollbook_id
+
+    @property
     def name(self):
         """name-property"""
         return self._name
@@ -122,7 +127,7 @@ class EvalgLegacyPollbook:
         """
         if not value:  # avoid devision by 0
             # paranoia: should not happen because of client check
-            self._weight_per_pollbook = decimal.Decimal('0')
+            self._weight_per_pollbook = decimal.Decimal(0)
         else:
             self._weight_per_pollbook = self.weight_per_vote / value
 
@@ -148,6 +153,11 @@ class EvalgLegacyCandidate:
 
     @property
     def candidate_id(self):
+        """candidate_id-property"""
+        return self._candidate_id
+
+    @property
+    def id(self):
         """candidate_id-property"""
         return self._candidate_id
 
@@ -321,9 +331,9 @@ class EvalgLegacyElection:
                     self._add_ballot_from_file(fp)
         # set weight per pollbook
         pollbook_list = self._pollbook_dict.values()
-        min_wpv = min(
-            [pollbook.weight_per_vote for
-             pollbook in pollbook_list if pollbook.weight_per_vote])
+        min_wpv = min([pollbook.weight_per_vote for
+                       pollbook in pollbook_list if pollbook.weight_per_vote],
+                      default=decimal.Decimal(1))
         for pollbook in pollbook_list:
             pollbook.set_weight_per_pollbook(min_wpv)
 

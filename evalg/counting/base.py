@@ -35,3 +35,10 @@ class Result:
         :rtype: str
         """
         return json.dumps(self.__dict__)
+
+
+class Protocol:
+    """
+    The base class representing the counting protocol
+    """
+    pass
