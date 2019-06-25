@@ -1,5 +1,4 @@
 from evalg.graphql import get_context
-
 from evalg.models.candidate import Candidate
 from evalg.models.election_list import ElectionList
 from evalg.models.election import ElectionGroup
