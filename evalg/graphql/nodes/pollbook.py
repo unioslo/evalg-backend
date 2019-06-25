@@ -1,6 +1,4 @@
-"""
-GraphQL ObjectType for PollBook and Voter nodes.
-"""
+"""GraphQL ObjectType for PollBook and Voter nodes."""
 import collections
 import logging
 
@@ -58,6 +56,9 @@ class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
     verified_voters_count = graphene.Int()
     verified_voters_with_votes_count = graphene.Int()
 
+    voters_with_vote = graphene.List(lambda: Voter)
+    voters_without_vote = graphene.List(lambda: Voter)
+
     def resolve_self_added_voters(self, info):
         session = get_session(info)
         return evalg.proc.vote.get_voters_by_self_added(session,
@@ -76,7 +77,18 @@ class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_verified_voters_with_votes_count(self, info):
         session = get_session(info)
-        return evalg.proc.vote.get_verified_voters_with_votes_count(session, self.id)
+        return evalg.proc.vote.get_verified_voters_with_votes_count(
+            session, self.id)
+
+    def resolve_voters_with_vote(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_voters_with_vote_in_pollbook(
+            session, self.id)
+
+    def resolve_voters_without_vote(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_voters_without_vote_in_pollbook(
+            session, self.id)
 
 
 def resolve_pollbooks_by_fields(_, info):
