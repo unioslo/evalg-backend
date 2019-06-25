@@ -3,6 +3,7 @@ Common GraphQL objects and functionality.
 """
 import graphene
 
+
 def get_session(info):
     return info.context.get('session')
 
