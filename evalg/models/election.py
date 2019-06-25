@@ -274,7 +274,7 @@ class Election(AbstractElection):
 
     @property
     def num_substitutes(self):
-        return self.meta['candidate_rules']['substitutes']
+        return self.meta['candidate_rules'].get('substitutes', 0)
 
     @property
     def candidates(self):
@@ -285,7 +285,7 @@ class Election(AbstractElection):
 
     def get_quotas(self):
         quotas = []
-        if self.meta['candidate_rules']['candidate_gender']:
+        if self.meta['candidate_rules'].get('candidate_gender', False):
             quota_names = self.meta['counting_rules']['affirmative_action']
             for quota in quota_names:
                 method = quota_name2method[quota]
