@@ -305,7 +305,7 @@ class ElectionCountPath:
             'election_name': election.name,
             'num_regular': election.num_choosable,
             'num_substitutes': election.num_substitutes,
-            'ballots_count': len(counter_obj.ballots)
+            'ballots_count': len(counter_obj.ballots),
             'empty_ballots_count': (len(counter_obj.ballots) -
                                     len(counter_obj.counting_ballots))}
         pollbook_meta = []

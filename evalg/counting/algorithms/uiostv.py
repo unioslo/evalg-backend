@@ -6,8 +6,7 @@ import logging
 import math
 import operator
 
-from evalg.counting import base
-from evalg.counting.count import CountingFailure
+from evalg.counting import base, count
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -237,7 +236,8 @@ class RegularRound:
         # prevent infinite loops due to bugs
         if self._round_cnt > 100:
             logger.critical('Infinite recursion caught. Killing everything...')
-            raise CountingFailure('Infinite recursion caught in regular round')
+            raise count.CountingFailure(
+                'Infinite recursion caught in regular round')
         self._elected = []
         self._potentially_elected = []
         self._excluded = []
@@ -852,7 +852,7 @@ class RegularRound:
             # used in §18.2
             election_state = self.get_candidate_election_state(candidate)
             if election_state is None:
-                raise CountingFailure(
+                raise count.CountingFailure(
                     'Trying to transfer surplus from unelected candidate')
             ballots = election_state.get_transferred_candidate_ballots(
                 candidate)
@@ -968,7 +968,7 @@ class RegularRound:
         """
         election_state = self.get_candidate_election_state(candidate)
         if election_state is None:
-            raise CountingFailure(
+            raise count.CountingFailure(
                 'Trying to transfer surplus from unelected candidate')
         return election_state.transferred_ballot_weights
 
@@ -1334,7 +1334,7 @@ class RegularRound:
     def _update_surplus_for_elected_candidate(self, candidate):
         """Updates the surplus for `candidate` after she is elected"""
         if candidate not in self._elected:
-            raise CountingFailure(
+            raise count.CountingFailure(
                 'Can not update the surplus of unelected candidate')
         if not self._vcount_results_remaining:
             logger.warning("No counting performed yet. "
@@ -1435,7 +1435,8 @@ class SubstituteRound(RegularRound):
         self._counter_obj.append_state_to_current_path(self._state)
         if self._round_cnt > 200:
             logger.critical('Infinite recursion caught. Killing everything...')
-            raise CountingFailure('Infinite recursion caught in regular round')
+            raise count.CountingFailure(
+                'Infinite recursion caught in regular round')
 
     @property
     def substitute_nr(self):
