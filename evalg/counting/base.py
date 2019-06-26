@@ -15,6 +15,19 @@ class Result:
         self.meta = meta
 
     @classmethod
+    def from_dict(cls, dict_obj):
+        """
+        Returns a Result object from the dict-object
+
+        :param dict_obj: The dict object
+        :type dict_obj: dict
+
+        :return: A new Result-object
+        :rtype: base.Result
+        """
+        return cls(**dict_obj)
+
+    @classmethod
     def from_json(cls, json_str):
         """
         Returns a Result object from the json-string
@@ -27,6 +40,15 @@ class Result:
         """
         return cls(**json.loads(json_str))
 
+    def to_dict(self):
+        """
+        Returns a dict representation of the object
+
+        :return: dict representation of the object
+        :rtype: dict
+        """
+        return self.__dict__
+
     def to_json(self):
         """
         Returns a json representation of the object
@@ -35,10 +57,3 @@ class Result:
         :rtype: str
         """
         return json.dumps(self.__dict__)
-
-
-class Protocol:
-    """
-    The base class representing the counting protocol
-    """
-    pass

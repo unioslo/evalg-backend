@@ -312,7 +312,7 @@ class ElectionCountPath:
         counter_obj = self._round_state_list[-1].round_obj.counter_obj
         election = counter_obj.election
         meta = {
-            'election_id': election.id,
+            'election_id': str(election.id),
             'election_name': election.name,
             'num_regular': election.num_choosable,
             'num_substitutes': election.num_substitutes,
@@ -323,15 +323,15 @@ class ElectionCountPath:
         pollbook_meta = []
         for pollbook in election.pollbooks:
             pollbook_meta.append(
-                {'id': pollbook.id,
+                {'id': str(pollbook.id),
                  'ballots_count': pollbook.ballots_count,
                  'empty_ballots_count': pollbook.empty_ballots_count})
         meta['pollbooks'] = pollbook_meta
         return uiostv.Result(
             meta=meta,
-            regular_candidates=[cand.id for cand in
+            regular_candidates=[str(cand.id) for cand in
                                 self.get_elected_regular_candidates()],
-            substitute_candidates=[cand.id for cand in
+            substitute_candidates=[str(cand.id) for cand in
                                    self.get_elected_substitute_candidates()])
 
 
