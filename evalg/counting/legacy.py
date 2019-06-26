@@ -107,7 +107,7 @@ class EvalgLegacyPollbook:
     @property
     def weight_per_vote(self):
         """weight_per_vote-property"""
-        if not (self._ballots_cnt - self._empty_ballots_cnt):
+        if not self._ballots_cnt - self._empty_ballots_cnt:
             # no (real) ballots related to this pollbook
             # avoid devision by 0
             return decimal.Decimal('0')
@@ -370,6 +370,11 @@ class EvalgLegacyElection:
         """
         election_id-property
         """
+        return self._election_id
+
+    @property
+    def id(self):
+        """election_id-property"""
         return self._election_id
 
     @property

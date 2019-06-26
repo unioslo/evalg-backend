@@ -994,15 +994,15 @@ class RegularRound:
             return vcount
 
         # not the first count. A previous count exists
-        for candidate, count in self._vcount_results_remaining.items():
+        for candidate, ccount in self._vcount_results_remaining.items():
             # new vote count = old vcount + count for transferred ballots
             if candidate in candidate_ballots:  # received some ballots
                 vcount[candidate] = (
-                    count +
+                    ccount +
                     sum(map(lambda b: ballot_weights[b],
                             candidate_ballots[candidate])))
             else:
-                vcount[candidate] = count
+                vcount[candidate] = ccount
         self._transferred_uncounted_ballots.clear()
         return vcount
 
@@ -1189,6 +1189,11 @@ class RegularRound:
         if not self._counter_obj.election.num_substitutes:
             logger.debug("No substitute candidates to be elected. "
                          "Election count completed.")
+            return self._state
+        if len(self._counter_obj.candidates) == len(self._elected):
+            logger.debug(
+                "Not enough unelected candidates for a substitute-round. "
+                "Election count completed.")
             return self._state
         logger.debug("-" * 8)
         logger.debug("-" * 8)
@@ -1595,11 +1600,14 @@ class SubstituteRound(RegularRound):
         except NoMoreGloballyElectableCandidates:
             # §19.1 - same as above, only result of a "global" check
             # Only one last candidate remains unelected
-            logger.info("Only one globally unelected candidate remains")
+            logger.info("Only one globally unelected candidate remains. "
+                        "Electing according to §19.1.")
             try:
                 self._elect_candidate(
                     self._get_globally_unelected_candidates()[0])
             except SubstituteCandidateElected:
+                pass
+            except NoMoreElectableCandidates:
                 pass
             except RequiredCandidatesElected:
                 logger.info("All required candidates are elected. "
@@ -1641,6 +1649,8 @@ class SubstituteRound(RegularRound):
 
     def _elect_candidate(self, candidate):
         """Wraps the functionality of electing a candidate"""
+        last_substitute_candidate = len(
+            self._get_globally_unelected_candidates()) <= 1
         if candidate in self._state.quota_excluded:
             logger.debug("Candidate %s is excluded based on quota. "
                          "Unable to elect",
@@ -1669,8 +1679,9 @@ class SubstituteRound(RegularRound):
             self._potentially_elected.pop(
                 self._potentially_elected.index(candidate))
         logger.info("Candidate %s is elected", candidate)
-        self._update_surplus_for_elected_candidate(candidate)
-        self._vcount_results_remaining.pop(candidate)
+        if not last_substitute_candidate:
+            self._update_surplus_for_elected_candidate(candidate)
+            self._vcount_results_remaining.pop(candidate)
         self._state.add_elected_candidate(candidate)  # update the round-state
         self._state.all_elected_candidates = self._elected
         self._state.all_elected_substitutes = self._elected_substitutes

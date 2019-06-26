@@ -181,11 +181,17 @@ class ElectionCountTree:
 
     Election-path container
     """
-
     def __init__(self):
         """Creates an ElectionCountTree object"""
         self._election_path_dict = {}
         self._drawing = None
+
+    @property
+    def default_path(self):
+        """default_path-property"""
+        if not self._election_path_dict:
+            return None
+        return self.election_paths[0]
 
     @property
     def drawing(self):
@@ -250,6 +256,11 @@ class ElectionCountPath:
         """current_drawing_branch-property"""
         return self._current_drawing_branch
 
+    @property
+    def drawing(self):
+        """drawing-property"""
+        return self._current_drawing_branch is not None
+
     @current_drawing_branch.setter
     def current_drawing_branch(self, value):
         """current_drawing_branch-property setter"""
@@ -305,6 +316,7 @@ class ElectionCountPath:
             'election_name': election.name,
             'num_regular': election.num_choosable,
             'num_substitutes': election.num_substitutes,
+            'drawing': self.drawing,
             'ballots_count': len(counter_obj.ballots),
             'empty_ballots_count': (len(counter_obj.ballots) -
                                     len(counter_obj.counting_ballots))}
