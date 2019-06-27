@@ -36,6 +36,6 @@ def test_election_group_counter(
         ElectionResult.election_group_count_id == count.id
     ).first()
 
-    assert election_result.result.get('elected_regular_candidates')[0]
+    assert election_result.result.get('regular_candidates')[0]
     election_group_counter.log_finalize_count(count)
     assert count.status == 'finished'
