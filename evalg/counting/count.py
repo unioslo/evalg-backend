@@ -317,9 +317,8 @@ class ElectionCountPath:
             'num_regular': election.num_choosable,
             'num_substitutes': election.num_substitutes,
             'drawing': self.drawing,
-            'ballots_count': len(counter_obj.ballots),
-            'empty_ballots_count': (len(counter_obj.ballots) -
-                                    len(counter_obj.counting_ballots))}
+            'ballots_count': election.total_amount_ballots,
+            'empty_ballots_count': election.total_amount_empty_ballots}
         pollbook_meta = []
         for pollbook in election.pollbooks:
             pollbook_meta.append(
