@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
 
+class CountingFailure(Exception):
+    """General custom exception"""
+    pass
+
+
 class DrawingBranchState(enum.Enum):
     """DrawingBranch state types"""
     OPEN = 1  # never visited
@@ -176,11 +181,17 @@ class ElectionCountTree:
 
     Election-path container
     """
-
     def __init__(self):
         """Creates an ElectionCountTree object"""
         self._election_path_dict = {}
         self._drawing = None
+
+    @property
+    def default_path(self):
+        """default_path-property"""
+        if not self._election_path_dict:
+            return None
+        return self.election_paths[0]
 
     @property
     def drawing(self):
@@ -245,6 +256,11 @@ class ElectionCountPath:
         """current_drawing_branch-property"""
         return self._current_drawing_branch
 
+    @property
+    def drawing(self):
+        """drawing-property"""
+        return self._current_drawing_branch is not None
+
     @current_drawing_branch.setter
     def current_drawing_branch(self, value):
         """current_drawing_branch-property setter"""
@@ -284,6 +300,38 @@ class ElectionCountPath:
         if self._current_drawing_branch is None:
             return decimal.Decimal(1)
         return self._current_drawing_branch.get_branch_probability()
+
+    def get_result(self):
+        """
+        :return: The result-object for this path
+        :rtype: base.Result
+        """
+        # TODO: check election type
+        if not self._round_state_list or not self._round_state_list[-1].final:
+            raise CountingFailure('Empty or unfinished path')
+        counter_obj = self._round_state_list[-1].round_obj.counter_obj
+        election = counter_obj.election
+        meta = {
+            'election_id': str(election.id),
+            'election_name': election.name,
+            'num_regular': election.num_choosable,
+            'num_substitutes': election.num_substitutes,
+            'drawing': self.drawing,
+            'ballots_count': election.total_amount_ballots,
+            'empty_ballots_count': election.total_amount_empty_ballots}
+        pollbook_meta = []
+        for pollbook in election.pollbooks:
+            pollbook_meta.append(
+                {'id': str(pollbook.id),
+                 'ballots_count': pollbook.ballots_count,
+                 'empty_ballots_count': pollbook.empty_ballots_count})
+        meta['pollbooks'] = pollbook_meta
+        return uiostv.Result(
+            meta=meta,
+            regular_candidates=[str(cand.id) for cand in
+                                self.get_elected_regular_candidates()],
+            substitute_candidates=[str(cand.id) for cand in
+                                   self.get_elected_substitute_candidates()])
 
 
 class Counter:

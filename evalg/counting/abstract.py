@@ -23,6 +23,7 @@ class EvalgCountingAbstractBase(abc.ABC):
 
 
 class AbstractPollbook(EvalgCountingAbstractBase):
+    """The abstract pollbook / census class"""
 
     @property
     @abc.abstractmethod
@@ -44,8 +45,13 @@ class AbstractPollbook(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
+    def id(self):
+        """id-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
     def name(self):
-        # TODO rename to id?
         """candidate_id-property"""
         pass
 
@@ -63,10 +69,17 @@ class AbstractPollbook(EvalgCountingAbstractBase):
 
 
 class AbstractCandidate(EvalgCountingAbstractBase):
-    pass
+    """The abstract candidate class"""
+
+    @property
+    @abc.abstractmethod
+    def id(self):
+        """candidate-id"""
+        pass
 
 
 class AbstractQuota(EvalgCountingAbstractBase):
+    """The abstract quota class"""
 
     @property
     @abc.abstractmethod
@@ -88,6 +101,7 @@ class AbstractQuota(EvalgCountingAbstractBase):
 
 
 class AbstractBallot(EvalgCountingAbstractBase):
+    """The abstract ballot class"""
 
     @property
     @abc.abstractmethod
@@ -112,17 +126,24 @@ class AbstractBallot(EvalgCountingAbstractBase):
 
 
 class AbstractElection(EvalgCountingAbstractBase):
+    """The abstract election class"""
 
     @property
     @abc.abstractmethod
     def ballots(self):
-        """ballots property"""
+        """ballots-property"""
         pass
 
     @property
     @abc.abstractmethod
     def candidates(self):
-        """candidates property"""
+        """candidates-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def id(self):
+        """id-property"""
         pass
 
     @property

@@ -6,6 +6,8 @@ import logging
 import math
 import operator
 
+from evalg.counting import base, count
+
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
 DEFAULT_LOG_LEVEL = logging.DEBUG
@@ -14,13 +16,13 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
 
-class CountingFailure(Exception):
-    """General custom exception"""
+class NoMoreElectableCandidates(Exception):
+    """Raised when §19.1 is detected"""
     pass
 
 
-class NoMoreElectableCandidates(Exception):
-    """Raised when §19.1 is detected"""
+class NoMoreGloballyElectableCandidates(Exception):
+    """Raised when §19.1 is detected (globally)"""
     pass
 
 
@@ -32,6 +34,26 @@ class RequiredCandidatesElected(Exception):
 class SubstituteCandidateElected(Exception):
     """Raised when a single substitute candidate is elected"""
     pass
+
+
+class Result(base.Result):
+    """
+    UiOSTV Result
+    """
+    def __init__(self, meta, regular_candidates, substitute_candidates):
+        """
+        :param meta: The metadata for this result
+        :type meta: dict
+
+        :param regular_candidates: The elected regular candidates
+        :type regular_candidates: collections.abc.Sequence
+
+        :param substitute_candidates: The elected substitute candidates
+        :type substitute_candidates: collections.abc.Sequence
+        """
+        super().__init__(meta)
+        self.regular_candidates = regular_candidates
+        self.substitute_candidates = substitute_candidates
 
 
 class RoundState:
@@ -214,7 +236,8 @@ class RegularRound:
         # prevent infinite loops due to bugs
         if self._round_cnt > 100:
             logger.critical('Infinite recursion caught. Killing everything...')
-            raise CountingFailure('Infinite recursion caught in regular round')
+            raise count.CountingFailure(
+                'Infinite recursion caught in regular round')
         self._elected = []
         self._potentially_elected = []
         self._excluded = []
@@ -258,6 +281,11 @@ class RegularRound:
     def candidate_ballots(self):
         """candidate_ballots-property"""
         return self._candidate_ballots
+
+    @property
+    def counter_obj(self):
+        """counter_obj-property"""
+        return self._counter_obj
 
     @property
     def elected(self):
@@ -513,7 +541,7 @@ class RegularRound:
         minimum_group = min([self._counter_obj.election.num_choosable,
                              len(self._counter_obj.candidates)])
         if len(self._elected) == minimum_group:
-            raise RequiredCandidatesElected()
+            raise RequiredCandidatesElected
         return False
 
     def _check_remaining_candidates(self):
@@ -522,7 +550,7 @@ class RegularRound:
                 len(self._get_remaining_candidates()) <=
                 self._get_amount_remaining_to_be_elected()
         ):
-            raise NoMoreElectableCandidates()
+            raise NoMoreElectableCandidates
         return True
 
     def _clear_candidate_surplus(self, candidate):
@@ -824,7 +852,7 @@ class RegularRound:
             # used in §18.2
             election_state = self.get_candidate_election_state(candidate)
             if election_state is None:
-                raise CountingFailure(
+                raise count.CountingFailure(
                     'Trying to transfer surplus from unelected candidate')
             ballots = election_state.get_transferred_candidate_ballots(
                 candidate)
@@ -940,7 +968,7 @@ class RegularRound:
         """
         election_state = self.get_candidate_election_state(candidate)
         if election_state is None:
-            raise CountingFailure(
+            raise count.CountingFailure(
                 'Trying to transfer surplus from unelected candidate')
         return election_state.transferred_ballot_weights
 
@@ -966,15 +994,15 @@ class RegularRound:
             return vcount
 
         # not the first count. A previous count exists
-        for candidate, count in self._vcount_results_remaining.items():
+        for candidate, ccount in self._vcount_results_remaining.items():
             # new vote count = old vcount + count for transferred ballots
             if candidate in candidate_ballots:  # received some ballots
                 vcount[candidate] = (
-                    count +
+                    ccount +
                     sum(map(lambda b: ballot_weights[b],
                             candidate_ballots[candidate])))
             else:
-                vcount[candidate] = count
+                vcount[candidate] = ccount
         self._transferred_uncounted_ballots.clear()
         return vcount
 
@@ -1162,6 +1190,11 @@ class RegularRound:
             logger.debug("No substitute candidates to be elected. "
                          "Election count completed.")
             return self._state
+        if len(self._counter_obj.candidates) == len(self._elected):
+            logger.debug(
+                "Not enough unelected candidates for a substitute-round. "
+                "Election count completed.")
+            return self._state
         logger.debug("-" * 8)
         logger.debug("-" * 8)
         logger.info("Starting substitute count")
@@ -1306,7 +1339,7 @@ class RegularRound:
     def _update_surplus_for_elected_candidate(self, candidate):
         """Updates the surplus for `candidate` after she is elected"""
         if candidate not in self._elected:
-            raise CountingFailure(
+            raise count.CountingFailure(
                 'Can not update the surplus of unelected candidate')
         if not self._vcount_results_remaining:
             logger.warning("No counting performed yet. "
@@ -1407,7 +1440,8 @@ class SubstituteRound(RegularRound):
         self._counter_obj.append_state_to_current_path(self._state)
         if self._round_cnt > 200:
             logger.critical('Infinite recursion caught. Killing everything...')
-            raise CountingFailure('Infinite recursion caught in regular round')
+            raise count.CountingFailure(
+                'Infinite recursion caught in regular round')
 
     @property
     def substitute_nr(self):
@@ -1451,6 +1485,7 @@ class SubstituteRound(RegularRound):
                 "No substitute candidates to be elected. Terminating count.")
             return self._terminate_substitute_count()
         try:
+            self._check_total_remaining_candidates()  # 19.1
             self._check_remaining_candidates()  # §19.1
             self._check_election_quota_reached()  # §19.2
             logger.debug("Checking §19 - done")
@@ -1536,6 +1571,7 @@ class SubstituteRound(RegularRound):
                 logger.info("Excluding: %s", excludable_candidate)
                 self._exclude_candidate(excludable_candidate)
             # check §19.1 again
+            self._check_total_remaining_candidates()
             self._check_remaining_candidates()
             self._transfer_ballots_from_excluded_candidates()
             if not excludable_candidates:
@@ -1561,6 +1597,22 @@ class SubstituteRound(RegularRound):
                                 "Terminating count according to §19.2.")
                     return self._terminate_substitute_count()
             return self._terminate_substitute_election()
+        except NoMoreGloballyElectableCandidates:
+            # §19.1 - same as above, only result of a "global" check
+            # Only one last candidate remains unelected
+            logger.info("Only one globally unelected candidate remains. "
+                        "Electing according to §19.1.")
+            try:
+                self._elect_candidate(
+                    self._get_globally_unelected_candidates()[0])
+            except SubstituteCandidateElected:
+                pass
+            except NoMoreElectableCandidates:
+                pass
+            except RequiredCandidatesElected:
+                logger.info("All required candidates are elected. "
+                            "Terminating count according to §19.2.")
+            return self._terminate_substitute_count()
         except RequiredCandidatesElected:
             # §19.2
             logger.info("All required candidates are elected. "
@@ -1580,17 +1632,25 @@ class SubstituteRound(RegularRound):
                               self._counter_obj.election.num_substitutes),
                              len(self._counter_obj.candidates)])
         if len(self._elected) == minimum_group:
-            raise RequiredCandidatesElected()
+            raise RequiredCandidatesElected
         return False
 
     def _check_remaining_candidates(self):
         """§19.1"""
         if len(self._get_remaining_candidates()) <= 1:
-            raise NoMoreElectableCandidates()
+            raise NoMoreElectableCandidates
+        return True
+
+    def _check_total_remaining_candidates(self):
+        """§19.1"""
+        if len(self._get_globally_unelected_candidates()) <= 1:
+            raise NoMoreGloballyElectableCandidates
         return True
 
     def _elect_candidate(self, candidate):
         """Wraps the functionality of electing a candidate"""
+        last_substitute_candidate = len(
+            self._get_globally_unelected_candidates()) <= 1
         if candidate in self._state.quota_excluded:
             logger.debug("Candidate %s is excluded based on quota. "
                          "Unable to elect",
@@ -1619,13 +1679,14 @@ class SubstituteRound(RegularRound):
             self._potentially_elected.pop(
                 self._potentially_elected.index(candidate))
         logger.info("Candidate %s is elected", candidate)
-        self._update_surplus_for_elected_candidate(candidate)
-        self._vcount_results_remaining.pop(candidate)
+        if not last_substitute_candidate:
+            self._update_surplus_for_elected_candidate(candidate)
+            self._vcount_results_remaining.pop(candidate)
         self._state.add_elected_candidate(candidate)  # update the round-state
         self._state.all_elected_candidates = self._elected
         self._state.all_elected_substitutes = self._elected_substitutes
         self._check_election_quota_reached()
-        raise SubstituteCandidateElected()
+        raise SubstituteCandidateElected
 
     def _exclude_candidate(self, candidate):
         """Wraps the functionality of excluding a candidate"""
@@ -1765,6 +1826,12 @@ class SubstituteRound(RegularRound):
                 continue
             filtered_excludables.append(excludable)
         return tuple(filtered_excludables)
+
+    def _get_globally_unelected_candidates(self):
+        """Returns all unelected candidates (globally)"""
+        total = set(self._counter_obj.candidates)
+        elected = set(self._elected)
+        return tuple(total.difference(elected))
 
     def _get_remaining_candidates(self):
         """
