@@ -1,6 +1,4 @@
-"""
-GraphQL ObjectType for PollBook and Voter nodes.
-"""
+"""GraphQL ObjectType for PollBook and Voter nodes."""
 import collections
 import logging
 
@@ -17,7 +15,7 @@ import evalg.proc.pollbook
 from evalg import db
 from evalg.file_parser.parser import CensusFileParser
 from evalg.graphql.nodes.base import get_session, MutationResponse
-
+from evalg.graphql.nodes.person import Person
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +46,17 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
         evalg.models.voter.VerifiedStatus
     )()
 
+    person = graphene.Field(Person)
+
+    def resolve_person(self, info):
+        voter_id = self.id
+        session = get_session(info)
+        voter = evalg.database.query.lookup(
+            session,
+            evalg.models.voter.Voter,
+            id=voter_id)
+        return evalg.proc.vote.get_person_for_voter(session, voter)
+
 
 class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
@@ -57,6 +66,9 @@ class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
     admin_added_voters = graphene.List(lambda: Voter)
     verified_voters_count = graphene.Int()
     verified_voters_with_votes_count = graphene.Int()
+
+    voters_with_vote = graphene.List(lambda: Voter)
+    voters_without_vote = graphene.List(lambda: Voter)
 
     def resolve_self_added_voters(self, info):
         session = get_session(info)
@@ -76,7 +88,18 @@ class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_verified_voters_with_votes_count(self, info):
         session = get_session(info)
-        return evalg.proc.vote.get_verified_voters_with_votes_count(session, self.id)
+        return evalg.proc.vote.get_verified_voters_with_votes_count(
+            session, self.id)
+
+    def resolve_voters_with_vote(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_voters_with_vote_in_pollbook(
+            session, self.id)
+
+    def resolve_voters_without_vote(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_voters_without_vote_in_pollbook(
+            session, self.id)
 
 
 def resolve_pollbooks_by_fields(_, info):

@@ -10,15 +10,12 @@ import evalg.models.pollbook
 import evalg.models.voter
 import evalg.models.election
 
-
-def get_session(info):
-    return info.context.get('session')
+from evalg.graphql.nodes.base import get_session
 
 
 #
 # Query
 #
-
 class Vote(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.votes.Vote
