@@ -110,6 +110,7 @@ def get_voters_with_vote_in_pollbook(session, pollbook_id):
     ).filter(
         and_(
             ~ Vote.voter_id.is_(None),
+            Voter.verified.is_(True),
             Voter.pollbook_id == pollbook_id
         )
     ).all()
@@ -124,6 +125,7 @@ def get_voters_without_vote_in_pollbook(session, pollbook_id):
     ).filter(
         and_(
             Vote.voter_id.is_(None),
+            Voter.verified.is_(True),
             Voter.pollbook_id == pollbook_id
         )
     ).all()
