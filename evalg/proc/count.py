@@ -225,16 +225,9 @@ class ElectionGroupCounter:
             if election.status == 'closed':
                 counter = Counter(election, election.ballots)
                 election_count_tree = counter.count()
-                election_path = election_count_tree.election_paths[0]
+                election_path = election_count_tree.default_path
 
-                result = {
-                    'elected_regular_candidates':
-                        [str(candidate.id) for candidate in
-                         election_path.get_elected_regular_candidates()],
-                    'elected_substitute_candidates':
-                        [str(candidate.id) for candidate in
-                         election_path.get_elected_substitute_candidates()]
-                }
+                result = election_path.get_result().to_dict()
 
                 ballots = [ballot.ballot_data for ballot in election.ballots]
 
