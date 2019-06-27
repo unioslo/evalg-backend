@@ -632,6 +632,7 @@ def vote_bar(db_session, pollbook_voter_bar, envelope_bar):
     return vote
 
 
+@pytest.fixture
 def make_full_election(make_election_group, make_election, make_pollbook,
                        make_person, make_pollbook_voter, make_pollbook_vote):
 
