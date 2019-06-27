@@ -15,7 +15,7 @@ import evalg.proc.pollbook
 from evalg import db
 from evalg.file_parser.parser import CensusFileParser
 from evalg.graphql.nodes.base import get_session, MutationResponse
-
+from evalg.graphql.nodes.person import Person
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,17 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
     verified_status = graphene.Enum.from_enum(
         evalg.models.voter.VerifiedStatus
     )()
+
+    person = graphene.Field(Person)
+
+    def resolve_person(self, info):
+        voter_id = self.id
+        session = get_session(info)
+        voter = evalg.database.query.lookup(
+            session,
+            evalg.models.voter.Voter,
+            id=voter_id)
+        return evalg.proc.vote.get_person_for_voter(session, voter)
 
 
 class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
