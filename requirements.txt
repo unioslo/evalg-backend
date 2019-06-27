@@ -13,7 +13,10 @@ flask-shell-ipython
 flask-sqlalchemy
 graphene==2.1.3
 graphene-file-upload==1.2.1
-graphene-sqlalchemy
+graphene-sqlalchemy=2.1.0
+graphql-core==2.1
+graphql-relay==0.4.5
+graphql-server-core==1.1.1
 gunicorn
 psycopg2-binary
 pynacl
