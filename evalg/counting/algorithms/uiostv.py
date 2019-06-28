@@ -1739,7 +1739,9 @@ class SubstituteRound(RegularRound):
         except NoMoreElectableCandidates:
             # §19.1
             logger.info("§19.1 Remaining candidates <= electable candidates")
-            remaining_candidates = self._get_remaining_candidates()
+            remaining_candidates = tuple(
+                set(self._get_remaining_candidates()).difference(
+                    set(self._elected)))
             if remaining_candidates:
                 # only one remaining candidate
                 try:
@@ -1791,7 +1793,10 @@ class SubstituteRound(RegularRound):
 
     def _check_remaining_candidates(self):
         """§19.1"""
-        if len(self._get_remaining_candidates()) <= 1:
+        if (
+                len(set(self._get_remaining_candidates()).difference(
+                    set(self._elected))) <= 1
+        ):
             raise NoMoreElectableCandidates
         return True
 
