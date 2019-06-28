@@ -2,6 +2,7 @@
 """Implementations of several counting algorithms"""
 import collections
 import decimal
+import enum
 import logging
 import math
 import operator
@@ -36,10 +37,88 @@ class SubstituteCandidateElected(Exception):
     pass
 
 
+class CountingEventType(enum.Enum):
+    """The counting event types"""
+    # calculation of election number
+    ELECTION_NUMBER = enum.auto()
+
+    # new count performed
+    NEW_COUNT = enum.auto()
+
+    # new regular round starts
+    NEW_REGULAR_ROUND = enum.auto()
+
+    # new substitute round starts
+    NEW_SUBSTITUTE_ROUND = enum.auto()
+
+    # no substitute candidates to be elected
+    NO_ELECTABLE_SUBSTITUTES = enum.auto()
+
+    # not enough unelected candidates for a substitute-round
+    NOT_ENOUGH_FOR_SUBSTITUTE_ROUND = enum.auto()
+
+    # terminate election / count according to §19.1
+    TERMINATE_19_1 = enum.auto()
+
+    # terminate election / count according to §19.2
+    TERMINATE_19_2 = enum.auto()
+
+    # terminating regular count
+    TERMINATE_REGULAR_COUNT = enum.auto()
+
+    # terminates the entire count of regular candidates
+    TERMINATE_SUBSTITUTE_COUNT = enum.auto()
+
+    # terminates only the the election of the current substitute candidate
+    TERMINATE_SUBSTITUTE_ELECTION = enum.auto()
+
+
+class CountingEvent:
+    """
+    The CountingEvent class
+
+    Describes a single UiOSTV counting event like f.i. a count result.
+    Counting-events are used when generating an election protocol
+    """
+
+    def __init__(self, event_type, event_data):
+        """
+        :param event_type: The type of event
+        :type event_type: CountingEventType
+
+        :param event_data: Relevant data for this type of event
+        :type event_data: obj
+        """
+        self.event_type = str(event_type).split('.')[-1]
+        self.event_data = event_data
+        if event_type == CountingEventType.NEW_COUNT:
+            self.event_data['count_results'] = self._format_count_results(
+                event_data['count_results'])
+
+    def to_dict(self):
+        """
+        Returns a dict representation of the object
+
+        :return: dict representation of the object
+        :rtype: dict
+        """
+        return self.__dict__
+
+    def _format_count_results(self, count_results):
+        """Formats the event_data for NEW_COUNT"""
+        new_count_results = []
+        for value in count_results:
+            # value[0] - candidate_obj
+            # value[1] - count (decimal.Decimal)
+            new_count_results.append(
+                tuple([value[0].id,
+                       str(value[1])]))
+        return new_count_results
+
+
 class Result(base.Result):
-    """
-    UiOSTV Result
-    """
+    """UiOSTV Result"""
+
     def __init__(self, meta, regular_candidates, substitute_candidates):
         """
         :param meta: The metadata for this result
@@ -54,6 +133,21 @@ class Result(base.Result):
         super().__init__(meta)
         self.regular_candidates = regular_candidates
         self.substitute_candidates = substitute_candidates
+
+
+class Protocol(base.Protocol):
+    """UiOSTV Protocol"""
+
+    def __init__(self, meta, rounds):
+        """
+        :param meta: The metadata for this result
+        :type meta: dict
+
+        :param rounds: The list of rounds
+        :type rounds: collections.abc.Sequence
+        """
+        super().__init__(meta)
+        self.rounds = rounds
 
 
 class RoundState:
@@ -82,6 +176,7 @@ class RoundState:
         # ballots weight of all transfered ballots at the moment of transfer
         self._transferred_ballot_weights = collections.Counter()
         self._transferred_candidate_ballots = {}  # candidate: ballot-list dict
+        self._events = []
 
     @property
     def all_elected_candidates(self):
@@ -112,6 +207,11 @@ class RoundState:
     def excluded(self):
         """excluded-property"""
         return self._excluded
+
+    @property
+    def events(self):
+        """events-property"""
+        return tuple(self._events)
 
     @property
     def final(self):
@@ -168,6 +268,15 @@ class RoundState:
         :type candidate: object
         """
         self._excluded = self._excluded + (candidate, )
+
+    def add_event(self, event):
+        """
+        Adds a new CountingEvent into the state
+
+        :param event: The CountingEvent object
+        :type event: CountingEvent
+        """
+        self._events.append(event.to_dict())
 
     def add_quota_excluded_candidate(self, candidate):
         """
@@ -248,6 +357,10 @@ class RegularRound:
         self._surplus_per_elected_candidate = collections.Counter()
         self._state = RoundState(self)  # we store the state of the round
         self._counter_obj.append_state_to_current_path(self._state)
+        self._state.add_event(
+            CountingEvent(CountingEventType.NEW_REGULAR_ROUND,
+                          {'round_id': self._round_id,
+                           'round_count': self._round_cnt}))
         if self._parent is None:
             # first round
             self._election_number = self._get_election_number()
@@ -699,6 +812,17 @@ class RegularRound:
                     quotient,
                     epsilon,
                     initial_e_number)
+        self._state.add_event(
+            CountingEvent(
+                CountingEventType.ELECTION_NUMBER,
+                {'weight_counting_ballots': str(weight_counting_ballots),
+                 'candidates_to_elect': (
+                     self._counter_obj.election.num_choosable),
+                 'substitute_number': 0,  # not a substitute round
+                 'precision': str(prec),
+                 'quotient': str(quotient),
+                 'epsilon': str(epsilon),
+                 'election_number': str(initial_e_number)}))
         return initial_e_number
 
     def _get_excludable_candidates(self):
@@ -1020,6 +1144,9 @@ class RegularRound:
                     self._election_number)
         count_results = self._get_vcount_per_candidate()
         round_count_results = count_results.most_common()
+        self._state.add_event(
+            CountingEvent(CountingEventType.NEW_COUNT,
+                          {'count_results': round_count_results}))
         self._vcount_results_remaining = collections.Counter(count_results)
         for vcount in round_count_results:
             candidate, candidate_count = vcount
@@ -1186,14 +1313,21 @@ class RegularRound:
         """
         self._state.final = True
         logger.info("Regular count completed")
+        self._state.add_event(
+            CountingEvent(CountingEventType.TERMINATE_REGULAR_COUNT, {}))
         if not self._counter_obj.election.num_substitutes:
             logger.debug("No substitute candidates to be elected. "
                          "Election count completed.")
+            self._state.add_event(
+                CountingEvent(CountingEventType.NO_ELECTABLE_SUBSTITUTES, {}))
             return self._state
         if len(self._counter_obj.candidates) == len(self._elected):
             logger.debug(
                 "Not enough unelected candidates for a substitute-round. "
                 "Election count completed.")
+            self._state.add_event(
+                CountingEvent(
+                    CountingEventType.NOT_ENOUGH_FOR_SUBSTITUTE_ROUND, {}))
             return self._state
         logger.debug("-" * 8)
         logger.debug("-" * 8)
@@ -1399,6 +1533,11 @@ class SubstituteRound(RegularRound):
         if self._parent is None:
             # There were no regular round(s)
             self._first_substitute_count = True
+            self._state.add_event(
+                CountingEvent(CountingEventType.NEW_SUBSTITUTE_ROUND,
+                              {'round_id': self._round_id,
+                               'substitute_nr': self._substitute_nr,
+                               'round_count': self._round_cnt}))
             self._election_number = self._get_election_number()
             self._set_initial_ballot_state()
         elif not isinstance(self._parent, SubstituteRound):
@@ -1406,6 +1545,11 @@ class SubstituteRound(RegularRound):
             self._elected = list(self._parent.elected)
             self._round_cnt = self._parent.round_cnt + 1
             self._first_substitute_count = True
+            self._state.add_event(
+                CountingEvent(CountingEventType.NEW_SUBSTITUTE_ROUND,
+                              {'round_id': self._round_id,
+                               'substitute_nr': self._substitute_nr,
+                               'round_count': self._round_cnt}))
             self._election_number = self._get_election_number()
             self._set_initial_ballot_state()
         elif self._parent.state.substitute_final:
@@ -1416,6 +1560,11 @@ class SubstituteRound(RegularRound):
             self._elected_substitutes = list(self._parent.elected_substitutes)
             self._first_substitute_count = True
             self._election_number = self._get_election_number()
+            self._state.add_event(
+                CountingEvent(CountingEventType.NEW_SUBSTITUTE_ROUND,
+                              {'round_id': self._round_id,
+                               'substitute_nr': self._substitute_nr,
+                               'round_count': self._round_cnt}))
             self._set_initial_ballot_state()
         else:
             # New round, old count
@@ -1426,6 +1575,11 @@ class SubstituteRound(RegularRound):
             self._elected_substitutes = list(self._parent.elected_substitutes)
             self._elected_earlier = list(self._parent.elected_earlier)
             self._excluded = list(self._parent.excluded)
+            self._state.add_event(
+                CountingEvent(CountingEventType.NEW_SUBSTITUTE_ROUND,
+                              {'round_id': self._round_id,
+                               'substitute_nr': self._substitute_nr,
+                               'round_count': self._round_cnt}))
             self._election_number = self._parent.election_number
             self._vcount_results_remaining = collections.Counter(
                 self._parent.vcount_results_remaining)
@@ -1741,6 +1895,17 @@ class SubstituteRound(RegularRound):
                     quotient,
                     epsilon,
                     election_number)
+        self._state.add_event(
+            CountingEvent(
+                CountingEventType.ELECTION_NUMBER,
+                {'weight_counting_ballots': str(weight_counting_ballots),
+                 'candidates_to_elect': (
+                     self._counter_obj.election.num_choosable),
+                 'substitute_number': self._substitute_nr,
+                 'precision': str(prec),
+                 'quotient': str(quotient),
+                 'epsilon': str(epsilon),
+                 'election_number': str(election_number)}))
         return election_number
 
     def _get_excludable_candidates(self):
@@ -1995,6 +2160,8 @@ class SubstituteRound(RegularRound):
         self._state.substitute_final = True
         self._state.final = True
         logger.info("Substitute count completed")
+        self._state.add_event(
+            CountingEvent(CountingEventType.TERMINATE_SUBSTITUTE_COUNT, {}))
         return self._state
 
     def _terminate_substitute_election(self):
@@ -2009,6 +2176,8 @@ class SubstituteRound(RegularRound):
         """
         self._state.substitute_final = True
         logger.info("Substitute %d election completed", self._substitute_nr)
+        self._state.add_event(
+            CountingEvent(CountingEventType.TERMINATE_SUBSTITUTE_ELECTION, {}))
         try:
             # now check if the entire substitute count is done
             self._check_election_quota_reached()
@@ -2017,4 +2186,6 @@ class SubstituteRound(RegularRound):
         except RequiredCandidatesElected:
             logger.info("All required candidates are elected. "
                         "Terminating count according to §19.2.")
+            self._state.add_event(
+                CountingEvent(CountingEventType.TERMINATE_19_2, {}))
             return self._terminate_substitute_count()
