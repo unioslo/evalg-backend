@@ -333,6 +333,48 @@ class ElectionCountPath:
             substitute_candidates=[str(cand.id) for cand in
                                    self.get_elected_substitute_candidates()])
 
+    def get_protocol(self):
+        """
+        :return: The protocol-object for this path
+        :rtype: base.Protocol
+        """
+        # TODO: check election type
+        if not self._round_state_list or not self._round_state_list[-1].final:
+            raise CountingFailure('Empty or unfinished path')
+        counter_obj = self._round_state_list[-1].round_obj.counter_obj
+        election = counter_obj.election
+        meta = {
+            'election_id': str(election.id),
+            'election_name': election.name,
+            'num_regular': election.num_choosable,
+            'num_substitutes': election.num_substitutes,
+            'ballots_count': election.total_amount_ballots,
+            'counting_ballots_count': election.total_amount_counting_ballots,
+            'empty_ballots_count': election.total_amount_empty_ballots}
+        pollbook_meta = []
+        for pollbook in election.pollbooks:
+            pollbook_meta.append(
+                {'id': str(pollbook.id),
+                 'ballots_count': pollbook.ballots_count,
+                 'counting_ballots_count': pollbook.counting_ballots_count,
+                 'empty_ballots_count': pollbook.empty_ballots_count,
+                 'weight_per_vote': str(pollbook.weight_per_vote),
+                 'weight_per_pollbook': str(pollbook.weight_per_pollbook)})
+        meta['pollbooks'] = pollbook_meta
+        quota_meta = []
+        for quota in election.quotas:
+            quota_meta.append(
+                {'name': quota.name,
+                 'members': [str(member.id) for member in quota.members],
+                 'min_value': quota.min_value,
+                 'max_value_regular': counter_obj.max_choosable(quota),
+                 'max_value_substitutes': counter_obj.max_substitutes(quota)})
+        meta['quotas'] = quota_meta
+        rounds = []
+        for state in self._round_state_list:
+            rounds.append(state.events)
+        return uiostv.Protocol(meta=meta, rounds=rounds)
+
 
 class Counter:
     """

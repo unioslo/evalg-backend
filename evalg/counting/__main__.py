@@ -58,6 +58,7 @@ if __name__ == '__main__':
             election_count_tree = counter.count()
             election_count_tree.print_summary()  # debug
             # print(election_count_tree.default_path.get_result().to_json())
+            print(election_count_tree.default_path.get_protocol().to_json())
     except EvalgLegacyInvalidBallot as e:
         logger.error("Invalid ballot: %s", e)
         sys.exit(1)
