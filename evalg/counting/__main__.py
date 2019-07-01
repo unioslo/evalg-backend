@@ -41,6 +41,14 @@ if __name__ == '__main__':
         default=False,
         help='Calculate all alternative election paths in case of drawing')
     parser.add_argument(
+        '-p', '--protocol-file',
+        metavar='<filename>',
+        type=str,
+        default='',
+        dest='protocol_file',
+        help=('Optional .txt file to store the protocol in '
+              '(default: print to stdout)'))
+    parser.add_argument(
         'electionfile',
         metavar='<filename>',
         type=str,
@@ -58,7 +66,13 @@ if __name__ == '__main__':
             election_count_tree = counter.count()
             election_count_tree.print_summary()  # debug
             # print(election_count_tree.default_path.get_result().to_json())
-            print(election_count_tree.default_path.get_protocol().to_json())
+            # print(election_count_tree.default_path.get_protocol().to_json())
+            path_protocol = election_count_tree.default_path.get_protocol()
+            if args.protocol_file:
+                with open(args.protocol_file, 'w', encoding='utf-8') as fp:
+                    fp.write(path_protocol.render())
+            else:
+                print(path_protocol.render())
     except EvalgLegacyInvalidBallot as e:
         logger.error("Invalid ballot: %s", e)
         sys.exit(1)

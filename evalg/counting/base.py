@@ -2,6 +2,8 @@
 """Base classes for the counting package"""
 import json
 
+from jinja2 import Environment, PackageLoader
+
 
 class Result:
     """The base class representing counting result"""
@@ -111,3 +113,18 @@ class Protocol:
         :rtype: str
         """
         return json.dumps(self.__dict__, indent=4)
+
+    def render(self, template='protocol.tmpl'):
+        """
+        Renders the protocol using jinja2 template `template`
+
+        :param template: The template to be used (default: protocol.tmpl)
+        :type template: str
+
+        :return: The rendered unicode text
+        :rtype: str
+        """
+        tmpl = Environment(
+            loader=PackageLoader('evalg.counting', 'templates')).get_template(
+                template)
+        return tmpl.render(**self.to_dict())
