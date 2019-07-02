@@ -64,11 +64,8 @@ def import_ous():
 
 def wipe_db():
     from evalg import db
-    import flask_fixtures
-    from evalg.fixtures import populate_tables
     db.drop_all()
     db.create_all()
-    flask_fixtures.setup(populate_tables.Populator)
 
 
 def shell_context():
@@ -116,19 +113,6 @@ def shell_context():
     return context
 
 
-@click.command('populate-tables',
-               short_help='Populate tables with example data.')
-@flask.cli.with_appcontext
-def populate_tables():
-    """ Use flask_fixtures to populate tables. """
-    import os
-    import flask_fixtures
-    from evalg.fixtures import populate_tables
-
-    os.environ['EVALG_JOB_NAME'] = "populate_table"
-    flask_fixtures.setup(populate_tables.Populator)
-
-
 @click.command('recreate-tables',
                short_help='Recreate tables with db.drop_all() and '
                'db.create_all()')
@@ -142,7 +126,6 @@ def recreate_tables():
 
 
 commands = tuple((
-    populate_tables,
     recreate_tables,
 ))
 
