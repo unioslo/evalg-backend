@@ -36,7 +36,7 @@ class Base64NaClSerializer(BallotSerializerBase):
                  election_private_key=None,
                  backend_public_key=None,
                  backend_private_key=None,
-                 envelope_padded_len=None,
+                 envelope_padded_len=0,
                  ):
         super().__init__()
         self._election_private_key = None
