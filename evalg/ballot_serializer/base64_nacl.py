@@ -47,7 +47,7 @@ class Base64NaClSerializer(BallotSerializerBase):
         self.election_private_key = election_private_key
         self.backend_public_key = backend_public_key
         self.backend_private_key = backend_private_key
-        self._envelope_padded_len = envelope_padded_len
+        self._envelope_padded_len = int(envelope_padded_len)
 
     def serialize(self, ballot):
         """
