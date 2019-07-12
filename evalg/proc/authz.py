@@ -15,20 +15,29 @@ from evalg.models.person import PersonExternalId
 from evalg.models.authorization import PersonIdentifierPrincipal
 
 
-def get_or_create_principal(session, principal_type, principal_owner_id):
+def get_or_create_principal(session, principal_type, **kwargs):
     """
     Ensure existence of a principal.
     """
     lookup_opts = {
-        'person': (PersonPrincipal, 'person_id'),
-        'group': (GroupPrincipal, 'group_id')
+        'person': (PersonPrincipal, {
+            'person_id': kwargs.get('person_id'),
+        }),
+        'person_identifier': (PersonIdentifierPrincipal, {
+            'id_type': kwargs.get('id_type'),
+            'id_value': kwargs.get('id_value'),
+        }),
+        'group': (GroupPrincipal, {
+            'person_id': kwargs.get('person_id'),
+        })
     }
     assert principal_type in lookup_opts
-    principal_cls, selector_field = lookup_opts.get(principal_type)
+    principal_cls, selectors = lookup_opts.get(principal_type)
+    assert all([v is not None for k, v in selectors.items()])
     principal = evalg.database.query.get_or_create(
         session,
         principal_cls,
-        **{selector_field: principal_owner_id},
+        **selectors,
     )
     session.add(principal)
     session.flush()
@@ -66,6 +75,24 @@ def get_person_identifier_principals(session, person):
         )
     )
     return query
+
+
+def get_role_by_grant_id(session, grant_id):
+    """
+    Get a role by its grant ID. Returns `None` if not found.
+    """
+    return evalg.database.query.lookup_or_none(
+        session,
+        evalg.models.authorization.Role,
+        grant_id=grant_id)
+
+
+def delete_role(session, role):
+    """
+    Delete a role.
+    """
+    session.delete(role)
+    session.flush()
 
 
 def add_election_group_role(session, election_group, principal,

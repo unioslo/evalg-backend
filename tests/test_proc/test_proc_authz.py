@@ -10,7 +10,7 @@ def test_get_or_create_principal(db_session, person_foo):
     principal = get_or_create_principal(
         session=db_session,
         principal_type='person',
-        principal_owner_id=person_foo.id)
+        person_id=person_foo.id)
     db_session.add(principal)
     db_session.flush()
     assert isinstance(principal, PersonPrincipal)
@@ -18,26 +18,26 @@ def test_get_or_create_principal(db_session, person_foo):
     same_principal = get_or_create_principal(
         session=db_session,
         principal_type='person',
-        principal_owner_id=person_foo.id)
+        person_id=person_foo.id)
     assert principal == same_principal
 
 
 def test_get_person_identifier_principals(db_session, person_foo):
-    feide_id_principal = get_or_create(
-        db_session,
-        PersonIdentifierPrincipal,
+    feide_id_principal = get_or_create_principal(
+        session=db_session,
+        principal_type='person_identifier',
         id_type='feide_id',
         id_value='foo@example.org')
     db_session.add(feide_id_principal)
-    other_persons_feide_id_principal = get_or_create(
-        db_session,
-        PersonIdentifierPrincipal,
+    other_persons_feide_id_principal = get_or_create_principal(
+        session=db_session,
+        principal_type='person_identifier',
         id_type='feide_id',
         id_value='bar@example.org')
     db_session.add(other_persons_feide_id_principal)
-    nin_principal = get_or_create(
-        db_session,
-        PersonIdentifierPrincipal,
+    nin_principal = get_or_create_principal(
+        session=db_session,
+        principal_type='person_identifier',
         id_type='nin',
         id_value='12128812345')
     db_session.add(nin_principal)
@@ -52,11 +52,11 @@ def test_get_principals_for_person(db_session, person_foo):
     principal = get_or_create_principal(
         session=db_session,
         principal_type='person',
-        principal_owner_id=person_foo.id)
+        person_id=person_foo.id)
     db_session.add(principal)
-    feide_id_principal = get_or_create(
-        db_session,
-        PersonIdentifierPrincipal,
+    feide_id_principal = get_or_create_principal(
+        session=db_session,
+        principal_type='person_identifier',
         id_type='feide_id',
         id_value='foo@example.org')
     db_session.add(feide_id_principal)

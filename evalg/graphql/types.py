@@ -4,9 +4,12 @@ import datetime
 import logging
 
 import aniso8601
+import graphene
 from graphene.types import Scalar
 from graphql.language import ast
 
+from evalg.models.person import PersonIdType as _PersonIdType
+from evalg.models.authorization import ElectionGroupRoleType as _ElectionGroupRoleType
 
 logger = logging.getLogger(__name__)
 
@@ -75,3 +78,12 @@ class DateTime(Scalar):
     @staticmethod
     def parse_value(value):
         return _parse_datetime(value)
+
+
+PersonIdType = graphene.Enum.from_enum(
+    _PersonIdType,
+    description=_PersonIdType.get_description)
+
+ElectionGroupRoleType = graphene.Enum.from_enum(
+    _ElectionGroupRoleType,
+    description=_ElectionGroupRoleType.get_description)

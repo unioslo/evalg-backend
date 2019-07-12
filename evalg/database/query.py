@@ -49,6 +49,26 @@ def lookup(session, model, **attrs):
                            (num, model, filter_cond))
 
 
+def lookup_or_none(session, model, **attrs):
+    """
+    Find a unique object identified by a set of attributes.
+    Return `None` if none is found.
+
+    :param session: An SQLAlchemy session
+    :param model: An SQLAlchemy model to find
+    :param attrs:
+        A set of column names and values to use for matching.
+    """
+    try:
+        return lookup(session, model, **attrs)
+    except TooFewError:
+        return None
+    except Exception:
+        # reraise any other exception
+        raise
+    assert False, 'not reached'
+
+
 def get_or_create(session, model, **attrs):
     """
     Find or create a unique object identified by a set of attributes.

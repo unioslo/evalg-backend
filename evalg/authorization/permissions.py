@@ -7,11 +7,18 @@ This module
 """
 import logging
 
-from flask_allows import Permission, Requirement
+from flask_allows import Permission, Requirement as OriginalRequirement
 
 from evalg.proc.authz import get_principals_for_person
 
 logger = logging.getLogger(__name__)
+
+
+class Requirement(OriginalRequirement):
+    def __call__(self, user):
+        # TODO: Workaround to avoid warnings. Remove when this is merged:
+        #       https://github.com/justanr/flask-allows/pull/45
+        return self.fulfill(user)
 
 
 def role_in_principals(principals, **match):

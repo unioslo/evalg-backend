@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This module
- - does
- - things
+This module:
+ - bootstraps the flask-allows extension
+ - makes the currently authenticated user available to flask-allows
+ - defines a exceptions related to authorization
 """
 import logging
 
@@ -11,7 +12,6 @@ from flask_allows import Allows
 from werkzeug.exceptions import Forbidden
 
 import evalg.authentication.user
-import evalg.database.query
 
 logger = logging.getLogger(__name__)
 
