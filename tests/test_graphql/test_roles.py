@@ -156,11 +156,10 @@ remove_election_group_role_by_grant_mutation = """
 """
 
 
-def test_remove_election_group_role_when_grant_does_not_exist(
+def test_remove_election_group_role_by_grant(
         db_session, election_group_foo, logged_in_user, client):
     """
-    Ensure addElectionGroupRoleByIdentifier fails gracefully when the election
-    group does not exist.
+    Ensure removeElectionGroupRoleByGrant removes the specified role grant.
     """
     # Give the logged in user a role
     admin_principal = evalg.proc.authz.get_or_create_principal(
