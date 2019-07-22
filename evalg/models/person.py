@@ -68,15 +68,15 @@ class Person(ModelBase):
         return None
 
 
-IdType = make_descriptive_enum(
-    'IdType',
+PersonIdType = make_descriptive_enum(
+    'PersonIdType',
     {
         'feide_id': 'Feide id (eduPersonPrincipalName)',
         'feide_user_id': 'Feide/Dataporten user id',
         'nin': 'National identification number',
         'uid': 'Username',
     },
-    description='Identifier types',
+    description='Person identifier types',
 )
 
 
@@ -105,7 +105,7 @@ class PersonExternalId(ModelBase):
 
     @validates('id_type')
     def validate_id_type(self, key, id_type):
-        return IdType(id_type).value
+        return PersonIdType(id_type).value
 
     @classmethod
     def find_ids(cls, *where):

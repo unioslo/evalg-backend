@@ -65,10 +65,10 @@ class ElectionMutations(graphene.ObjectType):
         nodes.pollbook.UndoReviewSelfAddedVoter.Field()
 
     # Roles
-    add_admin = \
-        nodes.roles.AddAdmin.Field()
-    remove_admin = \
-        nodes.roles.RemoveAdmin.Field()
+    add_election_group_role_by_identifier = \
+        nodes.roles.AddElectionGroupRoleByIdentifier.Field()
+    remove_election_group_role_by_grant = \
+        nodes.roles.RemoveElectionGroupRoleByGrant.Field()
 
     # Votes
     vote = nodes.votes.AddVote.Field()

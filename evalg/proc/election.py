@@ -205,5 +205,5 @@ def make_group_from_template(session, template_name, ou, principals=()):
 
     group.elections = list(map(make_election, elections))
     session.add(group)
-    session.commit()
+    session.flush()
     return group

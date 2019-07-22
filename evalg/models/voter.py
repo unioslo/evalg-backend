@@ -17,10 +17,10 @@ from sqlalchemy.schema import UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from evalg import db
+from evalg.models.person import PersonIdType
 from evalg.utils import make_descriptive_enum
 from evalg.database.types import UuidType
 from .base import ModelBase
-from .person import IdType
 
 
 VerifiedStatus = make_descriptive_enum(
@@ -130,7 +130,7 @@ class Voter(ModelBase):
     #
     @validates('id_type')
     def validate_id_type(self, key, id_type):
-        return IdType(id_type).value
+        return PersonIdType(id_type).value
 
     __table_args__ = (
         UniqueConstraint(

@@ -4,114 +4,151 @@ GraphQL ObjectType for authorization roles.
 import graphene
 import graphene_sqlalchemy
 
+import evalg.database.query
 import evalg.models.authorization
-from evalg import db
-
-from . import person
-from . import group
+from evalg.authorization import permissions
+from evalg.graphql.types import PersonIdType, ElectionGroupRoleType
+from evalg.graphql.nodes.base import (get_session,
+                                      get_current_user,
+                                      MutationResponse)
+from evalg.proc.authz import (get_or_create_principal,
+                              add_election_group_role,
+                              delete_role)
 
 
 #
 # Queries
 #
 
-# TODO:
-#   We should rework the authorization a bit - That may change the models here.
-
-# TODO:
-#   We should use an explicit db session passed through the `info.context`
-#   object, rather than relying on the builtin `Model.query`.
-#   E.g. Model.get_query(info) -> info.context.session.query(Model)
-
-# TODO:
-#   All Queries and Mutations should be implemented using functionality from
-#   evalg.candidates in order to show or mutate candidate lists or candidates.
-
-
-class Principal(graphene_sqlalchemy.SQLAlchemyObjectType):
-    class Meta:
-        model = evalg.models.authorization.Principal
-
-    person = graphene.Field(person.Person)
-    group = graphene.Field(group.Group)
-
 
 class PersonPrincipal(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.authorization.PersonPrincipal
+        exclude_fields = ('principal_type', )
+
+
+class PersonIdentifierPrincipal(graphene_sqlalchemy.SQLAlchemyObjectType):
+    id_type = PersonIdType(required=True)
+
+    class Meta:
+        model = evalg.models.authorization.PersonIdentifierPrincipal
+        exclude_fields = ('principal_type', )
 
 
 class GroupPrincipal(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.authorization.GroupPrincipal
+        exclude_fields = ('principal_type', )
 
 
-# class ElectionRole(graphene_sqlalchemy.SQLAlchemyObjectType):
-#     class Meta:
-#         model = evalg.models.authorization.ElectionRole
-
-
-# class ElectionRoleList(graphene_sqlalchemy.SQLAlchemyObjectType):
-#     class Meta:
-#         model = evalg.models.authorization.ElectionRoleList
+class Principal(graphene.types.Union):
+    class Meta:
+        types = (PersonPrincipal, PersonIdentifierPrincipal, GroupPrincipal)
 
 
 class ElectionGroupRole(graphene_sqlalchemy.SQLAlchemyObjectType):
+    principal = graphene.Field(Principal)
+
     class Meta:
         model = evalg.models.authorization.ElectionGroupRole
+        exclude_fields = ('target_type', )
 
 
 #
 # Mutations
 #
 
+class AddElectionGroupRoleByIdentifierResponse(MutationResponse):
+    pass
 
-class AddAdmin(graphene.Mutation):
+
+class AddElectionGroupRoleByIdentifier(graphene.Mutation):
     """
-    Add a user as administrator to a given election group.
+    Add an election group role to a user identifier.
     """
     class Arguments:
-        admin_id = graphene.UUID(required=True)
-        el_grp_id = graphene.UUID(required=True)
-        type = graphene.String(required=True)
+        election_group_id = graphene.UUID(required=True)
+        role = ElectionGroupRoleType(required=True)
+        id_type = PersonIdType(required=True)
+        id_value = graphene.String(required=True)
 
-    ok = graphene.Boolean()
+    Output = AddElectionGroupRoleByIdentifierResponse
 
     def mutate(self, info, **args):
-        # TODO:
-        #   We should rework the argument names in these queries.
-        #   *admin_id*? *el_grp_id*?
-        # TODO:
-        #   Should we check if the Principal objects already exists?
-        if args.get('type') == 'person':
-            principal = evalg.models.authorization.PersonPrincipal(
-                person_id=args.get('admin_id'))
-        else:
-            principal = evalg.models.authorization.GroupPrincipal(
-                group_id=args.get('admin_id'))
-        role = evalg.models.authorization.ElectionGroupRole(
-            role='election-admin',
+        session = get_session(info)
+        user = get_current_user(info)
+        election_group_id = args.get('election_group_id')
+        role_name = args.get('role')
+        id_type = args.get('id_type')
+        id_value = args.get('id_value')
+        election_group = evalg.database.query.lookup_or_none(
+            session,
+            evalg.models.election.ElectionGroup,
+            id=election_group_id)
+        if election_group is None:
+            return AddElectionGroupRoleByIdentifierResponse(
+                success=False,
+                code='election-group-not-found',
+                message='No election group identified by {}'.format(
+                    election_group_id)
+            )
+        if not permissions.can_manage_election_group(session, user, election_group.id):
+            return AddElectionGroupRoleByIdentifierResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to add roles for election {}'.format(
+                    election_group_id)
+            )
+        principal = get_or_create_principal(
+            session=session,
+            principal_type='person_identifier',
+            id_type=id_type,
+            id_value=id_value)
+        add_election_group_role(
+            session=session,
+            election_group=election_group,
             principal=principal,
-            group_id=args.get('el_grp_id'))
-        db.session.add(role)
-        db.session.commit()
-        return AddAdmin(ok=True)
+            role_name=role_name)
+        session.commit()
+        return AddElectionGroupRoleByIdentifierResponse(
+            success=True,
+            code='role-added')
 
 
-class RemoveAdmin(graphene.Mutation):
+class RemoveElectionGroupRoleByGrantResponse(MutationResponse):
+    pass
+
+
+class RemoveElectionGroupRoleByGrant(graphene.Mutation):
     """
-    Remove a an administrative role from a given election group.
+    Add an election group role by the grant ID.
     """
     class Arguments:
         grant_id = graphene.UUID(required=True)
 
-    ok = graphene.Boolean()
+    Output = RemoveElectionGroupRoleByGrantResponse
 
     def mutate(self, info, **args):
-        # TODO:
-        #   Where do we get the grant_id from? Are we missing some queries?
-        role = evalg.models.authorization.ElectionGroupRole.query.get(
-            args.get('grant_id'))
-        db.session.delete(role)
-        db.session.commit()
-        return RemoveAdmin(ok=True)
+        session = get_session(info)
+        user = get_current_user(info)
+        grant_id = args.get('grant_id')
+        role = evalg.proc.authz.get_role_by_grant_id(session, grant_id)
+        if role is None:
+            return RemoveElectionGroupRoleByGrantResponse(
+                success=False,
+                code='grant-not-found',
+                message='No election group role grant identified by {}'.format(
+                    grant_id)
+            )
+        if not permissions.can_manage_election_group(session, user, role.group.id):
+            return RemoveElectionGroupRoleByGrantResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to remove roles for election {}'.format(
+                    role.group.id)
+            )
+        delete_role(session, role)
+        session.commit()
+        return RemoveElectionGroupRoleByGrantResponse(
+            success=True,
+            code='role-removed')

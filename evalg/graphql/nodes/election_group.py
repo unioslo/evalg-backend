@@ -10,15 +10,17 @@ from graphql import GraphQLError
 from graphene.types.generic import GenericScalar
 from sqlalchemy_continuum import version_class
 
-import evalg.proc.election
 import evalg.models.election
 import evalg.models.election_group_count
+import evalg.models.ou
+import evalg.proc.authz
+import evalg.proc.election
 import evalg.proc.vote
 import evalg.proc.count
 from evalg import db
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
-from evalg.graphql.nodes.base import get_session, MutationResponse
+from evalg.graphql.nodes.base import get_session, get_current_user, MutationResponse
 from evalg.graphql.nodes.person import Person
 from evalg.graphql.nodes.election import ElectionResult
 from evalg.utils import convert_json
@@ -207,10 +209,22 @@ class CreateNewElectionGroup(graphene.Mutation):
 
     def mutate(self, info, ou_id, template, template_name):
         # TODO: Looks like template_name is required?
-        ou = evalg.models.ou.OrganizationalUnit.query.get(ou_id)
         session = get_session(info)
+        ou = evalg.database.query.lookup(
+            session, evalg.models.ou.OrganizationalUnit, id=ou_id)
         election_group = evalg.proc.election.make_group_from_template(
             session, template_name, ou)
+        current_user = get_current_user(info)
+        current_user_principal = evalg.proc.authz.get_or_create_principal(
+            session,
+            principal_type='person',
+            person_id=current_user.person.id)
+        evalg.proc.authz.add_election_group_role(
+            session=session,
+            election_group=election_group,
+            principal=current_user_principal,
+            role_name='admin')
+        session.commit()
         return CreateNewElectionGroup(
             election_group=election_group,
             ok=True)

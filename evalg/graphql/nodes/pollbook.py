@@ -13,6 +13,7 @@ import evalg.models.pollbook
 import evalg.models.voter
 import evalg.proc.pollbook
 from evalg import db
+from evalg.graphql.types import PersonIdType
 from evalg.file_parser.parser import CensusFileParser
 from evalg.graphql.nodes.base import get_session, MutationResponse
 from evalg.graphql.nodes.person import Person
@@ -271,18 +272,13 @@ class DeleteVotersInPollBook(graphene.Mutation):
         return DeleteVotersInPollBook(ok=True)
 
 
-VoterIdType = graphene.Enum.from_enum(
-    evalg.models.person.IdType,
-    description=evalg.models.person.IdType.get_description)
-
-
 class AddVoterByIdentifier(graphene.Mutation):
     """
     Create a single voter object in a pollbook.
     """
 
     class Arguments:
-        id_type = VoterIdType(required=True)
+        id_type = PersonIdType(required=True)
         id_value = graphene.String(required=True)
         pollbook_id = graphene.UUID(required=True)
         approved = graphene.Boolean(
