@@ -31,4 +31,4 @@ sqlalchemy-utils
 werkzeug
 
 # Our own dependencies
-sap-client==0.2.0
+sap-client==0.3.1
