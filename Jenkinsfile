@@ -14,6 +14,26 @@ pipeline {
                 archiveArtifacts artifacts: 'dist/evalg-*.tar.gz'
             }
         }
+        stage('Push pkg to Nexus') {
+            when { branch 'master' }
+            steps {
+                build(
+                    job: 'python-publish',
+                    parameters: [
+                        [
+                            $class: 'StringParammeterVault',
+                            name: 'project',
+                            value: "${JOB_NAME}",
+                        ],
+                        [
+                            $class: 'StringParammeterVault',
+                            name: 'build',
+                            value: "${BUILD_ID}",
+                        ],
+                    ]
+                )
+            }
+        }
     }
     post {
         always {
