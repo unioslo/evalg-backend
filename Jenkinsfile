@@ -15,7 +15,6 @@ pipeline {
             }
         }
         stage('Push pkg to Nexus') {
-            when { branch 'master' }
             steps {
                 build(
                     job: 'python-publish',
