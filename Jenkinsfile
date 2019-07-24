@@ -20,12 +20,12 @@ pipeline {
                     job: 'python-publish',
                     parameters: [
                         [
-                            $class: 'StringParammeterVault',
+                            $class: 'StringParammeterValue',
                             name: 'project',
                             value: "${JOB_NAME}",
                         ],
                         [
-                            $class: 'StringParammeterVault',
+                            $class: 'StringParammeterValue',
                             name: 'build',
                             value: "${BUILD_ID}",
                         ],
