@@ -2,17 +2,6 @@
 
 pipeline {
     agent none
-    environment {
-        VERSION = sh(
-            returnStdout: true,
-            script: 'git describe --dirty=+ --tags'
-        ).trim()
-        REPO = 'harbor.uio.no'
-        PROJECT = 'it-usit-int-drift'
-        APP_NAME = 'valg-backend'
-        CONTAINER = "${REPO}/${PROJECT}/${APP_NAME}"
-        IMAGE_TAG = "${CONTAINER}:${BRANCH_NAME}-${VERSION}"
-    }
     stages {
         stage('Build, test and deploy python package') {
             agent { label 'python3' }
@@ -63,6 +52,17 @@ pipeline {
         }
         stage('Build and deploy docker image') {
             agent { label 'docker' }
+            environment {
+                VERSION = sh(
+                    returnStdout: true,
+                    script: 'git describe --dirty=+ --tags'
+                ).trim()
+                REPO = 'harbor.uio.no'
+                PROJECT = 'it-usit-int-drift'
+                APP_NAME = 'valg-backend'
+                CONTAINER = "${REPO}/${PROJECT}/${APP_NAME}"
+                IMAGE_TAG = "${CONTAINER}:${BRANCH_NAME}-${VERSION}"
+            }
             stages {
                 stage('Build docker image') {
                     steps {
