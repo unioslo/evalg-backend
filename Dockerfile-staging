@@ -30,8 +30,9 @@ ENV https_proxy=""
 
 RUN pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
  && pip3 config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
- && pip3 install setuptools_scm \
- && pip3 install evalg --no-cache-dir \
+ && pip3 install setuptools_scm 
+
+RUN pip3 install evalg --no-cache-dir \
  && apk del .evalg-build-deps
 
 COPY evalg/migrations /usr/src/evalg/evalg/migrations
