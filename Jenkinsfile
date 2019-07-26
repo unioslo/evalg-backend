@@ -40,7 +40,6 @@ pipeline {
             post {
                 always {
                     junit '**/junit*.xml'
-                    //cobertura coberturaReportFile: '**/coverage*.xml'
                     publishCoverage adapters: [coberturaAdapter(path: '**/coverage*.xml')] 
                 }
                 cleanup {
@@ -81,7 +80,7 @@ pipeline {
                             }
                         }
                         stage('Tag image as latest/utv') {
-                            when { branch 'master' }
+                            //when { branch 'master' }
                             steps {
                                 script {
                                     docker_image.push('latest')
