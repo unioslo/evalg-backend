@@ -59,6 +59,23 @@ def get_principals_for_person(session, person):
     return [x for x in principals if x is not None]
 
 
+def get_roles_for_person(session, person):
+    principals = get_principals_for_person(session, person)
+    roles = []
+    for principal in principals:
+        for role in principal.roles:
+            roles.append(role)
+    return roles
+
+
+def get_person_roles_matching(session, person, **match):
+    assert 'target_type' in match
+    assert 'name' in match
+    roles = get_roles_for_person(session, person)
+    return [role for role in roles
+            if all([getattr(role, k) == v for k, v in match.items()])]
+
+
 def get_person_identifier_principals(session, person):
     """
     Get all `PersonIdentifierPrincipal`s matching the external IDs of a person.

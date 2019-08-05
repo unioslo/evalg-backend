@@ -8,6 +8,7 @@ import graphene
 import graphene_sqlalchemy
 from graphql import GraphQLError
 from graphene.types.generic import GenericScalar
+from sqlalchemy.sql import or_
 from sqlalchemy_continuum import version_class
 
 import evalg.models.election
@@ -69,18 +70,53 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
         return evalg.proc.election.get_latest_election_group_count(
             session, group_id)
 
+    @classmethod
+    def get_current_user_admin_roles(cls, info):
+        session = get_session(info)
+        current_user = get_current_user(info)
+        return evalg.proc.authz.get_person_roles_matching(
+            session=session,
+            person=current_user.person,
+            target_type='election-group-role',
+            name='admin')
 
-def resolve_election_groups_by_fields(_, info):
-    return ElectionGroup.get_query(info).all()
+    @classmethod
+    def get_query_visible_to_current_user(cls, info):
+        admin_roles = cls.get_current_user_admin_roles(info)
+        admin_for = [role.group_id for role in admin_roles]
+        return cls.get_query(info).filter(
+            or_(
+                evalg.models.election.ElectionGroup.announced,
+                evalg.models.election.ElectionGroup.published,
+                evalg.models.election.ElectionGroup.id.in_(admin_for)
+            )
+        )
+
+
+def resolve_election_groups(_, info):
+    """
+    List all election groups that should be visible to the current user.
+    """
+    return ElectionGroup.get_query_visible_to_current_user(info).all()
 
 
 def resolve_election_group_by_id(_, info, **args):
-    return ElectionGroup.get_query(info).get(args['id'])
+    """
+    Get a single election group that should be visible to the current user.
+    """
+    admin_roles = ElectionGroup.get_current_user_admin_roles(info)
+    admin_for = [role.group_id for role in admin_roles]
+    election_group = ElectionGroup.get_query(info).get(args['id'])
+    if not election_group:
+        return None
+    if (args['id'] in admin_for or election_group.announced or election_group.published):
+        return election_group
+    return None
 
 
 list_election_groups_query = graphene.List(
     ElectionGroup,
-    resolver=resolve_election_groups_by_fields)
+    resolver=resolve_election_groups)
 
 
 get_election_group_query = graphene.Field(
@@ -256,8 +292,8 @@ class UpdateBaseSettings(graphene.Mutation):
         #   Is there any particular reason why the ElectionGroup settings and
         #   Election settings are bound together in a single mutation?
         el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
-        el_grp.meta['candidate_rules']['candidate_gender'] =\
-            args.get('has_gender_quota')
+        el_grp.meta['candidate_rules']['candidate_gender'] = args.get(
+            'has_gender_quota')
         db.session.add(el_grp)
         for e in args.get('elections'):
             election = evalg.models.election.Election.query.get(e['id'])
