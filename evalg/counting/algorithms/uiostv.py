@@ -45,6 +45,9 @@ class CountingEventType(enum.Enum):
     # candidate has been elected
     CANDIDATE_ELECTED = enum.auto()
 
+    # candidate has been elected because of §19.1
+    CANDIDATE_ELECTED_19_1 = enum.auto()
+
     # candidate has been excluded
     CANDIDATE_EXCLUDED = enum.auto()
 
@@ -228,6 +231,7 @@ class RoundState:
         self._transferred_ballot_weights = collections.Counter()
         self._transferred_candidate_ballots = {}  # candidate: ballot-list dict
         self._events = []
+        self._paragraph_19_1 = False  # §19.1 in the corresponding round
 
     @property
     def all_elected_candidates(self):
@@ -273,6 +277,16 @@ class RoundState:
     def final(self, value):
         """final-property setter"""
         self._final = value
+
+    @property
+    def paragraph_19_1(self):
+        """paragraph_19_1-property"""
+        return self._paragraph_19_1
+
+    @paragraph_19_1.setter
+    def paragraph_19_1(self, value):
+        """paragraph_19_1-property setter"""
+        self._paragraph_19_1 = value
 
     @property
     def quota_excluded(self):
@@ -698,6 +712,7 @@ class RegularRound:
         except NoMoreElectableCandidates:
             # §19.1
             logger.info("§19.1 Remaining candidates <= electable candidates")
+            self._state.paragraph_19_1 = True
             self._state.add_event(
                 CountingEvent(CountingEventType.TERMINATE_19_1, {}))
             try:
@@ -796,10 +811,15 @@ class RegularRound:
             self._potentially_elected.pop(
                 self._potentially_elected.index(candidate))
         logger.info("Candidate %s is elected", candidate)
-        self._state.add_event(
-            CountingEvent(CountingEventType.CANDIDATE_ELECTED,
-                          {'candidate': str(candidate.id)}))
-        self._update_surplus_for_elected_candidate(candidate)
+        if not self._state.paragraph_19_1:
+            self._state.add_event(
+                CountingEvent(CountingEventType.CANDIDATE_ELECTED,
+                              {'candidate': str(candidate.id)}))
+            self._update_surplus_for_elected_candidate(candidate)
+        else:
+            self._state.add_event(
+                CountingEvent(CountingEventType.CANDIDATE_ELECTED_19_1,
+                              {'candidate': str(candidate.id)}))
         self._vcount_results_remaining.pop(candidate)
         self._state.add_elected_candidate(candidate)  # update the round-state
         self._state.all_elected_candidates = self._elected
@@ -1982,6 +2002,7 @@ class SubstituteRound(RegularRound):
         except NoMoreElectableCandidates:
             # §19.1
             logger.info("§19.1 Remaining candidates <= electable candidates")
+            self._state.paragraph_19_1 = True
             self._state.add_event(
                 CountingEvent(CountingEventType.TERMINATE_19_1, {}))
             remaining_candidates = tuple(
@@ -2005,6 +2026,7 @@ class SubstituteRound(RegularRound):
             # Only one last candidate remains unelected
             logger.info("Only one globally unelected candidate remains. "
                         "Electing according to §19.1.")
+            self._state.paragraph_19_1 = True
             self._state.add_event(
                 CountingEvent(CountingEventType.TERMINATE_19_1, {}))
             try:
@@ -2078,7 +2100,8 @@ class SubstituteRound(RegularRound):
             if candidate in self._potentially_elected:
                 self._potentially_elected.pop(
                     self._potentially_elected.index(candidate))
-            self._update_surplus_for_elected_candidate(candidate)
+            if not self._state.paragraph_19_1:
+                self._update_surplus_for_elected_candidate(candidate)
             self._vcount_results_remaining.pop(candidate)
             self._elected_earlier.append(candidate)
             # update the state as if it is a normal election because of
@@ -2092,8 +2115,11 @@ class SubstituteRound(RegularRound):
                 self._potentially_elected.index(candidate))
         logger.info("Candidate %s is elected", candidate)
         self._state.add_event(
-            CountingEvent(CountingEventType.CANDIDATE_ELECTED,
-                          {'candidate': str(candidate.id)}))
+            CountingEvent(
+                (CountingEventType.CANDIDATE_ELECTED_19_1 if
+                 self._state.paragraph_19_1 else
+                 CountingEventType.CANDIDATE_ELECTED),
+                {'candidate': str(candidate.id)}))
         if not last_substitute_candidate:
             self._update_surplus_for_elected_candidate(candidate)
             self._vcount_results_remaining.pop(candidate)

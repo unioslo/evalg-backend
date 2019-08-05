@@ -53,7 +53,10 @@ Ingen kvote-grupper er definert
 Vi velger kandidat som skal ekskluderes ved hjelp av loddtrekning i henhold til §16.4 - B.:
 
 {% elif event.event_type == 'CANDIDATE_ELECTED' -%}
-{{ person_name(event.event_data['candidate']) }} ble valgt.
+{{ person_name(event.event_data['candidate']) }} ble valgt (oppnår valgtall).
+
+{% elif event.event_type == 'CANDIDATE_ELECTED_19_1' -%}
+{{ person_name(event.event_data['candidate']) }} ble valgt (§19.1).
 
 {% elif event.event_type == 'CANDIDATE_EXCLUDED' -%}
 {{ person_name(event.event_data['candidate']) }} er ekskludert.
@@ -176,3 +179,4 @@ DEBUG: Unimplemented event {{ event.event_type }}
 {% endif -%}
 {% endfor -%}
 {% endfor -%}
+---Avslutter protokol---
