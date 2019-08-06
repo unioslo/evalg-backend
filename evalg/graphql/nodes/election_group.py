@@ -18,6 +18,7 @@ from sqlalchemy_continuum import version_class
 import evalg.models.election
 import evalg.models.election_group_count
 import evalg.models.ou
+import evalg.models.person
 import evalg.proc.authz
 import evalg.proc.election
 import evalg.proc.vote
@@ -28,6 +29,7 @@ from evalg.graphql import types
 from evalg.graphql.nodes.base import (get_session,
                                       get_current_user,
                                       MutationResponse)
+from evalg.graphql.nodes.pollbook import Voter
 from evalg.graphql.nodes.person import Person
 from evalg.graphql.nodes.election import ElectionResult
 from evalg.utils import convert_json
@@ -63,6 +65,9 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
     published = graphene.Boolean()
     announced = graphene.Boolean()
     latest_election_group_count = graphene.Field(lambda: ElectionGroupCount)
+    persons_with_multiple_verified_voters = graphene.List(
+        lambda: PersonWithVoters
+    )
 
     def resolve_announcement_blockers(self, info):
         return evalg.proc.election.get_group_announcement_blockers(self)
@@ -75,6 +80,10 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
         group_id = self.id
         return evalg.proc.election.get_latest_election_group_count(
             session, group_id)
+
+    def resolve_persons_with_multiple_verified_voters(self, info):
+        return resolve_persons_with_multiple_verified_voters(info, id=self.id)
+
 
     @classmethod
     def get_current_user_admin_roles(cls, info):
@@ -133,6 +142,43 @@ get_election_group_query = graphene.Field(
     ElectionGroup,
     id=graphene.Argument(graphene.UUID, required=True),
     resolver=resolve_election_group_by_id)
+
+
+class PersonWithVoters(graphene.ObjectType):
+    person = graphene.Field(Person)
+    voters = graphene.List(Voter)
+
+
+def resolve_persons_with_multiple_verified_voters(info, **args):
+    election_group_id = args.get('id')
+    session = get_session(info)
+    query = evalg.proc.vote.get_persons_with_multiple_verified_voters(
+        session,
+        election_group_id
+    )
+
+    class PersonWithVoters:
+        def __init__(self, person, voter):
+            self.person = person
+            self.voters = [voter]
+
+    person_id2person_with_voters = {}
+    for person, voter in query.all():
+        if person.id in person_id2person_with_voters.keys():
+            person_id2person_with_voters[person.id].voters.append(voter)
+        else:
+            person_id2person_with_voters[person.id] = PersonWithVoters(
+                person,
+                voter
+            )
+    return person_id2person_with_voters.values()
+
+
+persons_with_multiple_verified_voters_query = graphene.List(
+    PersonWithVoters,
+    id=graphene.Argument(graphene.UUID, required=True),
+    resolver=resolve_persons_with_multiple_verified_voters
+)
 
 
 # TODO:
