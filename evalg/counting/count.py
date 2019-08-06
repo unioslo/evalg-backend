@@ -343,9 +343,14 @@ class ElectionCountPath:
             raise CountingFailure('Empty or unfinished path')
         counter_obj = self._round_state_list[-1].round_obj.counter_obj
         election = counter_obj.election
+        candidates = {}
+        for candidate in election.candidates:
+            candidates.update({str(candidate.id): candidate.name})
         meta = {
             'election_id': str(election.id),
             'election_name': election.name,
+            'candidate_ids': [str(cand.id) for cand in election.candidates],
+            'candidates': candidates,
             'num_regular': election.num_choosable,
             'num_substitutes': election.num_substitutes,
             'ballots_count': election.total_amount_ballots,
@@ -355,6 +360,7 @@ class ElectionCountPath:
         for pollbook in election.pollbooks:
             pollbook_meta.append(
                 {'id': str(pollbook.id),
+                 'name': pollbook.name,
                  'ballots_count': pollbook.ballots_count,
                  'counting_ballots_count': pollbook.counting_ballots_count,
                  'empty_ballots_count': pollbook.empty_ballots_count,
