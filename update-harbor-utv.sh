@@ -13,9 +13,6 @@ docker build -f Dockerfile-staging -t $IMAGE_TAG .
 echo "Pushing $IMAGE_TAG"
 docker push $IMAGE_TAG
 
-if [[ $GIT_BRANCH = "master" ]]
-then
-  echo "On master-branch, setting $IMAGE_TAG as $CONTAINER:utv"
-  docker tag $IMAGE_TAG $CONTAINER:utv
-  docker push $CONTAINER:utv
-fi
+echo "On master-branch, setting $IMAGE_TAG as $CONTAINER:utv"
+docker tag $IMAGE_TAG $CONTAINER:utv
+docker push $CONTAINER:utv
