@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 pipeline {
-    agent none
+    agent any
     stages {
         stage('Build, test and deploy python package') {
             agent { label 'python3' }
@@ -23,16 +23,8 @@ pipeline {
                             build(
                                 job: 'python-publish',
                                 parameters: [
-                                    [
-                                        $class: 'StringParameterValue',
-                                        name: 'project',
-                                        value: "${JOB_NAME}",
-                                    ],
-                                    [
-                                        $class: 'StringParameterValue',
-                                        name: 'build',
-                                        value: "${BUILD_ID}",
-                                    ],
+                                    string(name: 'project', value: "${JOB_NAME}"),
+                                    string(name: 'build', value: "${BUILD_ID}"),
                                 ]
                             )
                         }
