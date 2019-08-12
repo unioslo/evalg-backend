@@ -2,9 +2,10 @@ from evalg.graphql import get_context
 from evalg.models.candidate import Candidate
 from evalg.models.election_list import ElectionList
 from evalg.models.election import ElectionGroup
+from evalg.graphql import get_context
 
 
-def test_query_electiongroup_by_id(make_election_group, client):
+def test_query_electiongroup_by_id(make_election_group, client, logged_in_user):
     election_group = make_election_group('Test query EG by id')
     variables = {'id': str(election_group.id)}
     query = """
@@ -16,7 +17,8 @@ def test_query_electiongroup_by_id(make_election_group, client):
         }
     }
     """
-    execution = client.execute(query, variables=variables)
+    execution = client.execute(
+        query, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['electionGroup']
     assert str(election_group.id) == response['id']

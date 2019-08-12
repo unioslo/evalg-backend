@@ -80,6 +80,10 @@ class ElectionGroup(AbstractElection):
     def announced(self):
         return self.announced_at is not None
 
+    @announced.expression
+    def announced(cls):
+        return cls.announced_at.isnot(None)
+
     def publish(self):
         """ Mark as published. """
         self.published_at = utcnow()
@@ -91,6 +95,10 @@ class ElectionGroup(AbstractElection):
     @hybrid_property
     def published(self):
         return self.published_at is not None
+
+    @published.expression
+    def published(cls):
+        return cls.published_at.isnot(None)
 
     def cancel(self):
         """ Mark as cancelled. """

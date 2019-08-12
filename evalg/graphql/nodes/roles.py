@@ -54,6 +54,11 @@ class ElectionGroupRole(graphene_sqlalchemy.SQLAlchemyObjectType):
         exclude_fields = ('target_type', )
 
 
+class Role(graphene.types.Union):
+    class Meta:
+        types = (ElectionGroupRole, )
+
+
 #
 # Mutations
 #
