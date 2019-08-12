@@ -22,16 +22,8 @@ pipeline {
                         build(
                             job: 'python-publish',
                             parameters: [
-                                [
-                                    $class: 'StringParameterValue',
-                                    name: 'project',
-                                    value: "${JOB_NAME}",
-                                ],
-                                [
-                                    $class: 'StringParameterValue',
-                                    name: 'build',
-                                    value: "${BUILD_ID}",
-                                ],
+                                string(name: 'project', value: "${JOB_NAME}"),
+                                string(name: 'build', value: "${BUILD_ID}")
                             ]
                         )
                     }
@@ -63,6 +55,11 @@ pipeline {
                 IMAGE_TAG = "${CONTAINER}:${BRANCH_NAME}-${VERSION}"
             }
             stages {
+                stage('Wait for nexus') {
+                    steps {
+                        sleep(10)
+                    }
+                }
                 stage('Build docker image') {
                     steps {
                         script {
