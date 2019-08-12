@@ -22,8 +22,16 @@ pipeline {
                         build(
                             job: 'python-publish',
                             parameters: [
-                                string(name: 'project', value: "${JOB_NAME}"),
-                                string(name: 'build', value: "${BUILD_ID}")
+                                [
+                                    $class: 'StringParameterValue',
+                                    name: 'project',
+                                    value: "${JOB_NAME}",
+                                ],
+                                [
+                                    $class: 'StringParameterValue',
+                                    name: 'build',
+                                    value: "${BUILD_ID}",
+                                ],
                             ]
                         )
                     }
