@@ -15,7 +15,9 @@ docker push $IMAGE_TAG
 
 if [[ $GIT_BRANCH = "master" ]]
 then
-  echo "On master-branch, setting $IMAGE_TAG as $CONTAINER:latest"
+  echo "On master-branch, setting $IMAGE_TAG as $CONTAINER:latest and $CONTAINER:utv"
   docker tag $IMAGE_TAG $CONTAINER:latest
+  docker tag $IMAGE_TAG $CONTAINER:utv
   docker push $CONTAINER:latest
+  docker push $CONTAINER:utv
 fi
