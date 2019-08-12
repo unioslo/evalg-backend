@@ -19,21 +19,23 @@ pipeline {
                 }
                 stage('Deploy pkg to Nexus') {
                     steps {
-                        build(
-                            job: 'python-publish',
-                            parameters: [
-                                [
-                                    $class: 'StringParameterValue',
-                                    name: 'project',
-                                    value: "${JOB_NAME}",
-                                ],
-                                [
-                                    $class: 'StringParameterValue',
-                                    name: 'build',
-                                    value: "${BUILD_ID}",
-                                ],
-                            ]
-                        )
+                        node('python-build') {
+                            build(
+                                job: 'python-publish',
+                                parameters: [
+                                    [
+                                        $class: 'StringParameterValue',
+                                        name: 'project',
+                                        value: "${JOB_NAME}",
+                                    ],
+                                    [
+                                        $class: 'StringParameterValue',
+                                        name: 'build',
+                                        value: "${BUILD_ID}",
+                                    ],
+                                ]
+                            )
+                        }
                     }
                 }
             }
