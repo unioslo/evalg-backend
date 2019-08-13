@@ -48,6 +48,9 @@ class CountingEventType(enum.Enum):
     # candidate has been elected because of §19.1
     CANDIDATE_ELECTED_19_1 = enum.auto()
 
+    # candidate has been elected in a previous round
+    CANDIDATE_ELECTED_EARLIER = enum.auto()
+
     # candidate has been excluded
     CANDIDATE_EXCLUDED = enum.auto()
 
@@ -56,6 +59,10 @@ class CountingEventType(enum.Enum):
 
     # candidate can not be elected because one of her groups has reached max.v.
     DENY_ELECT_QUOTA_MAX = enum.auto()
+
+    # same as NEW_COUNT except that no actual new count is performed,
+    # just displaying the status
+    DISPLAY_STATUS = enum.auto()
 
     # drawing to select a candidate
     DRAW_SELECT = enum.auto()
@@ -112,7 +119,7 @@ class CountingEventType(enum.Enum):
     TERMINATE_SUBSTITUTE_ELECTION = enum.auto()
 
     # transfer ballots from excluded candidates
-    TRANSFER_BALLOTS_FROM_EXCLUDED_CANDIDATES = enum.auto()
+    TRANSFER_BALLOTS_FROM_EXCL_CANDIDATES = enum.auto()
 
     # transfer excluded ballots to remaining candidates
     TRANSFER_EBALLOTS_TO_REMAINING_CANDIDATES = enum.auto()
@@ -122,6 +129,9 @@ class CountingEventType(enum.Enum):
 
     # transferring ballots with certain weight
     TRANSFERRING_BALLOTS_WITH_WEIGHT = enum.auto()
+
+    # unable to exclude any candidate in according to §16.3
+    UNABLE_TO_EXCLUDE = enum.auto()
 
     # update surplus for elected candidate
     UPDATE_SURPLUS = enum.auto()
@@ -145,7 +155,10 @@ class CountingEvent:
         """
         self.event_type = str(event_type).split('.')[-1]
         self.event_data = event_data
-        if event_type is CountingEventType.NEW_COUNT:
+        if (
+                event_type is CountingEventType.NEW_COUNT or
+                event_type is CountingEventType.DISPLAY_STATUS
+        ):
             self.event_data['count_results'] = self._format_count_results(
                 event_data['count_results'])
 
@@ -159,7 +172,7 @@ class CountingEvent:
         return self.__dict__
 
     def _format_count_results(self, count_results):
-        """Formats the event_data for NEW_COUNT"""
+        """Formats the event_data for NEW_COUNT and DISPLAY_STATUS"""
         new_count_results = []
         for value in count_results:
             # value[0] - candidate_obj
@@ -429,6 +442,7 @@ class RegularRound:
                               {'round_id': self._round_id,
                                'election_number': '',
                                'elected_count': 0,
+                               'sum_surplus': '0',
                                'remaining_to_elect_count': min(
                                    [self._counter_obj.election.num_choosable,
                                     len(self._counter_obj.candidates)]),
@@ -457,6 +471,7 @@ class RegularRound:
                               {'round_id': self._round_id,
                                'election_number': str(self._election_number),
                                'elected_count': len(self._elected),
+                               'sum_surplus': str(self._get_total_surplus()),
                                'remaining_to_elect_count': min(
                                    [self._counter_obj.election.num_choosable,
                                     len(self._counter_obj.candidates)]) - len(
@@ -615,6 +630,8 @@ class RegularRound:
             excludable_candidates = self._get_excludable_candidates()
             if not excludable_candidates:
                 logger.debug("No candidates for exclusion")
+                self._state.add_event(CountingEvent(
+                    CountingEventType.UNABLE_TO_EXCLUDE, {}))
                 # §16.4 - check if there is any remaining surplus
                 if self.has_remaining_surplus:
                     # §16.4 - A
@@ -661,6 +678,10 @@ class RegularRound:
                         # all bottom candidates are "quota-protected"
                         logger.warning("No bottom candidates to exclude. "
                                        "Starting a new round")
+                        cresults = self._vcount_results_remaining.most_common()
+                        self._state.add_event(
+                            CountingEvent(CountingEventType.DISPLAY_STATUS,
+                                          {'count_results': cresults}))
                         new_round = RegularRound(self._counter_obj,
                                                  self)
                         return new_round.count()
@@ -1526,11 +1547,12 @@ class RegularRound:
         if len(group_keys) > 1:
             group_keys.sort(reverse=True)
             logger.info("Several weight groups exist: %s", str(group_keys))
-        self._state.add_event(
-            CountingEvent(
-                CountingEventType.TRANSFER_BALLOTS_FROM_EXCLUDED_CANDIDATES,
-                {'excluded_candidates_data': excluded_candidates_data,
-                 'weight_groups': [str(wg) for wg in group_keys]}))
+        if excluded_candidates_data:
+            self._state.add_event(
+                CountingEvent(
+                    CountingEventType.TRANSFER_BALLOTS_FROM_EXCL_CANDIDATES,
+                    {'excluded_candidates_data': excluded_candidates_data,
+                     'weight_groups': [str(wg) for wg in group_keys]}))
         # §17.3, §17.4
         for key in group_keys:
             logger.info("Transferring ballots with weight: %s", key)
@@ -1738,6 +1760,7 @@ class SubstituteRound(RegularRound):
                               {'round_id': self._round_id,
                                'election_number': '',
                                'elected_count': 0,
+                               'sum_surplus': '0',
                                'remaining_to_elect_count': min(
                                    [self._counter_obj.election.num_substitutes,
                                     len(self._counter_obj.candidates)]),
@@ -1758,6 +1781,7 @@ class SubstituteRound(RegularRound):
                               {'round_id': self._round_id,
                                'election_number': '',
                                'elected_count': 0,
+                               'sum_surplus': '0',
                                'remaining_to_elect_count': min(
                                    [self._counter_obj.election.num_substitutes,
                                     len(self._counter_obj.candidates) -
@@ -1783,6 +1807,7 @@ class SubstituteRound(RegularRound):
                               {'round_id': self._round_id,
                                'election_number': '',
                                'elected_count': len(self._elected_substitutes),
+                               'sum_surplus': '0',
                                'remaining_to_elect_count': min(
                                    [self._counter_obj.election.num_substitutes,
                                     len(self._counter_obj.candidates) -
@@ -1806,11 +1831,16 @@ class SubstituteRound(RegularRound):
             self._elected_earlier = list(self._parent.elected_earlier)
             self._excluded = list(self._parent.excluded)
             self._election_number = self._parent.election_number
+            self._vcount_results_remaining = collections.Counter(
+                self._parent.vcount_results_remaining)
+            self._surplus_per_elected_candidate = collections.Counter(
+                self._parent.surplus_per_elected_candidate)
             self._state.add_event(
                 CountingEvent(CountingEventType.NEW_SUBSTITUTE_ROUND,
                               {'round_id': self._round_id,
                                'election_number': str(self._election_number),
                                'elected_count': len(self._elected_substitutes),
+                               'sum_surplus': str(self._get_total_surplus()),
                                'remaining_to_elect_count': min(
                                    [self._counter_obj.election.num_substitutes,
                                     len(self._counter_obj.candidates) -
@@ -1822,10 +1852,6 @@ class SubstituteRound(RegularRound):
                                     len(self._elected)]),
                                'substitute_nr': self._substitute_nr,
                                'round_count': self._round_cnt}))
-            self._vcount_results_remaining = collections.Counter(
-                self._parent.vcount_results_remaining)
-            self._surplus_per_elected_candidate = collections.Counter(
-                self._parent.surplus_per_elected_candidate)
             self._ballot_weights = collections.Counter(
                 self._parent.ballot_weights)
             self._candidate_ballots = dict(self._parent.candidate_ballots)
@@ -1900,6 +1926,8 @@ class SubstituteRound(RegularRound):
             excludable_candidates = self._get_excludable_candidates()
             if not excludable_candidates:
                 logger.debug("No candidates for exclusion")
+                self._state.add_event(CountingEvent(
+                    CountingEventType.UNABLE_TO_EXCLUDE, {}))
                 # §16.4 - check if there is any remaining surplus
                 if self.has_remaining_surplus:
                     # §16.4 - A
@@ -1946,8 +1974,12 @@ class SubstituteRound(RegularRound):
                         # all bottom candidates are "quota-protected"
                         logger.warning("No bottom candidates to exclude. "
                                        "Starting a new round")
-                        new_round = RegularRound(self._counter_obj,
-                                                 self)
+                        cresults = self._vcount_results_remaining.most_common()
+                        self._state.add_event(
+                            CountingEvent(CountingEventType.DISPLAY_STATUS,
+                                          {'count_results': cresults}))
+                        new_round = SubstituteRound(self._counter_obj,
+                                                    self)
                         return new_round.count()
                     if len(bottom_candidates) == 1:
                         # great! only one bottom candidate not protected
@@ -2097,6 +2129,9 @@ class SubstituteRound(RegularRound):
         if candidate in self._elected:
             logger.info("Candidate %s is elected in a previous round",
                         candidate)
+            self._state.add_event(
+                CountingEvent(CountingEventType.CANDIDATE_ELECTED_EARLIER,
+                              {'candidate': str(candidate.id)}))
             if candidate in self._potentially_elected:
                 self._potentially_elected.pop(
                     self._potentially_elected.index(candidate))
@@ -2121,7 +2156,8 @@ class SubstituteRound(RegularRound):
                  CountingEventType.CANDIDATE_ELECTED),
                 {'candidate': str(candidate.id)}))
         if not last_substitute_candidate:
-            self._update_surplus_for_elected_candidate(candidate)
+            if not self._state.paragraph_19_1:
+                self._update_surplus_for_elected_candidate(candidate)
             self._vcount_results_remaining.pop(candidate)
         self._state.add_elected_candidate(candidate)  # update the round-state
         self._state.all_elected_candidates = self._elected

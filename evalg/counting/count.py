@@ -353,8 +353,15 @@ class ElectionCountPath:
             'candidates': candidates,
             'num_regular': election.num_choosable,
             'num_substitutes': election.num_substitutes,
+            'drawing': self.drawing,
             'ballots_count': election.total_amount_ballots,
             'counting_ballots_count': election.total_amount_counting_ballots,
+            'regular_candidate_ids': [
+                str(cand.id) for cand in
+                self.get_elected_regular_candidates()],
+            'substitute_candidate_ids': [
+                str(cand.id) for cand in
+                self.get_elected_substitute_candidates()],
             'empty_ballots_count': election.total_amount_empty_ballots}
         pollbook_meta = []
         for pollbook in election.pollbooks:

@@ -58,12 +58,20 @@ Vi velger kandidat som skal ekskluderes ved hjelp av loddtrekning i henhold til 
 {% elif event.event_type == 'CANDIDATE_ELECTED_19_1' -%}
 {{ person_name(event.event_data['candidate']) }} ble valgt (§19.1).
 
+{% elif event.event_type == 'CANDIDATE_ELECTED_EARLIER' -%}
+{{ person_name(event.event_data['candidate']) }} ble valgt i en tidligere runde.
+
 {% elif event.event_type == 'CANDIDATE_EXCLUDED' -%}
 {{ person_name(event.event_data['candidate']) }} er ekskludert.
 
 {% elif event.event_type == 'DENY_ELECT_QUOTA_MAX' -%}
 {{ person_name(event.event_data['candidate']) }} kan ikke bli valgt for en av hans kvote-grupper er full. Ekskluderer i neste runde i henhold til §29.
 
+{% elif event.event_type == 'DISPLAY_STATUS' -%}
+Status (oppsummering):
+{% for result in event.event_data['count_results'] -%}
+{{ meta.candidates[result[0]] }}: {{ result[1] }}
+{% endfor %}
 {% elif event.event_type == 'DRAW_SELECT' -%}
 {{ person_name(event.event_data['candidate']) }} ble trukket ut.
 
@@ -97,7 +105,7 @@ Hovedoppgjør
 ------------
 {% endif %}
 
-Opptellingsrunde {{ event.event_data['round_id'] }} ({% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}{{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} kandidater valgt)
+Opptellingsrunde {{ event.event_data['round_id'] }} ({% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} kandidater valgt)
 ----------------
 
 {% elif event.event_type == 'NEW_SUBSTITUTE_ROUND' -%}
@@ -106,7 +114,7 @@ Valgoppgjør for vara {{ event.event_data['substitute_nr'] }}
 ----------------------
 {% endif %}
 
-Opptellingsrunde {{ event.event_data['round_id'] }} (for vara {{ event.event_data['substitute_nr'] }}): {% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}{{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} kandidater valgt
+Opptellingsrunde {{ event.event_data['round_id'] }} (for vara {{ event.event_data['substitute_nr'] }}): {% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} kandidater valgt
 ----------------
 
 {% elif event.event_type == 'NO_ELECTABLE_SUBSTITUTES' -%}
@@ -140,11 +148,12 @@ Gjenstående kandidater er mindre eller lik antall ledige plasser (§19.1).
 Alle representanter som skulle velges er valgt. Avslutter oppgjøret i henhold til §19.2.
 {% elif event.event_type == 'TERMINATE_SUBSTITUTE_COUNT' -%}
 ***Avslutter siste varaoppgjør og dermed hele opptellingen***
+
 {% elif event.event_type == 'TERMINATE_SUBSTITUTE_ELECTION' -%}
 ---Avslutter valg av vara {{ event.event_data['substitute_nr'] }}---
 
 
-{% elif event.event_type == 'TRANSFER_BALLOTS_FROM_EXCLUDED_CANDIDATES' -%}
+{% elif event.event_type == 'TRANSFER_BALLOTS_FROM_EXCL_CANDIDATES' -%}
 Stemmesedler fra følgende vekt-gruppe(r) kan overføres: {{ event.event_data['weight_groups']|join(', ') }}
 {% for excluded_candidate_data in event.event_data['excluded_candidates_data'] -%}
 {{ person_name(excluded_candidate_data['excluded_candidate']) }} har {{ excluded_candidate_data['ballots_count'] }} stemmesedler fra {{ excluded_candidate_data['groups_count'] }} vekt-gruppe(r) å overføre{% if excluded_candidate_data['empty_ballots_count'] %} (inkludert {{ excluded_candidate_data['empty_ballots_count'] }} blank(e)){% endif %}.
@@ -171,6 +180,9 @@ Kvotient: {{ event.event_data['candidate_surplus'] }} (overskudd) / {{ event.eve
 {{ person_name(transfer['receiver']) }} fikk {{ transfer['ballot_count'] }} stemmesedler med totalvekt {{ transfer['total_ballot_weight'] }}.
 {% endfor %}
 
+{% elif event.event_type == 'UNABLE_TO_EXCLUDE' -%}
+Kunne ikke ekskludere noen i henhold til §16.3
+
 {% elif event.event_type == 'UPDATE_SURPLUS' -%}
 Beregnet overskudd for {{ meta.candidates[event.event_data['candidate']] }} er: {{ event.event_data['new_surplus'] }}
 
@@ -179,4 +191,25 @@ DEBUG: Unimplemented event {{ event.event_type }}
 {% endif -%}
 {% endfor -%}
 {% endfor -%}
+
+Oppsummering:
+Loddtrekning: {% if meta.drawing %}Ja{% else %}Nei{% endif %}
+
+Faste kandidater som ble valgt:
+{% for candidate_id in meta.regular_candidate_ids -%}
+{{ person_name(candidate_id) }}
+{% else -%}
+Ingen
+{% endfor -%}
+---
+
+Vara kandidater som ble valgt:
+{% for candidate_id in meta.substitute_candidate_ids -%}
+{{ loop.index }}: {{ person_name(candidate_id) }}
+{% else -%}
+Ingen
+{% endfor -%}
+---
+
 ---Avslutter protokol---
+
