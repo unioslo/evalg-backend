@@ -31,21 +31,13 @@ For å implementere flere-stemmer-for-person-behandling bør et slikt kall/felt 
 
 ### Mutations
 
-#### reviewSelfAddedVoter(voterId: UUID!, verify: Boolean!)
+#### reviewVoter(voterId: UUID!, verify: Boolean!)
 
-Setter en SELF_ADDED_NOT_REVIEWED voter til SELF_ADDED_VERIFIED (verify: true) eller SELF_ADDED_REJECTED (verify: false).
+Setter verdiene reviewed og verified for en voter. reviewed settes til True, og verified settes til verdien av verify.
 
-#### undoReviewSelfAddedVoter(voterId: UUID!)
+#### undoReviewVoter(voterId: UUID!)
 
-Setter en voter med status SELF_ADDED_VERIFIED eller SELF_ADDED_REJECTED til SELF_ADDED_NOT_REVIEWED.
-
-#### rejectVoter(voterId: UUID!) *
-
-Setter en ADMIN_ADDED_AUTO_VERIFIED voter til ADMIN_ADDED_REJECTED eller en voter med status SELF_ADDED_VERIFIED til SELF_ADDED_REJECTED.
-
-#### undoRejectAdminAddedVoter(voterId: UUID!) *
-
-Setter en ADMIN_ADDED_REJECTED voter til ADMIN_ADDED_AUTO_VERIFIED.
+Setter verdiene reviewed og verified for en voter. reviewed settes til False, og verified settes til False.
 
 ## UX/UI
 

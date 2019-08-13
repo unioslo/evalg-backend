@@ -15,8 +15,10 @@ import evalg.proc.pollbook
 from evalg import db
 from evalg.graphql.types import PersonIdType
 from evalg.file_parser.parser import CensusFileParser
+from evalg.models.voter import VerifiedStatus, VERIFIED_STATUS_MAP
 from evalg.graphql.nodes.base import get_session, MutationResponse
 from evalg.graphql.nodes.person import Person
+
 
 logger = logging.getLogger(__name__)
 
@@ -126,11 +128,10 @@ def resolve_voters_by_fields(_, info):
 
 
 def resolve_search_voters(_, info, **args):
-    self_added = args.get('self_added', None)
-    election_group_id = args.get('election_group_id')
+    election_group_id = args.pop('election_group_id')
     session = get_session(info)
-    return evalg.proc.vote.get_voters_for_election_group(
-        session, election_group_id, self_added=self_added
+    return evalg.proc.vote.get_voters_in_election_group(
+        session, election_group_id, **args
     ).all()
 
 
@@ -157,7 +158,10 @@ search_voters_query = graphene.List(
     Voter,
     resolver=resolve_search_voters,
     election_group_id=graphene.Argument(graphene.UUID, required=True),
-    self_added=graphene.Argument(graphene.Boolean, required=False)
+    self_added=graphene.Argument(graphene.Boolean, required=False),
+    reviewed=graphene.Argument(graphene.Boolean, required=False),
+    verified=graphene.Argument(graphene.Boolean, required=False),
+    has_voted=graphene.Argument(graphene.Boolean, required=False),
 )
 
 
@@ -219,24 +223,44 @@ class UpdateVoterReason(graphene.Mutation):
         return UpdateVoterReason(ok=True)
 
 
-class UndoReviewSelfAddedVoter(graphene.Mutation):
+def undo_review_self_added_voter(voter):
+    voter.reviewed = False
+    voter.verified = False
+
+
+def undo_review_admin_added_voter(voter):
+    voter.reviewed = False
+    voter.verified = True
+
+
+class UndoReviewVoter(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)
 
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
-        if not voter.reviewed or not voter.self_added:
-            return UndoReviewSelfAddedVoter(ok=False)
-        voter.reviewed = False
-        voter.verified = False
-        db.session.add(voter)
-        db.session.commit()
-        return UndoReviewSelfAddedVoter(ok=True)
+        session = get_session(info)
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        verified_status = VERIFIED_STATUS_MAP.get(
+            (voter.self_added, voter.reviewed, voter.verified),
+            None
+        )
+
+        if verified_status in (VerifiedStatus.SELF_ADDED_VERIFIED,
+                               VerifiedStatus.SELF_ADDED_REJECTED):
+            undo_review_self_added_voter(voter)
+        elif verified_status is VerifiedStatus.ADMIN_ADDED_REJECTED:
+            undo_review_admin_added_voter(voter)
+        else:
+            return UndoReviewVoter(ok=False)
+
+        session.add(voter)
+        session.commit()
+        return UndoReviewVoter(ok=True)
 
 
-class ReviewSelfAddedVoter(graphene.Mutation):
+class ReviewVoter(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)
         verify = graphene.Boolean(required=True)
@@ -244,14 +268,13 @@ class ReviewSelfAddedVoter(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
-        if not voter.self_added or voter.reviewed:
-            return ReviewSelfAddedVoter(ok=False)
+        session = get_session(info)
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         voter.reviewed = True
         voter.verified = kwargs.get('verify')
-        db.session.add(voter)
-        db.session.commit()
-        return ReviewSelfAddedVoter(ok=True)
+        session.add(voter)
+        session.commit()
+        return ReviewVoter(ok=True)
 
 
 class DeleteVotersInPollBook(graphene.Mutation):
@@ -291,9 +314,6 @@ class AddVoterByIdentifier(graphene.Mutation):
     Output = Voter
 
     def mutate(self, info, **kwargs):
-        # TODO:
-        #   We have to make sure that the person only has one active voter
-        #   object in pollbooks for a given election.
         session = get_session(info)
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
         id_type = kwargs['id_type']
@@ -336,9 +356,6 @@ class AddVoterByPersonId(graphene.Mutation):
     Output = Voter
 
     def mutate(self, info, **kwargs):
-        # TODO:
-        #   We have to make sure that the person only has one active voter
-        #   object in pollbooks for a given election.
         session = get_session(info)
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
         person_id = kwargs['person_id']
