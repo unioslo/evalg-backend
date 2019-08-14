@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Tools for counting elections"""
 import collections
-import enum
+import datetime
 import decimal
+import enum
 import logging
 import operator
 import os
@@ -351,6 +352,9 @@ class ElectionCountPath:
             'election_name': election.name,
             'candidate_ids': [str(cand.id) for cand in election.candidates],
             'candidates': candidates,
+            'counted_at': datetime.datetime.now().strftime(
+                '%Y-%m-%d %H:%M:%S'),
+            'counted_by': None,
             'num_regular': election.num_choosable,
             'num_substitutes': election.num_substitutes,
             'drawing': self.drawing,

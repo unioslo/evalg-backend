@@ -6,6 +6,8 @@
 {%- endmacro %}
 Valg-ID: {{ meta.election_id }}
 Valg-tittel: {{ meta.election_name }}
+Opptelt: {{ meta.counted_at }}
+Opptelt av: {{ meta.counted_by|default('Ukjent', true) }}
 Kandidatar: {{ meta.candidates.values() |join(', ')}}
 Antall faste kandidater å velge: {{ meta.num_regular }}
 Antall vara kandidater å velge: {{ meta.num_substitutes }}
