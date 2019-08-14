@@ -21,7 +21,9 @@ import evalg.proc.count
 from evalg import db
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
-from evalg.graphql.nodes.base import get_session, get_current_user, MutationResponse
+from evalg.graphql.nodes.base import (get_session,
+                                      get_current_user,
+                                      MutationResponse)
 from evalg.graphql.nodes.person import Person
 from evalg.graphql.nodes.election import ElectionResult
 from evalg.utils import convert_json
@@ -109,7 +111,11 @@ def resolve_election_group_by_id(_, info, **args):
     election_group = ElectionGroup.get_query(info).get(args['id'])
     if not election_group:
         return None
-    if (args['id'] in admin_for or election_group.announced or election_group.published):
+    if (
+            args['id'] in admin_for or
+            election_group.announced or
+            election_group.published
+    ):
         return election_group
     return None
 
@@ -391,12 +397,14 @@ class SetElectionGroupKey(graphene.Mutation):
                 return SetElectionGroupKeyResponse(
                     success=False,
                     code='cannot-change-key-if-published',
-                    message='The public key cannot be changed if an election is published')
+                    message=('The public key cannot be changed if '
+                             'an election is published'))
             elif group.public_key and election.active and election.has_started:
                 return SetElectionGroupKeyResponse(
                     success=False,
                     code='cannot-change-key-if-past-start',
-                    message='The public key cannot be changed if an election has started')
+                    message=('The public key cannot be changed if '
+                             'an election has started'))
             else:
                 count = evalg.proc.vote.get_election_vote_counts(
                     session, election)
@@ -404,7 +412,8 @@ class SetElectionGroupKey(graphene.Mutation):
                     return SetElectionGroupKeyResponse(
                         success=False,
                         code='cannot-change-key-if-votes-exist',
-                        message='The public key cannot be changed if a vote has been cast')
+                        message=('The public key cannot be changed if '
+                                 'a vote has been cast'))
         group.public_key = public_key
         session.add(group)
         session.commit()
@@ -456,7 +465,9 @@ class CountElectionGroup(graphene.Mutation):
         count = election_group_counter.log_start_count()
         election_group_counter.deserialize_ballots()
         election_group_counter.process_for_count()
-        election_group_counter.generate_results(count)
+        election_group_counter.generate_results(
+            count,
+            info.context['user'].person.display_name)
 
         count = election_group_counter.log_finalize_count(count)
 

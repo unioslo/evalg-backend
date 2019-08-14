@@ -1,5 +1,4 @@
 
-from evalg.models.pollbook import PollBook
 from evalg.models.election_result import ElectionResult
 from evalg.proc.count import ElectionGroupCounter
 
@@ -28,7 +27,7 @@ def test_election_group_counter(
     election_group_counter.process_for_count()
     assert pollbook.weight_per_vote == 1
     assert pollbook.weight_per_pollbook == 1
-    election_group_counter.generate_results(count)
+    election_group_counter.generate_results(count, 'Test Runner')
 
     election_result = db_session.query(
         ElectionResult
