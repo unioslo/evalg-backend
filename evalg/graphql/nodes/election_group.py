@@ -5,10 +5,14 @@ This module defines the GraphQL ObjectType that represents election group, as
 well as queries and mutations for this object.
 """
 import graphene
-import graphene_sqlalchemy
-from graphql import GraphQLError
 from graphene.types.generic import GenericScalar
+
+import graphene_sqlalchemy
+
+from graphql import GraphQLError
+
 from sqlalchemy.sql import or_
+
 from sqlalchemy_continuum import version_class
 
 import evalg.models.election
@@ -465,9 +469,13 @@ class CountElectionGroup(graphene.Mutation):
         count = election_group_counter.log_start_count()
         election_group_counter.deserialize_ballots()
         election_group_counter.process_for_count()
-        election_group_counter.generate_results(
-            count,
-            info.context['user'].person.display_name)
+
+        if info.context['user'].person:
+            election_group_counter.generate_results(
+                count,
+                getattr(info.context['user'].person, 'display_name', None))
+        else:
+            election_group_counter.generate_results(count)
 
         count = election_group_counter.log_finalize_count(count)
 

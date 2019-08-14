@@ -222,7 +222,7 @@ class ElectionGroupCounter:
                     election.ballots.extend(pollbook.ballots)
                 election.quotas = election.get_quotas()
 
-    def generate_results(self, count, counted_by):
+    def generate_results(self, count, counted_by=None):
         for election in self.group.elections:
             if election.status == 'closed':
                 counter = Counter(election, election.ballots)
