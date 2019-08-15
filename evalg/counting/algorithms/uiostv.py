@@ -178,7 +178,7 @@ class CountingEvent:
             # value[0] - candidate_obj
             # value[1] - count (decimal.Decimal)
             new_count_results.append(
-                tuple([value[0].id,
+                tuple([str(value[0].id),
                        str(value[1])]))
         return new_count_results
 
