@@ -19,6 +19,9 @@ DEFAULT_LOG_LEVEL = logging.DEBUG
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
+PROTOCOL_MAPPINGS = {'uio_stv': uiostv.Protocol}
+RESULT_MAPPINGS = {'uio_stv': uiostv.Result}
+
 
 class CountingFailure(Exception):
     """General custom exception"""
