@@ -82,7 +82,11 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
             session, group_id)
 
     def resolve_persons_with_multiple_verified_voters(self, info):
-        return resolve_persons_with_multiple_verified_voters(info, id=self.id)
+        return resolve_persons_with_multiple_verified_voters(
+            None,
+            info,
+            id=self.id
+        )
 
 
     @classmethod
@@ -149,7 +153,7 @@ class PersonWithVoters(graphene.ObjectType):
     voters = graphene.List(Voter)
 
 
-def resolve_persons_with_multiple_verified_voters(info, **args):
+def resolve_persons_with_multiple_verified_voters(_, info, **args):
     election_group_id = args.get('id')
     session = get_session(info)
     query = evalg.proc.vote.get_persons_with_multiple_verified_voters(
@@ -491,6 +495,28 @@ class CountElectionGroup(graphene.Mutation):
             group_id,
             election_key
         )
+
+        if evalg.proc.vote.get_persons_with_multiple_verified_voters(
+            session,
+            group_id
+        ):
+            return CountElectionGroupResponse(
+                success=False,
+                code='persons-with-multiple-votes',
+                message='There are person(s) who have multiple verified votes'
+            )
+
+        if evalg.proc.vote.get_voters_in_election_group(
+                session,
+                group_id,
+                self_added=True,
+                reviewed=False
+        ):
+            return CountElectionGroupResponse(
+                success=False,
+                code='unreviewed-self-added-voters',
+                message='All self added voters must be reviewed'
+            )
 
         if not election_group_counter.ballot_serializer:
             return CountElectionGroupResponse(
