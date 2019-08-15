@@ -1,11 +1,13 @@
 """Module for pre processing data and initiating count"""
 import logging
-import nacl.exceptions
 import datetime
 import decimal
 
-from sqlalchemy.sql import and_
+import nacl.exceptions
+
 from flask import current_app
+
+from sqlalchemy.sql import and_
 
 import evalg.database.query
 from evalg.models.ballot import Envelope
@@ -37,20 +39,20 @@ class Ballot:
 
 def get_counting_ballots(ballots):
     return list(
-            filter(
-                lambda ballot: ballot.candidates != [],
-                ballots
-            )
+        filter(
+            lambda ballot: ballot.candidates != [],
+            ballots
         )
+    )
 
 
 def get_empty_ballots(ballots):
     return list(
-            filter(
-                lambda ballot: ballot.candidates == [],
-                ballots
-            )
+        filter(
+            lambda ballot: ballot.candidates == [],
+            ballots
         )
+    )
 
 
 def get_weight_per_vote(pollbook):
@@ -220,7 +222,7 @@ class ElectionGroupCounter:
                     election.ballots.extend(pollbook.ballots)
                 election.quotas = election.get_quotas()
 
-    def generate_results(self, count):
+    def generate_results(self, count, counted_by=None):
         for election in self.group.elections:
             if election.status == 'closed':
                 counter = Counter(election, election.ballots)
@@ -228,7 +230,9 @@ class ElectionGroupCounter:
                 election_path = election_count_tree.default_path
 
                 result = election_path.get_result().to_dict()
-
+                election_protocol_dict = election_path.get_protocol().to_dict()
+                # insert the name of the one who triggered the counting
+                election_protocol_dict['meta']['counted_by'] = counted_by
                 ballots = [ballot.ballot_data for ballot in election.ballots]
 
                 pollbook_stats = {}
@@ -249,6 +253,7 @@ class ElectionGroupCounter:
                     election_group_count_id=count.id,
                     ballots=ballots,
                     result=result,
+                    election_protocol=election_protocol_dict,
                     pollbook_stats=pollbook_stats,
                 )
                 self.session.add(db_row)
