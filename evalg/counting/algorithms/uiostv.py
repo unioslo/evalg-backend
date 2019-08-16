@@ -2477,10 +2477,10 @@ class SubstituteRound(RegularRound):
                 logger.debug("Quota group %s has no more remaining members",
                              quota_group)
                 continue
+            diff = quota_group.min_value_substitutes - sum_elected_substitutes
             if (
                     sum_remaining_members == 1 and
-                    quota_group.min_value - sum_elected_substitutes >=
-                    remaining_elections
+                    diff >= remaining_elections
             ):
                 return True
         return False

@@ -1,6 +1,7 @@
 """
 Database models for elections.
 """
+import math
 import uuid
 
 from sqlalchemy.sql import select, func, case, and_
@@ -10,7 +11,37 @@ import evalg.database.types
 from evalg import db
 from evalg.utils import utcnow
 from .base import ModelBase
-from evalg.rules.quotas import quota_name2method
+
+
+class QuotaGroup:
+    """The candidate quota-group class"""
+
+    def __init__(self, name, members, min_value, min_value_substitutes=0):
+        """
+        Keyword Arguments:
+        :param name: The name of the quota-group
+        :type name: str
+
+        :param members: The sequence of candidates
+        :type members: collections.abc.Sequence
+
+        :param min_value: The min. value
+        :type min_value: int
+
+        :param min_value_substitutes: The min. value for substitutes (if any)
+        :type min_value_substitutes: int
+        """
+        self.name = name
+        self.members = tuple(members)
+        self.min_value = min_value
+        self.min_value_substitutes = min_value_substitutes
+
+    def __str__(self):
+        """Used for debugging"""
+        return '{name}({min_value}, {min_value_substitutes})'.format(
+            name=self.name,
+            min_value=self.min_value,
+            min_value_substitutes=self.min_value_substitutes)
 
 
 class AbstractElection(ModelBase):
@@ -233,7 +264,7 @@ class Election(AbstractElection):
                   cls.start <= func.now()), 'ongoing'),
             (cls.published_at.isnot(None), 'published'),
             (cls.announced_at.isnot(None), 'announced')],
-            else_='draft')
+                    else_='draft')
 
     @hybrid_property
     def has_started(self):
@@ -245,7 +276,7 @@ class Election(AbstractElection):
         return case([
             (and_(cls.start.isnot(None),
                   cls.start <= func.now()), True)],
-            else_=False)
+                    else_=False)
 
     @hybrid_property
     def is_ongoing(self):
@@ -262,7 +293,7 @@ class Election(AbstractElection):
                   cls.start <= func.now(),
                   cls.end.isnot(None),
                   cls.end >= func.now()), True)],
-            else_=False)
+                    else_=False)
 
     @property
     def ou_id(self):
@@ -291,13 +322,43 @@ class Election(AbstractElection):
                             'with multiple candidate lists')
         return self.lists[0].candidates
 
-    def get_quotas(self):
+    @property
+    def quotas(self):
         quotas = []
-        if self.meta['candidate_rules'].get('candidate_gender', False):
+        if self.meta['candidate_rules'].get('candidate_gender'):
             quota_names = self.meta['counting_rules']['affirmative_action']
-            for quota in quota_names:
-                method = quota_name2method[quota]
-                quotas.extend(
-                    method(self.candidates, self.num_choosable)
-                )
+            for quota_name in quota_names:
+                if quota_name == 'gender_40':  # the only one supported so far
+                    males = []
+                    females = []
+                    min_value = 0
+                    min_value_substitutes = 0  # for uiostv .. etc
+                    if self.meta['counting_rules']['method'] == 'uio_stv':
+                        # no other elections implemented yet...
+                        if self.num_choosable <= 1:
+                            min_value = 0
+                        elif self.num_choosable <= 3:
+                            min_value = 1
+                        elif self.num_choosable:
+                            min_value = math.ceil(0.4 * self.num_choosable)
+                        if self.num_substitutes <= 1:
+                            min_value_substitutes = 0
+                        elif self.num_substitutes <= 3:
+                            min_value_substitutes = 1
+                        elif self.num_substitutes:
+                            min_value_substitutes = math.ceil(
+                                0.4 * self.num_substitutes)
+                    for candidate in self.candidates:
+                        if candidate.meta['gender'] == 'male':
+                            males.append(candidate)
+                        elif candidate.meta['gender'] == 'female':
+                            females.append(candidate)
+                    quotas.append(QuotaGroup('Males',
+                                             males,
+                                             min_value,
+                                             min_value_substitutes))
+                    quotas.append(QuotaGroup('Females',
+                                             females,
+                                             min_value,
+                                             min_value_substitutes))
         return quotas

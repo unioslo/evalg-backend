@@ -387,6 +387,7 @@ class ElectionCountPath:
                 {'name': quota.name,
                  'members': [str(member.id) for member in quota.members],
                  'min_value': quota.min_value,
+                 'min_value_substitutes': quota.min_value_substitutes,
                  'max_value_regular': counter_obj.max_choosable(quota),
                  'max_value_substitutes': counter_obj.max_substitutes(quota)})
         meta['quotas'] = quota_meta
@@ -640,7 +641,8 @@ class Counter:
         """
         other_quotas = [q for q in self._quotas if q != quota]
         max_substitutes = (self._election_obj.num_substitutes -
-                           sum(map(operator.attrgetter('min_value'),
+                           sum(map(operator.attrgetter(
+                               'min_value_substitutes'),
                                    other_quotas)))
         if max_substitutes < 0:
             # Should not happen if the election is set properly. Raise?

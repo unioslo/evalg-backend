@@ -214,6 +214,7 @@ class EvalgLegacyQuota:
         self._quota_id = quota_id
         self._name = quota_name
         self._min_value = min_value
+        self._min_value_substitutes = min_value  # keep the evalg2 system
         self._members_list = tuple(members_list)
 
     @property
@@ -230,6 +231,11 @@ class EvalgLegacyQuota:
     def min_value(self):
         """min_value-property"""
         return self._min_value
+
+    @property
+    def min_value_substitutes(self):
+        """min_value_substitutes-property"""
+        return self._min_value_substitutes
 
     def __str__(self):
         return '{name}: {members}'.format(
