@@ -77,6 +77,7 @@ def run_setup():
 
         use_scm_version=True,
         packages=get_packages(),
+        package_data = {'counting': ['*.tmpl']},
         python_requires='~= 3.6',
         setup_requires=setup_requirements,
         install_requires=install_requirements,
