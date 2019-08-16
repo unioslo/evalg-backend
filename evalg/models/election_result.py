@@ -3,14 +3,17 @@ Database model for election results
 """
 import uuid
 
+from sqlalchemy.orm import deferred
+
 import evalg.database.types
 from evalg import db
+from evalg.counting import count
+
 from .base import ModelBase
-from sqlalchemy.orm import deferred
 
 
 class ElectionResult(ModelBase):
-
+    """The ElectionResult class"""
     __versioned__ = {}
 
     id = db.Column(
@@ -47,3 +50,15 @@ class ElectionResult(ModelBase):
     result = db.Column(evalg.database.types.MutableJson)
 
     pollbook_stats = db.Column(evalg.database.types.MutableJson)
+
+    @property
+    def election_protocol_text(self):
+        """election_protocol_text-property"""
+        try:
+            protcol_cls = count.PROTOCOL_MAPPINGS[
+                self.election.meta['counting_rules']['method']]
+            return protcol_cls.from_dict(self.election_protocol).render()
+        except KeyError:
+            # re-raise?
+            return 'Unsupported counting method for protocol'
+        return self.value

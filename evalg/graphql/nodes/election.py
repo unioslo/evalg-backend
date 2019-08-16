@@ -2,14 +2,16 @@
 The GraphQL Election ObjectType.
 """
 import graphene
-import graphene_sqlalchemy
 from graphene.types.generic import GenericScalar
+
+import graphene_sqlalchemy
 
 import evalg.models.election
 from evalg.graphql.nodes.votes import (resolve_election_count_by_id,
                                        ElectionVoteCounts)
 from evalg.utils import convert_json
 from evalg import db
+
 from . import pollbook
 from .. import types
 
@@ -75,12 +77,14 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
         ballots_with_metadata = dict()
 
         pollbook_names = dict()
-        for pollbook in self.election.pollbooks:
-            pollbook_names[str(pollbook.id)] = pollbook.name
+        for pbook in self.election.pollbooks:
+            pollbook_names[str(pbook.id)] = pbook.name
         ballots_with_metadata['pollbook_names'] = pollbook_names
 
-        if (self.election.meta['candidate_type'] == "single" or
-            self.election.meta['candidate_type'] == "single_team"):
+        if (
+                self.election.meta['candidate_type'] == "single" or
+                self.election.meta['candidate_type'] == "single_team"
+        ):
             candidate_names = dict()
             for candidate in self.election.lists[0].candidates:
                 candidate_names[str(candidate.id)] = candidate.name
@@ -104,6 +108,9 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
         ballots_with_metadata['ballots'] = self.ballots
 
         return convert_json(ballots_with_metadata)
+
+    def resolve_election_protocol(self, info):
+        return self.election_protocol_text
 
 
 def resolve_election_result_by_id(_, info, **args):
