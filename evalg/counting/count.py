@@ -382,7 +382,10 @@ class ElectionCountPath:
                  'weight_per_pollbook': str(pollbook.weight_per_pollbook)})
         meta['pollbooks'] = pollbook_meta
         quota_meta = []
-        for quota in election.quotas:
+        for quota in counter_obj.quotas:
+            logger.debug("Quota %s in protocol: %s",
+                         quota.name,
+                         str(id(quota)))
             quota_meta.append(
                 {'name': quota.name,
                  'members': [str(member.id) for member in quota.members],
@@ -421,6 +424,9 @@ class Counter:
         self._election_obj = election
         self._ballots = tuple(ballots)
         self._alternative_paths = alternative_paths
+        # having a local copy of quotas is essential
+        # evalg.models.election.Election.quotas will always return a new set
+        # of QuotaGroup objects
         self._quotas = election.quotas
         self._drawing_nodes = []
 
@@ -458,10 +464,10 @@ class Counter:
                         quota.name,
                         quota.min_value,
                         self.max_choosable(quota))
-            logger.info("Quota group %s defined with min_value=%d and "
-                        "implicit max_value=%d for substitute candidates",
+            logger.info("Quota group %s defined with min_value_substitutes=%d "
+                        "and implicit max_value=%d for substitute candidates",
                         quota.name,
-                        quota.min_value,
+                        quota.min_value_substitutes,
                         self.max_substitutes(quota))
 
     @property
