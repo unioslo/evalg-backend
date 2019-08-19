@@ -33,6 +33,7 @@ Kvotering:
 {% if loop.first -%}---{% endif %}
 Navn: {{ quota.name }}
 Min. verdi: {{ quota.min_value }}
+Min. verdi (vara): {{ quota.min_value_substitutes }}
 Max. verdi: {{ quota.max_value_regular }}
 Max. verdi (vara): {{ quota.max_value_substitutes }}
 Members:

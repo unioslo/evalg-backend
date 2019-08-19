@@ -1,8 +1,6 @@
 import datetime
-import json
 import pytest
 import random
-import string
 
 import evalg.database.query
 
@@ -51,9 +49,6 @@ def config():
                         },
                         'audience': 'mock',
                     },
-                    # 'feide_user_info': {
-                    #     'eduPersonEntitlement': ('urn:mace:uio.no:evalg:valgadministrator', )
-                    # }
                 },
             },
         }
@@ -513,7 +508,8 @@ def election_bar(db_session, election_group_bar):
         'meta': {
             'candidate_rules': {'candidate_gender': True,
                                 'seats': 1},
-            'counting_rules': {'affirmative_action': ['gender_40']},
+            'counting_rules': {'method': 'uio_stv',
+                               'affirmative_action': ['gender_40']},
         },
         'active': True,
         'group_id': election_group_bar.id,
@@ -565,8 +561,9 @@ def pollbook_bar(db_session, election_bar):
         "election_id": election_bar.id,
     }
 
-    pollbook = evalg.database.query.get_or_create(
-    db_session, PollBook, **data)
+    pollbook = evalg.database.query.get_or_create(db_session,
+                                                  PollBook,
+                                                  **data)
 
     db_session.add(pollbook)
     db_session.flush()

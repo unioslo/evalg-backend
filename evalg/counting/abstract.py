@@ -95,6 +95,12 @@ class AbstractQuota(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
+    def min_value_substitutes(self):
+        """min_value_substitutes-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
     def name(self):
         """name-property"""
         pass

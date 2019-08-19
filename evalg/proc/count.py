@@ -220,7 +220,6 @@ class ElectionGroupCounter:
                     election.total_amount_counting_ballots += (
                         pollbook.counting_ballots_count)
                     election.ballots.extend(pollbook.ballots)
-                election.quotas = election.get_quotas()
 
     def generate_results(self, count, counted_by=None):
         for election in self.group.elections:
