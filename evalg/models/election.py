@@ -333,7 +333,7 @@ class Election(AbstractElection):
                     females = []
                     min_value = 0
                     min_value_substitutes = 0  # for uiostv .. etc
-                    if self.meta['counting_rules']['method'] == 'uio_stv':
+                    if self.type_str == 'uio_stv':
                         # no other elections implemented yet...
                         if self.num_choosable <= 1:
                             min_value = 0
@@ -362,3 +362,8 @@ class Election(AbstractElection):
                                              min_value,
                                              min_value_substitutes))
         return quotas
+
+    @property
+    def type_str(self):
+        """type_str-property"""
+        return self.meta['counting_rules']['method']

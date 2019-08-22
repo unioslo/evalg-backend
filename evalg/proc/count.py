@@ -92,10 +92,26 @@ def set_weight_per_pollbooks(pollbooks):
 
 
 class ElectionGroupCounter:
-    def __init__(self, session, group_id, election_key):
+    """The election-group counter class"""
+    def __init__(self, session, group_id, election_key, test_mode=False):
+        """
+        :param session: The DB session object
+        :type session: sqlalchemy.orm.session.Session
+
+        :param group_id: The UUID of the election-group
+        :type group_id: evalg.database.types.UuidType
+
+        :param election_key: The election private-key to be used for decrypting
+        :type election_key: str
+
+        :param test_mode: In case of drawing, generate the same (non-random)
+                          "random result(s)"
+        :type test_mode: bool
+        """
         self.app_config = current_app.config
         self.session = session
         self.group_id = group_id
+        self.test_mode = test_mode
         self.group = evalg.database.query.lookup(
             self.session,
             evalg.models.election.ElectionGroup,
@@ -224,7 +240,9 @@ class ElectionGroupCounter:
     def generate_results(self, count, counted_by=None):
         for election in self.group.elections:
             if election.status == 'closed':
-                counter = Counter(election, election.ballots)
+                counter = Counter(election,
+                                  election.ballots,
+                                  test_mode=self.test_mode)
                 election_count_tree = counter.count()
                 election_path = election_count_tree.default_path
 
