@@ -45,7 +45,6 @@ class Person(ModelBase):
         'PersonExternalId',
         back_populates='person',
         cascade='all, delete-orphan',
-        lazy='joined',
         )
 
     def get_preferred_id(self, *preference):

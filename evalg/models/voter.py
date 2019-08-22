@@ -88,9 +88,8 @@ class Voter(ModelBase):
 
     pollbook = db.relationship(
         'PollBook',
-        back_populates='voters',
-        lazy='joined')
-
+        back_populates='voters')
+    
     self_added = db.Column(
         sqlalchemy.types.Boolean,
         doc='voter was added to the poll book by himself',

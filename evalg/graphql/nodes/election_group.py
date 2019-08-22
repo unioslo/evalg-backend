@@ -499,7 +499,7 @@ class CountElectionGroup(graphene.Mutation):
         if evalg.proc.vote.get_persons_with_multiple_verified_voters(
             session,
             group_id
-        ):
+        ).all():
             return CountElectionGroupResponse(
                 success=False,
                 code='persons-with-multiple-votes',
@@ -511,7 +511,7 @@ class CountElectionGroup(graphene.Mutation):
                 group_id,
                 self_added=True,
                 reviewed=False
-        ):
+        ).all():
             return CountElectionGroupResponse(
                 success=False,
                 code='unreviewed-self-added-voters',

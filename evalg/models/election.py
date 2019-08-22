@@ -79,7 +79,7 @@ class ElectionGroup(AbstractElection):
 
     ou = db.relationship('OrganizationalUnit')
 
-    elections = db.relationship('Election', lazy='joined')
+    elections = db.relationship('Election')
     """ Organizational unit. """
 
     election_group_counts = db.relationship('ElectionGroupCount')
@@ -198,7 +198,7 @@ class Election(AbstractElection):
 
     lists = db.relationship('ElectionList')
 
-    pollbooks = db.relationship('PollBook', lazy='joined')
+    pollbooks = db.relationship('PollBook')
 
     active = db.Column(db.Boolean, default=False)
     """ Whether election is active.
