@@ -18,6 +18,7 @@ pipeline {
                     }
                 }
                 stage('Deploy pkg to Nexus') {
+                    when { branch 'master' }
                     steps {
                         build(
                             job: 'python-publish',
@@ -43,6 +44,7 @@ pipeline {
         }
         stage('Build and deploy docker image') {
             agent { label 'docker' }
+            when { branch 'master' }
             environment {
                 VERSION = sh(
                     returnStdout: true,
@@ -77,7 +79,6 @@ pipeline {
                             }
                         }
                         stage('Tag image as latest/utv') {
-                            when { branch 'master' }
                             steps {
                                 script {
                                     docker_image.push('latest')
