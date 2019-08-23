@@ -148,6 +148,12 @@ class AbstractElection(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
+    def end(self):
+        """end-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
     def id(self):
         """id-property"""
         pass
@@ -161,8 +167,20 @@ class AbstractElection(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
+    def start(self):
+        """start-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
     def type(self):
         """type-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def type_str(self):
+        """type_str-property"""
         pass
 
     @property

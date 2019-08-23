@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Legacy classes for handleing eValg 2 count (.zip) files"""
 import collections
+import datetime
 import decimal
 import enum
 import logging
@@ -320,6 +321,8 @@ class EvalgLegacyElection:
         self._ballot_list = []
         self._quota_list = []
         self._election_type = None
+        self._end = None
+        self._start = None
         if not zipfile.is_zipfile(legacy_election_file):
             raise EvalgLegacyInvalidFile('Missing or invalid election-file')
         with zipfile.ZipFile(legacy_election_file) as zfile:
@@ -358,6 +361,11 @@ class EvalgLegacyElection:
         return tuple(self._candidates_list)
 
     @property
+    def end(self):
+        """end-property"""
+        return self._end
+
+    @property
     def pollbooks(self):
         """
         pollbooks-property
@@ -366,6 +374,13 @@ class EvalgLegacyElection:
 
     @property
     def type(self):
+        """
+        type-property
+        """
+        return self._election_type
+
+    @property
+    def type_str(self):
         """
         type-property
         """
@@ -410,6 +425,11 @@ class EvalgLegacyElection:
         quotas-property
         """
         return tuple(self._quota_list)
+
+    @property
+    def start(self):
+        """start-property"""
+        return self._start
 
     @property
     def total_amount_empty_ballots(self):
@@ -469,6 +489,10 @@ class EvalgLegacyElection:
             else:
                 self._num_substitutes = self._num_choosable
         self._election_type = election_elem.attrib.get('election_type')
+        self._start = datetime.datetime.fromisoformat(
+            election_elem.attrib.get('start'))
+        self._end = datetime.datetime.fromisoformat(
+            election_elem.attrib.get('end'))
         for child in election_elem:
             if child.tag.lower() == 'candidate':
                 candidate = EvalgLegacyCandidate(
