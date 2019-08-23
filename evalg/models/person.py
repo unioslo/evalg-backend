@@ -44,7 +44,8 @@ class Person(ModelBase):
     identifiers = db.relationship(
         'PersonExternalId',
         back_populates='person',
-        cascade='all, delete-orphan')
+        cascade='all, delete-orphan',
+        )
 
     def get_preferred_id(self, *preference):
         """
