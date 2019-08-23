@@ -65,4 +65,6 @@ def test_counting_algorithms_uiostv(make_full_election):
                 elected_events_cnt += 1
     # all four candidates (regular + substitutes) must be elected by §19.1
     assert elected_events_cnt == 4
+    # cheap check to make sure that the protocol rendering is complete
+    default_path.get_protocol().render()
     # more tests / checks should be added in the future

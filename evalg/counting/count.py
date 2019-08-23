@@ -364,6 +364,8 @@ class ElectionCountPath:
             'counted_at': datetime.datetime.now().strftime(
                 '%Y-%m-%d %H:%M:%S'),
             'counted_by': None,
+            'election_start': election.start.strftime('%Y-%m-%d %H:%M:%S'),
+            'election_end': election.start.strftime('%Y-%m-%d %H:%M:%S'),
             'num_regular': election.num_choosable,
             'num_substitutes': election.num_substitutes,
             'drawing': self.drawing,
