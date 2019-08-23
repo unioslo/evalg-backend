@@ -13,11 +13,10 @@ def test_election_group_counter(
         election_keys_foo,
         db_session
 ):
-    election_group_counter = ElectionGroupCounter(
-        db_session,
-        election_group_bar.id,
-        election_keys_foo['private']
-    )
+    election_group_counter = ElectionGroupCounter(db_session,
+                                                  election_group_bar.id,
+                                                  election_keys_foo['private'],
+                                                  test_mode=True)
 
     count = election_group_counter.log_start_count()
     assert count.status == 'ongoing'

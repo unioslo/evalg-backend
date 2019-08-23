@@ -7,7 +7,7 @@ import enum
 import logging
 import operator
 import os
-# import random  # testing only
+import random  # testing only
 import secrets
 
 from evalg.counting.algorithms import uiostv
@@ -103,21 +103,27 @@ class DrawingBranch:
 class DrawingNode:
     """Represents a node for drawing members (currently candidates)"""
 
-    def __init__(self, parent, members):
+    def __init__(self, parent, members, test_mode=False):
         """
         :param parent: The DrawingBranch that spawned this node (None == root)
         :type parent: DrawingBranch, None
 
         :param members: The members (branches) of this node
         :type members: collections.abc.Sequence
+
+        :param test_mode: Generate the same (non-random) result by using
+                          the same seed. (used for testing)
+        :type test_mode: bool
         """
         self._parent = parent
         self._probability_factor = len(members)
         self._members = []
         for member in members:
             self._members.append(DrawingBranch(member, self))
-        self._rnd = secrets.SystemRandom()
-        # self._rnd = random.SystemRandom(1)
+        if test_mode:
+            self._rnd = random.SystemRandom(1)
+        else:
+            self._rnd = secrets.SystemRandom()
 
     @property
     def members(self):
@@ -407,7 +413,11 @@ class Counter:
     This class should be agnostic to counting method(s).
     """
 
-    def __init__(self, election, ballots, alternative_paths=False):
+    def __init__(self,
+                 election,
+                 ballots,
+                 alternative_paths=False,
+                 test_mode=False):
         """
         :param election: The Election object
         :type election: object
@@ -417,6 +427,10 @@ class Counter:
 
         :param alternative_paths: In case of drawing, generate alt. paths
         :type alternative_paths: bool
+
+        :param test_mode: In case of drawing, generate the same (non-random)
+                          "random result(s)"
+        :type test_mode: bool
         """
         if not isinstance(ballots, collections.abc.Sequence):
             raise TypeError(
@@ -429,6 +443,7 @@ class Counter:
         # of QuotaGroup objects
         self._quotas = election.quotas
         self._drawing_nodes = []
+        self._test_mode = test_mode
 
         self._current_election_path = None
         self._counting_ballots = self._get_counting_ballots(self._ballots)
