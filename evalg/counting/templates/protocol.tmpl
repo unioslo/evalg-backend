@@ -131,6 +131,10 @@ Skal ikke velge varakandidater.
 {% elif event.event_type == 'NOT_ENOUGH_FOR_SUBSTITUTE_ROUND' -%}
 Ikke nok kandidater for å velge vara.
 (Avslutter hele opptellingen)
+{% elif event.event_type == 'QUOTA_MIN_VALUE_SUB_ADJUSTED' -%}
+Kvote-klasse "{{ event.event_data['quota_group_name'] }}" har ikke nok kandidater som ikke er valgt for å oppfylle minstekvote for vara.
+Endrer minstekvote fra {{ event.event_data['current_value'] }} til {{ event.event_data['new_value'] }}.
+
 {% elif event.event_type == 'SAME_SCORE_CANDIDATES' -%}
 {{ event.event_data['candidates']|length }} kandidater har samme stemmetall ({{ event.event_data['identical_score'] }}) og vi kan ikke velge alle.
 {% for candidate in event.event_data['candidates'] -%}

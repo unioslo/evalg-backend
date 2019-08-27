@@ -247,6 +247,11 @@ class EvalgLegacyQuota:
         """min_value_substitutes-property"""
         return self._min_value_substitutes
 
+    @min_value_substitutes.setter
+    def min_value_substitutes(self, value):
+        """min_value_substitutes-property setter"""
+        self._min_value_substitutes = value
+
     def __str__(self):
         return '{name}: {members}'.format(
             name=self._name,
@@ -530,7 +535,7 @@ class EvalgLegacyElection:
                 for member in child.findall('member'):
                     members.append(
                         self._get_candidate_by_pid(member.attrib.get('pid')))
-                # assume stv election for now...
+                # assume stv election and gender quotas for now...
                 if self._num_choosable <= 1:
                     min_value = 0
                 elif self._num_choosable <= 3:
@@ -544,6 +549,9 @@ class EvalgLegacyElection:
                 elif self._num_substitutes:
                     min_value_substitutes = math.ceil(
                         0.4 * self.num_substitutes)
+                min_value = min([min_value, len(members)])
+                min_value_substitutes = min([min_value_substitutes,
+                                             len(members) - min_value])
                 quota = EvalgLegacyQuota(qid,
                                          qname,
                                          members,

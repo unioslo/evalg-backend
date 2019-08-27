@@ -333,6 +333,11 @@ class Election(AbstractElection):
                     females = []
                     min_value = 0
                     min_value_substitutes = 0  # for uiostv .. etc
+                    for candidate in self.candidates:
+                        if candidate.meta['gender'] == 'male':
+                            males.append(candidate)
+                        elif candidate.meta['gender'] == 'female':
+                            females.append(candidate)
                     if self.type_str == 'uio_stv':
                         # no other elections implemented yet...
                         if self.num_choosable <= 1:
@@ -348,19 +353,22 @@ class Election(AbstractElection):
                         elif self.num_substitutes:
                             min_value_substitutes = math.ceil(
                                 0.4 * self.num_substitutes)
-                    for candidate in self.candidates:
-                        if candidate.meta['gender'] == 'male':
-                            males.append(candidate)
-                        elif candidate.meta['gender'] == 'female':
-                            females.append(candidate)
-                    quotas.append(QuotaGroup('Males',
-                                             males,
-                                             min_value,
-                                             min_value_substitutes))
-                    quotas.append(QuotaGroup('Females',
-                                             females,
-                                             min_value,
-                                             min_value_substitutes))
+                    # handle universal cases when members < min_value
+                    min_value_males = min([min_value, len(males)])
+                    min_value_females = min([min_value, len(females)])
+                    quotas.append(
+                        QuotaGroup('Males',
+                                   males,
+                                   min_value_males,
+                                   min([min_value_substitutes,
+                                        len(males) - min_value_males])))
+                    quotas.append(
+                        QuotaGroup('Females',
+                                   females,
+                                   min_value_females,
+                                   min([min_value_substitutes,
+                                        len(females) - min_value_females])))
+
         return quotas
 
     @property

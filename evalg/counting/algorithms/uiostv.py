@@ -97,6 +97,9 @@ class CountingEventType(enum.Enum):
     # not enough unelected candidates for a substitute-round
     NOT_ENOUGH_FOR_SUBSTITUTE_ROUND = enum.auto()
 
+    # the min_value_substitutes for a quota-group is adjusted
+    QUOTA_MIN_VALUE_SUB_ADJUSTED = enum.auto()
+
     # candidates with the same score that can not be elected together
     SAME_SCORE_CANDIDATES = enum.auto()
 
@@ -1790,6 +1793,26 @@ class SubstituteRound(RegularRound):
                                'round_count': self._round_cnt}))
             self._election_number = self._get_election_number()
             self._set_initial_ballot_state()
+            # adjust the min_value_substitutes for quotas, in case not enough
+            # candidates
+            for quota_group in self._counter_obj.quotas:
+                unelected = len(self._get_unelected_quota_members(quota_group))
+                if (
+                        quota_group.min_value_substitutes and
+                        unelected < quota_group.min_value_substitutes
+                ):
+                    logger.info("Amount unelected members (%d) in "
+                                "quota-group %s < than current "
+                                "min_value_substitutes %d. Adjusting.",
+                                unelected,
+                                quota_group.name,
+                                quota_group.min_value_substitutes)
+                    self._state.add_event(CountingEvent(
+                        CountingEventType.QUOTA_MIN_VALUE_SUB_ADJUSTED, {
+                            'quota_group_name': quota_group.name,
+                            'current_value': quota_group.min_value_substitutes,
+                            'new_value': unelected}))
+                    quota_group.min_value_substitutes = unelected
         elif self._parent.state.substitute_final:
             # New substitute count
             self._round_cnt = self._parent.round_cnt + 1
