@@ -531,8 +531,14 @@ class Counter:
         election_count_tree = ElectionCountTree()
         self._current_election_path = ElectionCountPath()
         election_count_tree.append_path(self._current_election_path)
-        # Now check election type and select the proper counting class (todo)
+        # Now check election type and select the proper counting class
         # This method (and class) should remain algorithm agnostic.
+        if self._election_obj.type_str != 'uio_stv':
+            # no other election algorithms implemented so far
+            logger.warning("No algorithm implemented for election type: %s",
+                           self._election_obj.type_str)
+            return election_count_tree
+        # assume uio_stv
         if self._election_obj.num_choosable > 0:
             round_cls = uiostv.RegularRound
         else:

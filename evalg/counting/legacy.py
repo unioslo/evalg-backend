@@ -5,6 +5,7 @@ import datetime
 import decimal
 import enum
 import logging
+import math
 import os
 import xml.etree.ElementTree as ET
 import zipfile
@@ -198,7 +199,12 @@ class EvalgLegacyCandidate:
 class EvalgLegacyQuota:
     """The quota-class"""
 
-    def __init__(self, quota_id, quota_name, min_value, members_list):
+    def __init__(self,
+                 quota_id,
+                 quota_name,
+                 members_list,
+                 min_value,
+                 min_value_substitutes):
         """
         :param quota_id: The quota-id
         :type quota_id: str
@@ -206,17 +212,20 @@ class EvalgLegacyQuota:
         :param quota_name: The quota-name
         :type quota_name: str
 
+        :param members_list: The sequence of candidates
+        :type members_list: collections.abc.Sequence
+
         :param min_value: The min value set for this quota group
         :type min_value: int
 
-        :param members_list: The sequence of candidates
-        :type members_list: collections.abc.Sequence
+        :param min_value_substitutes: The min value set for this quota group
+        :type min_value_substitutes: int
         """
         self._quota_id = quota_id
         self._name = quota_name
-        self._min_value = min_value
-        self._min_value_substitutes = min_value  # keep the evalg2 system
         self._members_list = tuple(members_list)
+        self._min_value = min_value
+        self._min_value_substitutes = min_value_substitutes
 
     @property
     def members(self):
@@ -237,6 +246,11 @@ class EvalgLegacyQuota:
     def min_value_substitutes(self):
         """min_value_substitutes-property"""
         return self._min_value_substitutes
+
+    @min_value_substitutes.setter
+    def min_value_substitutes(self, value):
+        """min_value_substitutes-property setter"""
+        self._min_value_substitutes = value
 
     def __str__(self):
         return '{name}: {members}'.format(
@@ -517,12 +531,32 @@ class EvalgLegacyElection:
             if child.tag.lower() == 'quota':
                 qid = child.attrib.get('id')
                 qname = child.attrib.get('name')
-                qmin = int(child.attrib.get('min'))
                 members = []
                 for member in child.findall('member'):
                     members.append(
                         self._get_candidate_by_pid(member.attrib.get('pid')))
-                quota = EvalgLegacyQuota(qid, qname, qmin, members)
+                # assume stv election and gender quotas for now...
+                if self._num_choosable <= 1:
+                    min_value = 0
+                elif self._num_choosable <= 3:
+                    min_value = 1
+                elif self._num_choosable:
+                    min_value = math.ceil(0.4 * self._num_choosable)
+                if self._num_substitutes <= 1:
+                    min_value_substitutes = 0
+                elif self._num_substitutes <= 3:
+                    min_value_substitutes = 1
+                elif self._num_substitutes:
+                    min_value_substitutes = math.ceil(
+                        0.4 * self.num_substitutes)
+                min_value = min([min_value, len(members)])
+                min_value_substitutes = min([min_value_substitutes,
+                                             len(members) - min_value])
+                quota = EvalgLegacyQuota(qid,
+                                         qname,
+                                         members,
+                                         min_value,
+                                         min_value_substitutes)
                 self._quota_list.append(quota)
                 logger.info("Adding quota group: %s", quota)
 

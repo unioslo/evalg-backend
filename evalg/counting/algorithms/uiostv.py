@@ -97,6 +97,9 @@ class CountingEventType(enum.Enum):
     # not enough unelected candidates for a substitute-round
     NOT_ENOUGH_FOR_SUBSTITUTE_ROUND = enum.auto()
 
+    # the min_value_substitutes for a quota-group is adjusted
+    QUOTA_MIN_VALUE_SUB_ADJUSTED = enum.auto()
+
     # candidates with the same score that can not be elected together
     SAME_SCORE_CANDIDATES = enum.auto()
 
@@ -159,8 +162,14 @@ class CountingEvent:
                 event_type is CountingEventType.NEW_COUNT or
                 event_type is CountingEventType.DISPLAY_STATUS
         ):
-            self.event_data['count_results'] = self._format_count_results(
-                event_data['count_results'])
+            new_count_results = []
+            for value in event_data['count_results']:
+                # value[0] - candidate_obj
+                # value[1] - count (decimal.Decimal)
+                new_count_results.append(
+                    tuple([str(value[0].id),
+                           str(value[1])]))
+            self.event_data['count_results'] = new_count_results
 
     def to_dict(self):
         """
@@ -170,17 +179,6 @@ class CountingEvent:
         :rtype: dict
         """
         return self.__dict__
-
-    def _format_count_results(self, count_results):
-        """Formats the event_data for NEW_COUNT and DISPLAY_STATUS"""
-        new_count_results = []
-        for value in count_results:
-            # value[0] - candidate_obj
-            # value[1] - count (decimal.Decimal)
-            new_count_results.append(
-                tuple([str(value[0].id),
-                       str(value[1])]))
-        return new_count_results
 
 
 class Result(base.Result):
@@ -1795,6 +1793,26 @@ class SubstituteRound(RegularRound):
                                'round_count': self._round_cnt}))
             self._election_number = self._get_election_number()
             self._set_initial_ballot_state()
+            # adjust the min_value_substitutes for quotas, in case not enough
+            # candidates
+            for quota_group in self._counter_obj.quotas:
+                unelected = len(self._get_unelected_quota_members(quota_group))
+                if (
+                        quota_group.min_value_substitutes and
+                        unelected < quota_group.min_value_substitutes
+                ):
+                    logger.info("Amount unelected members (%d) in "
+                                "quota-group %s < than current "
+                                "min_value_substitutes %d. Adjusting.",
+                                unelected,
+                                quota_group.name,
+                                quota_group.min_value_substitutes)
+                    self._state.add_event(CountingEvent(
+                        CountingEventType.QUOTA_MIN_VALUE_SUB_ADJUSTED, {
+                            'quota_group_name': quota_group.name,
+                            'current_value': quota_group.min_value_substitutes,
+                            'new_value': unelected}))
+                    quota_group.min_value_substitutes = unelected
         elif self._parent.state.substitute_final:
             # New substitute count
             self._round_cnt = self._parent.round_cnt + 1
@@ -2142,6 +2160,39 @@ class SubstituteRound(RegularRound):
             # update the state as if it is a normal election because of
             # transferring surplus
             self._state.add_elected_candidate(candidate)
+            full_quota_groups = self._max_quota_full(candidate,
+                                                     self._elected_substitutes)
+            excludable_candidates = []
+            for full_quota_group in full_quota_groups:
+                unelected_members = self._get_unelected_quota_members(
+                    full_quota_group)
+                msg = 'Max-value for quota group {quota} is reached'.format(
+                    quota=full_quota_group.name)
+                if not unelected_members:
+                    logger.debug(msg +
+                                 ', but no unelected members. Continuing...')
+                logger.debug(msg)
+                self._state.add_event(
+                    CountingEvent(
+                        CountingEventType.MAX_QUOTA_VALUE_REACHED,
+                        {'quota_group': full_quota_group.name,
+                         'members': ([str(member.id) for
+                                      member in unelected_members])}))
+                excludable_candidates.extend(unelected_members)
+            excludable_candidates = self._get_filtered_excludables(
+                excludable_candidates)
+            for excludable_candidate in excludable_candidates:
+                logger.info("Candidate %s is member of a group that reached "
+                            "its max. value. Excluding.",
+                            excludable_candidate)
+                self._state.add_event(
+                    CountingEvent(
+                        CountingEventType.MAX_QUOTA_VALUE_EXCLUDED,
+                        {'candidate': str(excludable_candidate.id)}))
+                self._state.add_quota_excluded_candidate(excludable_candidate)
+                self._exclude_candidate(excludable_candidate)
+            if excludable_candidates:
+                self._transfer_ballots_from_excluded_candidates()
             return
         self._elected_substitutes.append(candidate)
         self._elected.append(candidate)
@@ -2426,7 +2477,7 @@ class SubstituteRound(RegularRound):
         """
         if not self._counter_obj.quotas:
             logger.debug("No quota-groups defined")
-            return False
+            return tuple()
         if elected is None:
             elected = self._elected
         quota_groups = self._get_candidate_quota_groups(candidate)
