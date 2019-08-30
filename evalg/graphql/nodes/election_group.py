@@ -378,6 +378,11 @@ class PublishElectionGroup(graphene.Mutation):
         session = get_session(info)
         election_group = evalg.models.election.ElectionGroup.query.get(
             args.get('id'))
+
+        for election in election_group.elections:
+            if not election.meta['counting_rules']['method']:
+                evalg.proc.election.set_counting_method(session, election)
+
         evalg.proc.election.publish_group(session, election_group)
         return PublishElectionGroup(ok=True)
 

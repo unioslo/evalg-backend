@@ -21,7 +21,7 @@ from evalg.utils import utcnow
 def get_latest_election_group_count(session, group_id):
     latest_count = session.query(ElectionGroupCount).filter(
         and_(ElectionGroupCount.group_id == group_id)).order_by(
-            ElectionGroupCount.initiated_at.desc()).first()
+        ElectionGroupCount.initiated_at.desc()).first()
 
     return latest_count
 
@@ -56,6 +56,17 @@ def get_group_announcement_blockers(group):
             if start_after_end(election):
                 blockers.append('start-must-be-before-end')
     return blockers
+
+
+def set_counting_method(session, election):
+    if election.election_group.template_name in ('uio_principal',
+                                                 'uio_dean',
+                                                 'uio_department_leader'):
+        if len(election.candidates) == 2:
+            election.meta['counting_rules']['method'] = 'uio_mv'
+        else:
+            election.meta['counting_rules']['method'] = 'uio_stv'
+    session.add(election)
 
 
 def publish_group(session, group, **fields):
@@ -112,9 +123,9 @@ def make_group_from_template(session, template_name, ou, principals=()):
     current_app.logger.info('Make election group %s for %s',
                             template_name,
                             ou)
-    election_templates = current_app.config.get('ELECTION_TEMPLATES')
+    election_templates = current_app.config.get('ELECTION_GROUP_TEMPLATES')
 
-    #if current_app.config['AUTH_ENABLED'] and not \
+    # if current_app.config['AUTH_ENABLED'] and not \
     #        check_perms(principals, 'create-election', ou=ou):
     #    current_app.logger.info('Testing %s', principals)
     #    raise PermissionDenied()
@@ -170,6 +181,7 @@ def make_group_from_template(session, template_name, ou, principals=()):
         grp_name[lang] = name[lang].format(ou.name[lang])
 
     group = ElectionGroup(name=grp_name,
+                          template_name=template_name,
                           description=None,  # Set this?
                           type=group_type,
                           meta=metadata,
@@ -195,7 +207,7 @@ def make_group_from_template(session, template_name, ou, principals=()):
                             mandate_period_start=mandate_period_start(e),
                             mandate_period_end=mandate_period_end(e),
                             meta=metadata,
-                            active=group_type == 'single_election',)
+                            active=group_type == 'single_election', )
         if candidate_type(e) == 'party_list':
             election.lists = list()
         else:

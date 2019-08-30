@@ -85,7 +85,6 @@ def make_election(db_session, election_group_foo):
                 'nb': name,
                 'en': name,
             },
-            'type': 'single_election',
             'description': {
                 'nb': 'Description {0}'.format(name),
                 'en': 'Description {0}'.format(name),

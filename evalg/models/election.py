@@ -61,9 +61,6 @@ class AbstractElection(ModelBase):
     description = db.Column(evalg.database.types.MutableJson)
     """ Translated text """
 
-    type = db.Column(db.UnicodeText)
-    """ Internal use """
-
     meta = db.Column(evalg.database.types.NestedMutableJson)
     """ Template metadata """
 
@@ -98,6 +95,12 @@ class ElectionGroup(AbstractElection):
 
     deleted_at = db.Column(evalg.database.types.UtcDateTime)
     """ Deleted if set """
+
+    template_name = db.Column(db.UnicodeText)
+    """ Name of the temlate used to create the election group """
+
+    type = db.Column(db.UnicodeText)
+    """ Internal use """
 
     def announce(self):
         """ Mark as announced. """

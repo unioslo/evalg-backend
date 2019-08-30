@@ -32,7 +32,7 @@ election_rule_sets = {
             'affirmative_action': ['gender_40'],
         },
     },
-    'uio_stv_teams': {
+    'uio_teams': {
         'candidate_type': 'single_team',
         'candidate_rules': {'seats': 1},
         'ballot_rules': {
@@ -40,7 +40,10 @@ election_rule_sets = {
             'votes': 'all',
         },
         'counting_rules': {
-            'method': 'uio_stv',
+            # method can not be decided until we know how many candidates the
+            # election has. Candidates are not frozen until the election is
+            # published.
+            'method': None,
         },
     },
     'uio_sp_list': {
@@ -96,13 +99,13 @@ grp_names = {
 
 
 ###
-# ELECTION TYPES
+# ELECTION GROUP TYPES
 # The various types of elections that are supported.
 ###
-election_types = {
+election_group_types = {
     'board_leader': {
         'group_type': 'single_election',
-        'rule_set': election_rule_sets['uio_stv_teams'],
+        'rule_set': election_rule_sets['uio_teams'],
         'elections': [{
             'sequence': 'all',
             'name': None,
@@ -203,20 +206,20 @@ election_types = {
 }
 
 ###
-# ELECTION TEMPLATES
+# ELECTION GROUP TEMPLATES
 # These are the defined templates.
 # They should contain a dict <name> with the predefined name, which will
 # get the OU_name injected when generating a new election, as well as
 # a reference to the type of election.
 ###
-ELECTION_TEMPLATES = {
+ELECTION_GROUP_TEMPLATES = {
     'uio_principal': {
         'name': {
             'nb': 'Rektor ved {}',
             'nn': 'Rektor ved {}',
             'en': 'Principal at {}'
         },
-        'settings': election_types['board_leader'],
+        'settings': election_group_types['board_leader'],
     },
     'uio_dean': {
         'name': {
@@ -224,7 +227,7 @@ ELECTION_TEMPLATES = {
             'nn': 'Dekanat ved {}',
             'en': 'Dean at {}'
         },
-        'settings': election_types['board_leader'],
+        'settings': election_group_types['board_leader'],
     },
     'uio_department_leader': {
         'name': {
@@ -232,7 +235,7 @@ ELECTION_TEMPLATES = {
             'nn': 'Instituttleiar ved {}',
             'en': 'Department leader at {}'
         },
-        'settings': election_types['board_leader'],
+        'settings': election_group_types['board_leader'],
     },
     'uio_university_board': {
         'name': {
@@ -240,7 +243,7 @@ ELECTION_TEMPLATES = {
             'nn': 'Universitetsstyre ved {}',
             'en': 'University board at {}',
         },
-        'settings': election_types['board'],
+        'settings': election_group_types['board'],
     },
     'uio_faculty_board': {
         'name': {
@@ -248,7 +251,7 @@ ELECTION_TEMPLATES = {
             'nn': 'Fakultetsstyre ved {}',
             'en': 'Faculty board at {}',
         },
-        'settings': election_types['board'],
+        'settings': election_group_types['board'],
     },
     'uio_department_board': {
         'name': {
@@ -256,7 +259,7 @@ ELECTION_TEMPLATES = {
             'nn': 'Instituttstyre ved {}',
             'en': 'Department board at {}',
         },
-        'settings': election_types['board'],
+        'settings': election_group_types['board'],
     },
     'uio_student_parliament': {
         'name': {
@@ -264,7 +267,7 @@ ELECTION_TEMPLATES = {
             'nn': 'Studentparlament ved {}',
             'en': 'Student parliament at {}',
         },
-        'settings': election_types['parliament'],
+        'settings': election_group_types['parliament'],
     },
 }
 

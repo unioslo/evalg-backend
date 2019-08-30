@@ -151,7 +151,6 @@ def make_election(db_session, election_group_foo):
                 'nb': name,
                 'en': name,
             },
-            'type': 'single_election',
             'description': {
                 'nb': 'Description {0}'.format(name),
                 'en': 'Description {0}'.format(name),
@@ -500,7 +499,6 @@ def election_bar(db_session, election_group_bar):
             'nb': 'Valg av bar',
             'en': 'Election of bar',
         },
-        'type': 'single_election',
         'description': {
             'nb': 'Description bar',
             'en': 'Description bar',
