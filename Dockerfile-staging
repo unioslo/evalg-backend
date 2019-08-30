@@ -3,10 +3,19 @@ FROM harbor.uio.no/library/python:3.6-alpine
 MAINTAINER USITINT <bnt-int@usit.uio.no>
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
+# Add docker entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
+    ln -s /usr/local/bin/docker-entrypoint.sh /
+
+COPY evalg/migrations /usr/src/evalg/evalg/migrations
+
+# Add rsyslog config
+ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evalg
+
 # Proxy for updates during build
 ENV http_proxy="http://updateproxy.uio.no:3128"
 ENV https_proxy="https://updateproxy.uio.no:3128"
-
 
 # Install build-deps, then install/build deps
 RUN set -ex \
@@ -22,11 +31,15 @@ RUN set -ex \
             git \
             bash \
             postgresql-dev \
-            postgresql-libs
+            postgresql-libs \
+            rsyslog
 
 # Reset proxy -- we don't want the build image to have these
 ENV http_proxy=""
 ENV https_proxy=""
+
+# Disable kernel logs
+RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf
 
 RUN pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
  && pip3 config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
@@ -35,7 +48,7 @@ RUN pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/p
 RUN pip3 install evalg --no-cache-dir \
  && apk del .evalg-build-deps
 
-COPY evalg/migrations /usr/src/evalg/evalg/migrations
-
 # Set instance path
 ENV EVALG_CONFIG="/usr/local/var/evalg-instance"
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

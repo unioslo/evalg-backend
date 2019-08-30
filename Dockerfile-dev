@@ -8,6 +8,14 @@ WORKDIR /usr/src/evalg
 ADD requirements-test.txt /usr/src/evalg
 ADD requirements.txt /usr/src/evalg
 
+# Docker entrypoint
+ADD docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
+    ln -s /usr/local/bin/docker-entrypoint.sh /
+
+# rsyslog confrsyslog configg
+ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evag
+
 # Install build-deps, then install/build deps
 RUN set -ex \
     && apk add --no-cache --virtual .evalg-build-deps \
@@ -18,9 +26,10 @@ RUN set -ex \
             linux-headers \
             libffi-dev \
     && apk add --no-cache --virtual .evalg-deps \
-            git \
             bash \
+            git \
             postgresql-dev \
+            rsyslog \
     && pip3 install -U pip \
     && pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
     && pip3 config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
@@ -32,3 +41,8 @@ ENV FLASK_ENV=development
 # Install app
 ADD . /usr/src/evalg
 RUN pip3 install --editable /usr/src/evalg
+
+# Disable kernel logs
+RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
