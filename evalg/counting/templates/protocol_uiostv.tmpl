@@ -6,6 +6,7 @@
 {%- endmacro %}
 Valg-ID: {{ meta.election_id }}
 Valg-tittel: {{ meta.election_name }}
+Valg-type: {{ meta.election_type }}
 Valgperiode: {{ meta.election_start }} (UTC) - {{ meta.election_end }} (UTC)
 Opptellingstidspunkt: {{ meta.counted_at }}
 Opptelling startet av: {{ meta.counted_by|default('Ukjent', true) }}
@@ -52,7 +53,7 @@ Ingen kvote-grupper er definert
 
 {% for round in rounds -%}
 {% for event in round -%}
-{% if event.event_type == 'BOTTOM_SCORE_CANDIDATES' -%}
+{% if event.event_type == 'BOTTOM_SCORE' -%}
 {{ event.event_data['candidates']|length }} kandidater har lavest stemmetall:
 {% for candidate in event.event_data['candidates'] -%}
 {{ person_name(candidate) }}
@@ -135,14 +136,14 @@ Ikke nok kandidater for å velge vara.
 Kvote-klasse "{{ event.event_data['quota_group_name'] }}" har ikke nok kandidater som ikke er valgt for å oppfylle minstekvote for vara.
 Endrer minstekvote fra {{ event.event_data['current_value'] }} til {{ event.event_data['new_value'] }}.
 
-{% elif event.event_type == 'SAME_SCORE_CANDIDATES' -%}
+{% elif event.event_type == 'SAME_SCORE' -%}
 {{ event.event_data['candidates']|length }} kandidater har samme stemmetall ({{ event.event_data['identical_score'] }}) og vi kan ikke velge alle.
 {% for candidate in event.event_data['candidates'] -%}
 {{ person_name(candidate) }}
 {% endfor -%}
 Vi velger kandidat ved hjelp av loddtrekning i henhold til §29:
 
-{% elif event.event_type == 'SAME_SURPLUS_CANDIDATES' -%}
+{% elif event.event_type == 'SAME_SURPLUS' -%}
 {{ event.event_data['candidates']|length }} kandidater har samme overskudd ({{ event.event_data['identical_surplus'] }}).
 {% for candidate in event.event_data['candidates'] -%}
 {{ person_name(candidate) }}
@@ -165,7 +166,7 @@ Alle representanter som skulle velges er valgt. Avslutter oppgjøret i henhold t
 (Avslutter valg av vara {{ event.event_data['substitute_nr'] }})
 
 
-{% elif event.event_type == 'TRANSFER_BALLOTS_FROM_EXCL_CANDIDATES' -%}
+{% elif event.event_type == 'TRANSFER_BALLOTS_FROM_EXCL_CAND' -%}
 Stemmesedler fra følgende vekt-gruppe(r) kan overføres: {{ event.event_data['weight_groups']|join(', ') }}
 {% for excluded_candidate_data in event.event_data['excluded_candidates_data'] -%}
 {{ person_name(excluded_candidate_data['excluded_candidate']) }} har {{ excluded_candidate_data['ballots_count'] }} stemmesedler fra {{ excluded_candidate_data['groups_count'] }} vekt-gruppe(r) å overføre{% if excluded_candidate_data['empty_ballots_count'] %} (inkludert {{ excluded_candidate_data['empty_ballots_count'] }} blank(e)){% endif %}.
@@ -174,7 +175,7 @@ Stemmesedler fra følgende vekt-gruppe(r) kan overføres: {{ event.event_data['w
 {% elif event.event_type == 'TRANSFERRING_BALLOTS_WITH_WEIGHT' -%}
 Overfører stemmesedler med vekt {{ event.event_data['weight'] }}:
 
-{% elif event.event_type == 'TRANSFER_EBALLOTS_TO_REMAINING_CANDIDATES' -%}
+{% elif event.event_type == 'TRANSFER_EBALLOTS_TO_REMAINING_CAND' -%}
 {% for transfer in event.event_data['transfer_list'] -%}
 {{ person_name(transfer['receiver']) }} fikk {{ transfer['ballot_count'] }} stemmesedler med totalvekt {{ transfer['total_ballot_weight'] }}.
 {% endfor -%}

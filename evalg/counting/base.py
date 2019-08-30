@@ -5,6 +5,79 @@ import json
 from jinja2 import Environment, PackageLoader
 
 
+class RoundState:
+    """
+    RoundState-class.
+
+    Represents the state of the round after a the count is performed.
+    """
+
+    def __init__(self, round_obj):
+        """
+        :param round_obj: The round-counting object
+        :type round_obj: object
+        """
+        self._final = False
+        self._round_obj = round_obj
+        self._elected = tuple()  # tuple of candidates elected in this round
+        self._events = []
+
+    @property
+    def all_elected_candidates(self):
+        """all_elected_candidates-property"""
+        # should be probably overloaded
+        return self._elected
+
+    @property
+    def all_elected_substitutes(self):
+        """all_elected_substitutes-property"""
+        # We want to please the ElectionPath API
+        return tuple()
+
+    @property
+    def elected(self):
+        """elected-property"""
+        return self._elected
+
+    @property
+    def events(self):
+        """events-property"""
+        return tuple(self._events)
+
+    @property
+    def final(self):
+        """final-property"""
+        return self._final
+
+    @final.setter
+    def final(self, value):
+        """final-property setter"""
+        self._final = value
+
+    @property
+    def round_obj(self):
+        """round_obj-property"""
+        return self._round_obj
+
+    def add_elected_candidate(self, candidate):
+        """
+        Sets self._elected to a new tuple containing `candidate`
+
+        :param candidate: Candidate object
+        :type candidate: object
+        """
+        self._elected = self._elected + (candidate, )
+
+    def add_event(self, event):
+        """
+        Adds a new CountingEvent into the state
+
+        :param event: The CountingEvent object
+        :type event: CountingEvent
+        """
+        self._events.append(event.to_dict())
+
+
 class Result:
     """The base class representing counting result"""
 
