@@ -217,7 +217,7 @@ ELECTION_GROUP_TEMPLATES = {
         'name': {
             'nb': 'Rektor ved {}',
             'nn': 'Rektor ved {}',
-            'en': 'Principal at {}'
+            'en': 'Rector at {}'
         },
         'settings': election_group_types['board_leader'],
     },
@@ -303,7 +303,7 @@ board_leader_node = {
             'name': {
                 'nb': 'Rektorat',
                 'nn': 'Rektorat',
-                'en': 'Principal'
+                'en': 'Rector'
             },
             'settings': {
                 'ou_tag': 'root',
