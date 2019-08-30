@@ -5,11 +5,20 @@ This module
  - does
  - things
 """
+import json
 import logging
+import functools
 
+from flask import current_app
+
+from graphene.types.resolver import get_default_resolver
 from flask_allows import Permission, Requirement as OriginalRequirement
 
-from evalg.proc.authz import get_principals_for_person
+from evalg.proc.authz import (get_principals_for_person,
+                              get_person_roles_matching)
+from evalg.graphql.nodes.base import (get_session,
+                                      get_current_user)
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,3 +58,60 @@ def can_manage_election_group(session, user, election_group_id):
     return Permission(
         IsElectionGroupAdmin(session, election_group_id),
         identity=user)
+
+
+@functools.lru_cache(maxsize=1)
+def get_permissions_config():
+    with open(current_app.config.get('PERMISSIONS_PATH'),
+              encoding='utf-8') as permissions_file:
+        permissions = json.load(permissions_file)
+    return permissions
+
+
+def can_access_field(info):
+    """Checks if the requested field can be accessed by the user
+
+    :type info: graphql.execution.base.ResolveInfo
+    """
+    session = get_session(info)
+    current_user = get_current_user(info)
+    permissions = get_permissions_config().get(str(info.parent_type), {})
+    if 'field_permissions' not in permissions.keys():
+        return False
+    for role in permissions['field_permissions'].get(info.field_name, ()):
+        if role == 'unprivileged_user':
+            return True
+        elif get_person_roles_matching(
+                session,
+                current_user.person,
+                target_type=permissions.get('target_type'),
+                name=role
+        ):
+            return True
+    return False
+
+
+def permission_control_decorate(resolver):
+    permission_control_decorate.decorated_resolvers.append(
+        resolver.__name__
+    )
+
+    @functools.wraps(resolver)
+    def wrapper(source, info, **args):
+        if can_access_field(info):
+            return resolver(source, info, **args)
+        return None
+
+    return wrapper
+
+
+# For testing permission control
+permission_control_decorate.decorated_resolvers = []
+
+
+def permission_controlled_default_resolver(attname, default_value, root, info,
+                                           **args):
+    if can_access_field(info):
+        return get_default_resolver()(attname, default_value, root, info,
+                                      **args)
+    return None

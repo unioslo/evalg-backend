@@ -55,6 +55,10 @@ FEIDE_BASIC_REQUIRE = True
 FEIDE_BASIC_REALM = None
 FEIDE_BASIC_USERS = []
 
+#
+# Permissions
+#
+PERMISSIONS_PATH = 'evalg/authorization/permissions_config.json'
 
 #
 # Ballot encryption/serialization

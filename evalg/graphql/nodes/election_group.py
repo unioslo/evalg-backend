@@ -24,6 +24,10 @@ import evalg.proc.election
 import evalg.proc.vote
 import evalg.proc.count
 from evalg import db
+from evalg.authorization.permissions import (
+    permission_control_decorate,
+    permission_controlled_default_resolver
+)
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
 from evalg.graphql.nodes.base import (get_session,
@@ -33,7 +37,6 @@ from evalg.graphql.nodes.pollbook import Voter
 from evalg.graphql.nodes.person import Person
 from evalg.graphql.nodes.election import ElectionResult
 from evalg.utils import convert_json
-
 
 # TODO:
 #   We should use an explicit db session passed through the `info.context`
@@ -48,15 +51,15 @@ from evalg.utils import convert_json
 #
 # Query
 #
-
-
 class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
     """
     A group of elections.
     """
     class Meta:
         model = evalg.models.election.ElectionGroup
+        default_resolver = permission_controlled_default_resolver
 
+    @permission_control_decorate
     def resolve_meta(self, info):
         return convert_json(self.meta)
 
@@ -69,25 +72,28 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
         lambda: PersonWithVoters
     )
 
+    @permission_control_decorate
     def resolve_announcement_blockers(self, info):
         return evalg.proc.election.get_group_announcement_blockers(self)
 
+    @permission_control_decorate
     def resolve_publication_blockers(self, info):
         return evalg.proc.election.get_group_publication_blockers(self)
 
+    @permission_control_decorate
     def resolve_latest_election_group_count(self, info):
         session = get_session(info)
         group_id = self.id
         return evalg.proc.election.get_latest_election_group_count(
             session, group_id)
 
+    @permission_control_decorate
     def resolve_persons_with_multiple_verified_voters(self, info):
         return resolve_persons_with_multiple_verified_voters(
-            None,
+            self,
             info,
             id=self.id
         )
-
 
     @classmethod
     def get_current_user_admin_roles(cls, info):
@@ -214,7 +220,7 @@ def resolve_election_key_meta(_, info, **args):
     key_meta = db.session.query(ElectionGroupVersion).filter(
         ElectionGroupVersion.id == election_group_id,
         ElectionGroupVersion.public_key_mod).order_by(
-            ElectionGroupVersion.transaction_id.desc()).limit(1).all()
+        ElectionGroupVersion.transaction_id.desc()).limit(1).all()
 
     if key_meta and len(key_meta) > 0:
         generated_at = key_meta[0].transaction.issued_at
@@ -295,6 +301,7 @@ class CreateNewElectionGroup(graphene.Mutation):
     """
     Create an ElectionGroup from a template.
     """
+
     class Arguments:
         ou_id = graphene.UUID()
         template = graphene.Boolean()
@@ -340,6 +347,7 @@ class UpdateBaseSettings(graphene.Mutation):
     """
     Update settings for elections in an election group.
     """
+
     class Arguments:
         id = graphene.UUID(required=True)
         elections = graphene.List(ElectionBaseSettingsInput, required=True)
@@ -369,6 +377,7 @@ class PublishElectionGroup(graphene.Mutation):
     """
     Publish an ElectionGroup.
     """
+
     class Arguments:
         id = graphene.UUID(required=True)
 
@@ -391,6 +400,7 @@ class UnpublishElectionGroup(graphene.Mutation):
     """
     Unpublish an ElectionGroup.
     """
+
     class Arguments:
         id = graphene.UUID(required=True)
 
@@ -502,8 +512,8 @@ class CountElectionGroup(graphene.Mutation):
         )
 
         if evalg.proc.vote.get_persons_with_multiple_verified_voters(
-            session,
-            group_id
+                session,
+                group_id
         ).all():
             return CountElectionGroupResponse(
                 success=False,
