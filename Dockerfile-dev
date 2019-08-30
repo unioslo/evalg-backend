@@ -40,7 +40,7 @@ RUN set -ex \
 ADD instance/evalg_logrotate.conf /etc/logrotate.d/evalg
 ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evag.conf
 RUN mkdir /var/log/evalg \
-    && chmod 645 /etc/logrotate.d/evalg \
+    && chmod 644 /etc/logrotate.d/evalg \
     && rm /etc/logrotate.d/acpid \
     && rm /etc/logrotate.d/rsyslog
 
