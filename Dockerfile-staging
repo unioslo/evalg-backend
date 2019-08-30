@@ -10,9 +10,6 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
 
 COPY evalg/migrations /usr/src/evalg/evalg/migrations
 
-# Add rsyslog config
-ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evalg
-
 # Proxy for updates during build
 ENV http_proxy="http://updateproxy.uio.no:3128"
 ENV https_proxy="https://updateproxy.uio.no:3128"
@@ -28,8 +25,9 @@ RUN set -ex \
             linux-headers \
             libffi-dev \
     && apk add --no-cache --virtual .evalg-deps \
-            git \
             bash \
+            git \
+            logrotate \
             postgresql-dev \
             postgresql-libs \
             rsyslog
@@ -37,6 +35,15 @@ RUN set -ex \
 # Reset proxy -- we don't want the build image to have these
 ENV http_proxy=""
 ENV https_proxy=""
+
+# Add rsyslog and logrotate config
+ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evalg.conf
+ADD instance/evalg_logrotate.conf /etc/logrotate.d/evalg
+
+RUN mkdir /var/log/evalg \
+    && chmod 645 /etc/logrotate.d/evalg \
+    && rm /etc/logrotate.d/acpid \
+    && rm /etc/logrotate.d/rsyslog
 
 # Disable kernel logs
 RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf

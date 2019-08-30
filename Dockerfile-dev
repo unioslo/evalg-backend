@@ -13,8 +13,6 @@ ADD docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
     ln -s /usr/local/bin/docker-entrypoint.sh /
 
-# rsyslog confrsyslog configg
-ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evag
 
 # Install build-deps, then install/build deps
 RUN set -ex \
@@ -28,6 +26,7 @@ RUN set -ex \
     && apk add --no-cache --virtual .evalg-deps \
             bash \
             git \
+            logrotate \
             postgresql-dev \
             rsyslog \
     && pip3 install -U pip \
@@ -37,12 +36,21 @@ RUN set -ex \
     && pip3 install -r /usr/src/evalg/requirements.txt \
     && apk del .evalg-build-deps
 
+# Add rsyslog and logrotate config
+ADD instance/evalg_logrotate.conf /etc/logrotate.d/evalg
+ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evag.conf
+RUN mkdir /var/log/evalg \
+    && chmod 645 /etc/logrotate.d/evalg \
+    && rm /etc/logrotate.d/acpid \
+    && rm /etc/logrotate.d/rsyslog
+
+# Disable kernel logs
+RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf
+
 ENV FLASK_ENV=development
 # Install app
 ADD . /usr/src/evalg
 RUN pip3 install --editable /usr/src/evalg
 
-# Disable kernel logs
-RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
