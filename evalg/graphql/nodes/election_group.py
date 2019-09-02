@@ -26,7 +26,8 @@ import evalg.proc.count
 from evalg import db
 from evalg.authorization.permissions import (
     permission_control_decorate,
-    permission_controlled_default_resolver
+    permission_controlled_default_resolver,
+    can_manage_election_group
 )
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
@@ -343,6 +344,10 @@ class ElectionBaseSettingsInput(graphene.InputObjectType):
     active = graphene.Boolean(required=True)
 
 
+class UpdateBaseSettingsResponse(MutationResponse):
+    pass
+
+
 class UpdateBaseSettings(graphene.Mutation):
     """
     Update settings for elections in an election group.
@@ -359,18 +364,28 @@ class UpdateBaseSettings(graphene.Mutation):
         # TODO:
         #   Is there any particular reason why the ElectionGroup settings and
         #   Election settings are bound together in a single mutation?
-        el_grp = evalg.models.election.ElectionGroup.query.get(args.get('id'))
+        session = get_session(info)
+        user = get_current_user(info)
+        group_id = args.get('id')
+        if not can_manage_election_group(session, user, group_id):
+            return UpdateBaseSettingsResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to update base settings for election '
+                        'group {}'.format(group_id)
+            )
+        el_grp = evalg.models.election.ElectionGroup.query.get(group_id)
         el_grp.meta['candidate_rules']['candidate_gender'] = args.get(
             'has_gender_quota')
-        db.session.add(el_grp)
+        session.add(el_grp)
         for e in args.get('elections'):
             election = evalg.models.election.Election.query.get(e['id'])
             election.meta['candidate_rules']['seats'] = e.seats
             election.meta['candidate_rules']['substitutes'] = e.substitutes
             election.active = e.active
-            db.session.add(election)
-        db.session.commit()
-        return UpdateBaseSettings(ok=True)
+            session.add(election)
+        session.commit()
+        return UpdateBaseSettings(success=True)
 
 
 class PublishElectionGroup(graphene.Mutation):
@@ -457,10 +472,16 @@ class SetElectionGroupKey(graphene.Mutation):
         group_id = args['id']
         public_key = args['public_key']
         session = get_session(info)
-        group = evalg.database.query.lookup(
-            session,
-            evalg.models.election.ElectionGroup,
-            id=group_id)
+        user = get_current_user(info)
+        if not can_manage_election_group(session, user, group_id):
+            return SetElectionGroupKeyResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to set election group key for election '
+                        'group {}'.format(group_id)
+            )
+        group = session.query(evalg.models.election.ElectionGroup).get(
+            group_id)
         for election in group.elections:
             if group.public_key and group.published:
                 return SetElectionGroupKeyResponse(
@@ -502,7 +523,16 @@ class CountElectionGroup(graphene.Mutation):
 
     def mutate(self, info, **args):
         session = get_session(info)
+        user = get_current_user(info)
         group_id = args['id']
+        if not can_manage_election_group(session, user, group_id):
+            return CountElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to count election group {}'.format(
+                    group_id)
+            )
+
         election_key = args['election_key']
 
         election_group_counter = evalg.proc.count.ElectionGroupCounter(
