@@ -27,7 +27,7 @@ from evalg import db
 from evalg.authorization.permissions import (
     permission_control_decorate,
     permission_controlled_default_resolver,
-    can_manage_election_group
+    Permissions
 )
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
@@ -367,7 +367,7 @@ class UpdateBaseSettings(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         group_id = args.get('id')
-        if not can_manage_election_group(session, user, group_id):
+        if not Permissions.can_manage_election_group(session, user, group_id):
             return UpdateBaseSettingsResponse(
                 success=False,
                 code='permission-denied',
@@ -473,7 +473,7 @@ class SetElectionGroupKey(graphene.Mutation):
         public_key = args['public_key']
         session = get_session(info)
         user = get_current_user(info)
-        if not can_manage_election_group(session, user, group_id):
+        if not Permissions.can_manage_election_group(session, user, group_id):
             return SetElectionGroupKeyResponse(
                 success=False,
                 code='permission-denied',
@@ -525,7 +525,7 @@ class CountElectionGroup(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         group_id = args['id']
-        if not can_manage_election_group(session, user, group_id):
+        if not Permissions.can_manage_election_group(session, user, group_id):
             return CountElectionGroupResponse(
                 success=False,
                 code='permission-denied',

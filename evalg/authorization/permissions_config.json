@@ -1,58 +1,23 @@
 {
   "ElectionGroup": {
-    "target_type": "election-group-role",
     "field_permissions": {
-      "name": [
-        "unprivileged_user"
-      ],
-      "description": [
-        "unprivileged_user"
-      ],
-      "type": [
-        "unprivileged_user"
-      ],
-      "meta": [
-        "unprivileged_user"
-      ],
-      "ou_id": [
-        "unprivileged_user"
-      ],
-      "elections": [
-        "unprivileged_user"
-      ],
-      "active": [
-        "unprivileged_user"
-      ],
-      "public_key": [
-        "admin"
-      ],
-      "announced_at": [
-        "unprivileged_user"
-      ],
-      "published_at": [
-        "unprivileged_user"
-      ],
-      "cancelled_at": [
-        "unprivileged_user"
-      ],
-      "deleted_at": [
-        "admin"
-      ],
-      "announced": [
-        "unprivileged_user"
-      ],
-      "published": [
-        "unprivileged_user"
-      ],
-      "cancelled": [
-        "unprivileged_user"
-      ],
-      "deleted": [
-        "unprivileged_user"
-      ],
-      "status": [
-        "unprivileged_user"
-      ]
+      "name": "allow",
+      "description": "allow",
+      "type": "allow",
+      "meta": "allow",
+      "ou_id": "allow",
+      "elections": "allow",
+      "active": "allow",
+      "public_key": "can_manage_election_group",
+      "announced_at": "allow",
+      "published_at": "allow",
+      "cancelled_at": "allow",
+      "deleted_at": "can_manage_election_group",
+      "announced": "allow",
+      "published": "allow",
+      "cancelled": "allow",
+      "deleted": "allow",
+      "status": "allow"
     }
   }
 }
