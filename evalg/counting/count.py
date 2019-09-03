@@ -165,19 +165,20 @@ class CountingEvent:
             if 'count_result_stats' in event_data:
                 new_count_result_stats = {}
                 for pbook, value in event_data['count_result_stats'].items():
-                    new_count_result_stats[pbook.name] = {}
-                    new_count_result_stats[pbook.name]['total'] = str(
+                    pbook_name = str(pbook.name)
+                    new_count_result_stats[pbook_name] = {}
+                    new_count_result_stats[pbook_name]['total'] = str(
                         event_data['count_result_stats'][pbook]['total'])
                     for cand, items in value.items():
                         if cand == 'total':
                             # the pollbook total
                             continue
                         # regular candidate
-                        new_count_result_stats[pbook.name][
+                        new_count_result_stats[pbook_name][
                             str(cand.id)] = {}
-                        new_count_result_stats[pbook.name][
+                        new_count_result_stats[pbook_name][
                             str(cand.id)]['total'] = str(items['total'])
-                        new_count_result_stats[pbook.name][
+                        new_count_result_stats[pbook_name][
                             str(cand.id)]['percent_pollbook'] = str(
                                 items['percent_pollbook'])
                 self.event_data['count_result_stats'] = new_count_result_stats

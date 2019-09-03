@@ -122,6 +122,7 @@ class Round:
             ballot_weights[ballot] = ballot.pollbook.weight_per_pollbook
             total_score += ballot.pollbook.weight_per_pollbook
         for candidate, ballots in candidate_ballots.items():
+            results[candidate] = decimal.Decimal(0)
             for ballot in ballots:
                 results[candidate] += ballot_weights[ballot]
                 count_result_stats[ballot.pollbook][
@@ -130,8 +131,20 @@ class Round:
                     'total'] += ballot_weights[ballot]
         # set % of total pollbook score - stats
         for pollbook in self._counter_obj.election.pollbooks:
+            logger.info("Pollbook %s has a total score: %s",
+                        pollbook.name,
+                        count_result_stats[pollbook]['total'])
             for candidate in count_result_stats[pollbook]:
                 if candidate == 'total':
+                    continue
+                if not count_result_stats[pollbook][candidate]['total']:
+                    # avoid division by 0 and optimize...
+                    # here the divisor can not be 0 if divident is not zero
+                    count_result_stats[pollbook][candidate][
+                        'percent_pollbook'] = decimal.Decimal(0)
+                    logger.info(
+                        "Candidate %s has a score of 0 in that pollbook",
+                        candidate)
                     continue
                 count_result_stats[pollbook][candidate]['percent_pollbook'] = (
                     (decimal.Decimal(100) *
@@ -139,6 +152,12 @@ class Round:
                     count_result_stats[pollbook]['total']).quantize(
                         decimal.Decimal('1.00'),
                         decimal.ROUND_HALF_EVEN)
+                logger.info(
+                    "Candidate %s has a score of %s (%s%%) in that pollbook",
+                    candidate,
+                    count_result_stats[pollbook][candidate]['total'],
+                    count_result_stats[pollbook][candidate][
+                        'percent_pollbook'])
         count_results = results.most_common()
         logger.info("Total score: %s", total_score)
         logger.info("Half score: %s", total_score / decimal.Decimal(2))
