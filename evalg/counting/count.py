@@ -180,7 +180,7 @@ class CountingEvent:
                         new_count_result_stats[pbook.name][
                             str(cand.id)]['percent_pollbook'] = str(
                                 items['percent_pollbook'])
-            self.event_data['count_result_stats'] = new_count_result_stats
+                self.event_data['count_result_stats'] = new_count_result_stats
 
     def to_dict(self):
         """
