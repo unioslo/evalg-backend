@@ -92,7 +92,7 @@ class Round:
         Performs the actual count.
 
         This method will either return a final state or call itself on a newly
-        instanciated object. (resurse until final state is returned)
+        instanciated object. (recurse until final state is returned)
 
         :return: A state (result) for this count
         :rtype: RoundState
@@ -100,12 +100,20 @@ class Round:
         logger.info("Starting the MV count")
         ballot_weights = collections.Counter()  # ballot: weight - dict
         candidate_ballots = {}
+        count_result_stats = {}
         results = collections.Counter()
         total_score = decimal.Decimal(0)
         elected_candidate = None
 
-        for candidate in self._counter_obj.candidates:
-            candidate_ballots[candidate] = list()
+        # generate per pollbook stats
+        for pollbook in self._counter_obj.election.pollbooks:
+            count_result_stats[pollbook] = {}
+            count_result_stats[pollbook]['total'] = decimal.Decimal(0)
+            for candidate in self._counter_obj.candidates:
+                candidate_ballots[candidate] = list()
+                count_result_stats[pollbook][candidate] = {}
+                count_result_stats[pollbook][candidate]['total'] = (
+                    decimal.Decimal(0))
         for ballot in self._counter_obj.ballots:
             if not ballot.candidates:
                 # blank ballot
@@ -114,17 +122,33 @@ class Round:
             ballot_weights[ballot] = ballot.pollbook.weight_per_pollbook
             total_score += ballot.pollbook.weight_per_pollbook
         for candidate, ballots in candidate_ballots.items():
-            results[candidate] = (
-                sum(map(lambda b: ballot_weights[b], ballots)))
+            for ballot in ballots:
+                results[candidate] += ballot_weights[ballot]
+                count_result_stats[ballot.pollbook][
+                    candidate]['total'] += ballot_weights[ballot]
+                count_result_stats[ballot.pollbook][
+                    'total'] += ballot_weights[ballot]
+        # set % of total pollbook score - stats
+        for pollbook in self._counter_obj.election.pollbooks:
+            for candidate in count_result_stats[pollbook]:
+                if candidate == 'total':
+                    continue
+                count_result_stats[pollbook][candidate]['percent_pollbook'] = (
+                    (decimal.Decimal(100) *
+                     count_result_stats[pollbook][candidate]['total']) /
+                    count_result_stats[pollbook]['total']).quantize(
+                        decimal.Decimal('1.00'),
+                        decimal.ROUND_HALF_EVEN)
         count_results = results.most_common()
-        half_score = total_score / decimal.Decimal(2)
         logger.info("Total score: %s", total_score)
-        logger.info("Half score: %s", half_score)
+        logger.info("Half score: %s", total_score / decimal.Decimal(2))
         self._state.add_event(
-            count.CountingEvent(count.CountingEventType.NEW_COUNT,
-                                {'count_results': count_results,
-                                 'half_score': half_score,
-                                 'total_score': total_score}))
+            count.CountingEvent(
+                count.CountingEventType.NEW_COUNT,
+                {'count_results': count_results,
+                 'count_result_stats': count_result_stats,
+                 'half_score': total_score / decimal.Decimal(2),
+                 'total_score': total_score}))
         for vcount in count_results:
             # debugging mostly
             candidate, candidate_count = vcount

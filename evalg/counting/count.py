@@ -161,6 +161,26 @@ class CountingEvent:
                     tuple([str(value[0].id),
                            str(value[1])]))
             self.event_data['count_results'] = new_count_results
+            # pick up the per pollbook stats
+            if 'count_result_stats' in event_data:
+                new_count_result_stats = {}
+                for pbook, value in event_data['count_result_stats'].items():
+                    new_count_result_stats[pbook.name] = {}
+                    new_count_result_stats[pbook.name]['total'] = str(
+                        event_data['count_result_stats'][pbook]['total'])
+                    for cand, items in value.items():
+                        if cand == 'total':
+                            # the pollbook total
+                            continue
+                        # regular candidate
+                        new_count_result_stats[pbook.name][
+                            str(cand.id)] = {}
+                        new_count_result_stats[pbook.name][
+                            str(cand.id)]['total'] = str(items['total'])
+                        new_count_result_stats[pbook.name][
+                            str(cand.id)]['percent_pollbook'] = str(
+                                items['percent_pollbook'])
+            self.event_data['count_result_stats'] = new_count_result_stats
 
     def to_dict(self):
         """
@@ -538,6 +558,7 @@ class ElectionCountPath:
                  'ballots_count': pollbook.ballots_count,
                  'counting_ballots_count': pollbook.counting_ballots_count,
                  'empty_ballots_count': pollbook.empty_ballots_count,
+                 'weight': pollbook.weight,
                  'weight_per_vote': str(pollbook.weight_per_vote),
                  'weight_per_pollbook': str(pollbook.weight_per_pollbook)})
         meta['pollbooks'] = pollbook_meta

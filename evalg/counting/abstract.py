@@ -57,6 +57,12 @@ class AbstractPollbook(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
+    def weight(self):
+        """weight-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
     def weight_per_pollbook(self):
         """weight_per_pollbook-property"""
         pass

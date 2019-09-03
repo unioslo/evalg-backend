@@ -391,7 +391,7 @@ class RegularRound:
         Performs the actual count.
 
         This method will either return a final state or call itself on a newly
-        instanciated object. (resurse until final state is returned)
+        instanciated object. (recurse until final state is returned)
 
         :return: A state (result) for this count
         :rtype: RoundState
