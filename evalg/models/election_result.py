@@ -55,8 +55,7 @@ class ElectionResult(ModelBase):
     def election_protocol_text(self):
         """election_protocol_text-property"""
         try:
-            protcol_cls = count.PROTOCOL_MAPPINGS[
-                self.election.meta['counting_rules']['method']]
+            protcol_cls = count.PROTOCOL_MAPPINGS[self.election.type_str]
             return protcol_cls.from_dict(self.election_protocol).render()
         except KeyError:
             # re-raise?

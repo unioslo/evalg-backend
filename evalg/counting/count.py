@@ -10,7 +10,7 @@ import os
 import random  # testing only
 import secrets
 
-from evalg.counting.algorithms import uiostv
+from evalg.counting.algorithms import uiostv, uiomv
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -19,13 +19,178 @@ DEFAULT_LOG_LEVEL = logging.DEBUG
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
-PROTOCOL_MAPPINGS = {'uio_stv': uiostv.Protocol}
-RESULT_MAPPINGS = {'uio_stv': uiostv.Result}
+PROTOCOL_MAPPINGS = {'uio_stv': uiostv.Protocol, 'uio_mv': uiomv.Protocol}
+RESULT_MAPPINGS = {'uio_stv': uiostv.Result, 'uio_mv': uiomv.Result}
 
 
 class CountingFailure(Exception):
     """General custom exception"""
     pass
+
+
+class CountingEventType(enum.Enum):
+    """The counting event types"""
+    # candidates with the same score that can not be excluded together
+    BOTTOM_SCORE = enum.auto()
+
+    # candidate has been elected
+    CANDIDATE_ELECTED = enum.auto()
+
+    # candidate has been elected because of §19.1
+    CANDIDATE_ELECTED_19_1 = enum.auto()
+
+    # candidate has been elected in a previous round
+    CANDIDATE_ELECTED_EARLIER = enum.auto()
+
+    # candidate has been excluded
+    CANDIDATE_EXCLUDED = enum.auto()
+
+    # the candidate must be elected in order to fulfill the quota-rules
+    CANDIDATE_QUOTA_PROTECTED = enum.auto()
+
+    # candidate can not be elected because one of her groups has reached max.v.
+    DENY_ELECT_QUOTA_MAX = enum.auto()
+
+    # same as NEW_COUNT except that no actual new count is performed,
+    # just displaying the status
+    DISPLAY_STATUS = enum.auto()
+
+    # drawing to select a candidate
+    DRAW_SELECT = enum.auto()
+
+    # a candidate is elected according to §19.1
+    ELECT_19_1 = enum.auto()
+
+    # calculation of election number for a regular round
+    ELECTION_NUMBER = enum.auto()
+
+    # calculation of election number for a substitute round
+    ELECTION_NUMBER_SUBSTITUTE = enum.auto()
+
+    # a candidate is member of a group that reached its max. value
+    MAX_QUOTA_VALUE_EXCLUDED = enum.auto()
+
+    # max-value for a quota group is reached
+    MAX_QUOTA_VALUE_REACHED = enum.auto()
+
+    # new count performed
+    NEW_COUNT = enum.auto()
+
+    # new regular round starts
+    NEW_REGULAR_ROUND = enum.auto()
+
+    # new substitute round starts
+    NEW_SUBSTITUTE_ROUND = enum.auto()
+
+    # no substitute candidates to be elected
+    NO_ELECTABLE_SUBSTITUTES = enum.auto()
+
+    # not enough unelected candidates for a substitute-round
+    NOT_ENOUGH_FOR_SUBSTITUTE_ROUND = enum.auto()
+
+    # the min_value_substitutes for a quota-group is adjusted
+    QUOTA_MIN_VALUE_SUB_ADJUSTED = enum.auto()
+
+    # candidates with the same score that can not be elected together
+    SAME_SCORE = enum.auto()
+
+    # candidates with the same surplus
+    SAME_SURPLUS = enum.auto()
+
+    # terminate election / count according to §19.1
+    TERMINATE_19_1 = enum.auto()
+
+    # terminate election / count according to §19.2
+    TERMINATE_19_2 = enum.auto()
+
+    # terminating regular count
+    TERMINATE_REGULAR_COUNT = enum.auto()
+
+    # terminates the entire count of regular candidates
+    TERMINATE_SUBSTITUTE_COUNT = enum.auto()
+
+    # terminates only the the election of the current substitute candidate
+    TERMINATE_SUBSTITUTE_ELECTION = enum.auto()
+
+    # transfer ballots from excluded candidates
+    TRANSFER_BALLOTS_FROM_EXCL_CAND = enum.auto()
+
+    # transfer excluded ballots to remaining candidates
+    TRANSFER_EBALLOTS_TO_REMAINING_CAND = enum.auto()
+
+    # transfers the ballots of an elected candidate
+    TRANSFER_SURPLUS = enum.auto()
+
+    # transferring ballots with certain weight
+    TRANSFERRING_BALLOTS_WITH_WEIGHT = enum.auto()
+
+    # unable to exclude any candidate in according to §16.3
+    UNABLE_TO_EXCLUDE = enum.auto()
+
+    # update surplus for elected candidate
+    UPDATE_SURPLUS = enum.auto()
+
+
+class CountingEvent:
+    """
+    The CountingEvent class
+
+    Describes a single UiOSTV counting event like f.i. a count result.
+    Counting-events are used when generating an election protocol
+    """
+
+    def __init__(self, event_type, event_data):
+        """
+        :param event_type: The type of event
+        :type event_type: CountingEventType
+
+        :param event_data: Relevant data for this type of event
+        :type event_data: obj
+        """
+        self.event_type = str(event_type).split('.')[-1]
+        self.event_data = event_data
+        if (
+                event_type is CountingEventType.NEW_COUNT or
+                event_type is CountingEventType.DISPLAY_STATUS
+        ):
+            new_count_results = []
+            for value in event_data['count_results']:
+                # value[0] - candidate_obj
+                # value[1] - count (decimal.Decimal)
+                new_count_results.append(
+                    tuple([str(value[0].id),
+                           str(value[1])]))
+            self.event_data['count_results'] = new_count_results
+            # pick up the per pollbook stats
+            if 'count_result_stats' in event_data:
+                new_count_result_stats = {}
+                for pbook, value in event_data['count_result_stats'].items():
+                    pbook_name = str(pbook.name)
+                    new_count_result_stats[pbook_name] = {}
+                    new_count_result_stats[pbook_name]['total'] = str(
+                        event_data['count_result_stats'][pbook]['total'])
+                    for cand, items in value.items():
+                        if cand == 'total':
+                            # the pollbook total
+                            continue
+                        # regular candidate
+                        new_count_result_stats[pbook_name][
+                            str(cand.id)] = {}
+                        new_count_result_stats[pbook_name][
+                            str(cand.id)]['total'] = str(items['total'])
+                        new_count_result_stats[pbook_name][
+                            str(cand.id)]['percent_pollbook'] = str(
+                                items['percent_pollbook'])
+                self.event_data['count_result_stats'] = new_count_result_stats
+
+    def to_dict(self):
+        """
+        Returns a dict representation of the object
+
+        :return: dict representation of the object
+        :rtype: dict
+        """
+        return self.__dict__
 
 
 class DrawingBranchState(enum.Enum):
@@ -316,7 +481,6 @@ class ElectionCountPath:
         :return: The result-object for this path
         :rtype: base.Result
         """
-        # TODO: check election type
         if not self._round_state_list or not self._round_state_list[-1].final:
             raise CountingFailure('Empty or unfinished path')
         counter_obj = self._round_state_list[-1].round_obj.counter_obj
@@ -324,8 +488,7 @@ class ElectionCountPath:
         meta = {
             'election_id': str(election.id),
             'election_name': election.name,
-            'num_regular': election.num_choosable,
-            'num_substitutes': election.num_substitutes,
+            'election_type': election.type_str,
             'drawing': self.drawing,
             'ballots_count': election.total_amount_ballots,
             'empty_ballots_count': election.total_amount_empty_ballots}
@@ -336,19 +499,30 @@ class ElectionCountPath:
                  'ballots_count': pollbook.ballots_count,
                  'empty_ballots_count': pollbook.empty_ballots_count})
         meta['pollbooks'] = pollbook_meta
-        return uiostv.Result(
-            meta=meta,
-            regular_candidates=[str(cand.id) for cand in
-                                self.get_elected_regular_candidates()],
-            substitute_candidates=[str(cand.id) for cand in
-                                   self.get_elected_substitute_candidates()])
+        if election.type_str == 'uio_stv':
+            meta.update({
+                'num_regular': election.num_choosable,
+                'num_substitutes': election.num_substitutes,
+            })
+            return uiostv.Result(
+                meta=meta,
+                regular_candidates=[str(cand.id) for cand in
+                                    self.get_elected_regular_candidates()],
+                substitute_candidates=[
+                    str(cand.id) for cand in
+                    self.get_elected_substitute_candidates()])
+        if election.type_str == 'uio_mv':
+            return uiomv.Result(
+                meta=meta,
+                regular_candidates=[str(cand.id) for cand in
+                                    self.get_elected_regular_candidates()])
+        return None
 
     def get_protocol(self):
         """
         :return: The protocol-object for this path
         :rtype: base.Protocol
         """
-        # TODO: check election type
         if not self._round_state_list or not self._round_state_list[-1].final:
             raise CountingFailure('Empty or unfinished path')
         counter_obj = self._round_state_list[-1].round_obj.counter_obj
@@ -359,6 +533,7 @@ class ElectionCountPath:
         meta = {
             'election_id': str(election.id),
             'election_name': election.name,
+            'election_type': election.type_str,
             'candidate_ids': [str(cand.id) for cand in election.candidates],
             'candidates': candidates,
             'counted_at': datetime.datetime.now().strftime(
@@ -366,8 +541,6 @@ class ElectionCountPath:
             'counted_by': None,
             'election_start': election.start.strftime('%Y-%m-%d %H:%M:%S'),
             'election_end': election.start.strftime('%Y-%m-%d %H:%M:%S'),
-            'num_regular': election.num_choosable,
-            'num_substitutes': election.num_substitutes,
             'drawing': self.drawing,
             'ballots_count': election.total_amount_ballots,
             'counting_ballots_count': election.total_amount_counting_ballots,
@@ -386,6 +559,7 @@ class ElectionCountPath:
                  'ballots_count': pollbook.ballots_count,
                  'counting_ballots_count': pollbook.counting_ballots_count,
                  'empty_ballots_count': pollbook.empty_ballots_count,
+                 'weight': pollbook.weight,
                  'weight_per_vote': str(pollbook.weight_per_vote),
                  'weight_per_pollbook': str(pollbook.weight_per_pollbook)})
         meta['pollbooks'] = pollbook_meta
@@ -405,7 +579,15 @@ class ElectionCountPath:
         rounds = []
         for state in self._round_state_list:
             rounds.append(state.events)
-        return uiostv.Protocol(meta=meta, rounds=rounds)
+        if election.type_str == 'uio_stv':
+            meta.update({
+                'num_regular': election.num_choosable,
+                'num_substitutes': election.num_substitutes,
+            })
+            return uiostv.Protocol(meta=meta, rounds=rounds)
+        if election.type_str == 'uio_mv':
+            return uiomv.Protocol(meta=meta, rounds=rounds)
+        return None
 
 
 class Counter:
@@ -448,7 +630,8 @@ class Counter:
         self._test_mode = test_mode
 
         self._current_election_path = None
-        self._counting_ballots = self._get_counting_ballots(self._ballots)
+        self._counting_ballots = tuple([ballot for ballot in self._ballots if
+                                        ballot.candidates])
         logger.info("Total number of ballots: %d",
                     self._election_obj.total_amount_ballots)
         logger.debug("Total number of ballots (debug): %d",
@@ -533,16 +716,18 @@ class Counter:
         election_count_tree.append_path(self._current_election_path)
         # Now check election type and select the proper counting class
         # This method (and class) should remain algorithm agnostic.
-        if self._election_obj.type_str != 'uio_stv':
+        if self._election_obj.type_str not in ('uio_stv', 'uio_mv'):
             # no other election algorithms implemented so far
             logger.warning("No algorithm implemented for election type: %s",
                            self._election_obj.type_str)
             return election_count_tree
-        # assume uio_stv
-        if self._election_obj.num_choosable > 0:
-            round_cls = uiostv.RegularRound
-        else:
-            round_cls = uiostv.SubstituteRound
+        if self._election_obj.type_str == 'uio_stv':
+            if self._election_obj.num_choosable > 0:
+                round_cls = uiostv.RegularRound
+            else:
+                round_cls = uiostv.SubstituteRound
+        elif self._election_obj.type_str == 'uio_mv':
+            round_cls = uiomv.Round
         election_round = round_cls(self)
         election_round.count()
         if self._drawing_nodes:
@@ -677,13 +862,3 @@ class Counter:
             # Should not happen if the election is set properly. Raise?
             return 0
         return max_substitutes
-
-    def _get_counting_ballots(self, ballots):
-        """
-        Returns a tuple of the ballots that actually count depending
-        on the type of election
-        """
-        # Only UiOSTV for now... No election-type checks yet
-        # if self._election_obj.type:
-        return tuple([ballot for ballot in ballots if
-                      ballot.candidates])

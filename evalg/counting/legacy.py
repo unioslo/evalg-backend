@@ -102,6 +102,11 @@ class EvalgLegacyPollbook:
         return self._name
 
     @property
+    def weight(self):
+        """weight-property"""
+        return self._weight
+
+    @property
     def weight_per_pollbook(self):
         """weight_per_pollbook-property"""
         return self._weight_per_pollbook

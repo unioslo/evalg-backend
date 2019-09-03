@@ -68,3 +68,54 @@ def test_counting_algorithms_uiostv(make_full_election):
     # cheap check to make sure that the protocol rendering is complete
     default_path.get_protocol().render()
     # more tests / checks should be added in the future
+
+
+def test_counting_algorithms_uiomv(make_full_election):
+    """
+    Tests for the UiO MV algorithm - case1
+
+    - Election with 2 candidates.
+    - 1 regular candidate to elect.
+    - No votes
+    """
+    election_data = make_full_election(
+        'test_counting_algorithms_uiostv election',
+        nr_of_elections=1,
+        seats=1,
+        substitutes=0,
+        election_type='uio_mv')
+    election = election_data['elections'][0]
+    # duplicate the process_for_count functionality
+    for pollbook in election.pollbooks:
+        pollbook.ballots_count = 0
+        pollbook.counting_ballots_count = 0
+        pollbook.empty_ballots_count = 0
+        pollbook.weight_per_vote = decimal.Decimal(0)
+        pollbook.weight_per_pollbook = decimal.Decimal(1)
+    election.ballots = []
+    election.total_amount_ballots = 0
+    election.total_amount_empty_ballots = 0
+    election.total_amount_counting_ballots = 0
+    # sanity checks before counting ...
+    candidates = election.candidates
+    assert len(candidates) == 2  # should be 2 candidates
+    # now the counting
+    counter = Counter(election, [])  # no test_mode. Real randomization at work
+    election_count_tree = counter.count()
+    default_path = election_count_tree.default_path
+    result_dict = default_path.get_result().to_dict()
+    election_protocol_dict = default_path.get_protocol().to_dict()
+    # test result #
+    assert result_dict
+    # empty ballot election can only be decided by drawing
+    assert result_dict['meta']['drawing']
+    # 1 regular candidate should have been elected
+    assert len(result_dict['regular_candidates']) == 1
+    # test the protocol #
+    assert election_protocol_dict
+    assert (''.join(result_dict['regular_candidates']) ==
+            ''.join(election_protocol_dict['meta']['regular_candidate_ids']))
+    # more detailed checks
+    # cheap check to make sure that the protocol rendering is complete
+    default_path.get_protocol().render()
+    # more tests / checks should be added in the future
