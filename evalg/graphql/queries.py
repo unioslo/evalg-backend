@@ -21,9 +21,11 @@ class ElectionQuery(graphene.ObjectType):
     # Election results
     election_group_count = \
         nodes.election_group.get_election_group_count_query
+    # TODO: Why isn't this called ``election_group_counts`` in line with the
+    #   convention.
     election_group_counting_results = \
         nodes.election_group.list_election_group_counting_results_query
-    election_result = nodes.election.get_election_group_count_query
+    election_result = nodes.election.get_election_result_query
 
     # Candidates and candidate lists
     # TODO: rename *election_list(s)* to *candidate_list(s)*?

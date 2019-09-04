@@ -52,3 +52,7 @@ class Candidate(ModelBase):
 
     def __str__(self):
         return self.name
+
+    @property
+    def election_status(self):
+        return self.list.election.status

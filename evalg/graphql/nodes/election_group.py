@@ -24,11 +24,7 @@ import evalg.proc.election
 import evalg.proc.vote
 import evalg.proc.count
 from evalg import db
-from evalg.authorization.permissions import (
-    permission_control_decorate,
-    permission_controlled_default_resolver,
-    Permissions
-)
+from evalg.authorization import permissions
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
 from evalg.graphql.nodes.base import (get_session,
@@ -58,9 +54,9 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
     """
     class Meta:
         model = evalg.models.election.ElectionGroup
-        default_resolver = permission_controlled_default_resolver
+        default_resolver = permissions.permission_controlled_default_resolver
 
-    @permission_control_decorate
+    @permissions.permission_control_field
     def resolve_meta(self, info):
         return convert_json(self.meta)
 
@@ -73,22 +69,22 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
         lambda: PersonWithVoters
     )
 
-    @permission_control_decorate
+    @permissions.permission_control_field
     def resolve_announcement_blockers(self, info):
         return evalg.proc.election.get_group_announcement_blockers(self)
 
-    @permission_control_decorate
+    @permissions.permission_control_field
     def resolve_publication_blockers(self, info):
         return evalg.proc.election.get_group_publication_blockers(self)
 
-    @permission_control_decorate
+    @permissions.permission_control_field
     def resolve_latest_election_group_count(self, info):
         session = get_session(info)
         group_id = self.id
         return evalg.proc.election.get_latest_election_group_count(
             session, group_id)
 
-    @permission_control_decorate
+    @permissions.permission_control_field
     def resolve_persons_with_multiple_verified_voters(self, info):
         return resolve_persons_with_multiple_verified_voters(
             self,
@@ -160,6 +156,7 @@ class PersonWithVoters(graphene.ObjectType):
     voters = graphene.List(Voter)
 
 
+@permissions.permission_control_single_resolver(permissions.can_manage_election_group)
 def resolve_persons_with_multiple_verified_voters(_, info, **args):
     election_group_id = args.get('id')
     session = get_session(info)
@@ -214,6 +211,7 @@ class ElectionKeyMeta(graphene.ObjectType):
     generated_by = graphene.Field(Person)
 
 
+@permissions.permission_control_single_resolver(permissions.can_manage_election_group)
 def resolve_election_key_meta(_, info, **args):
     election_group_id = args['id']
     ElectionGroupVersion = version_class(evalg.models.election.ElectionGroup)
@@ -243,11 +241,12 @@ get_election_key_meta_query = graphene.Field(
 class ElectionGroupCount(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.election_group_count.ElectionGroupCount
+        default_resolver = permissions.permission_controlled_default_resolver
 
     election_results = graphene.List(ElectionResult)
-
     initiated_by = graphene.Field(Person)
 
+    @permissions.permission_control_field
     def resolve_initiated_by(self, info):
         election_group_count_id = self.id
         ElectionGroupCountVersion = version_class(
@@ -314,8 +313,7 @@ class CreateNewElectionGroup(graphene.Mutation):
     def mutate(self, info, ou_id, template, template_name):
         # TODO: Looks like template_name is required?
         session = get_session(info)
-        ou = evalg.database.query.lookup(
-            session, evalg.models.ou.OrganizationalUnit, id=ou_id)
+        ou = session.query(evalg.models.ou.OrganizationalUnit).get(ou_id)
         election_group = evalg.proc.election.make_group_from_template(
             session, template_name, ou)
         current_user = get_current_user(info)
@@ -367,14 +365,14 @@ class UpdateBaseSettings(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         group_id = args.get('id')
-        if not Permissions.can_manage_election_group(session, user, group_id):
+        el_grp = evalg.models.election.ElectionGroup.query.get(group_id)
+        if not permissions.can_manage_election_group(session, user, el_grp):
             return UpdateBaseSettingsResponse(
                 success=False,
                 code='permission-denied',
                 message='Not allowed to update base settings for election '
                         'group {}'.format(group_id)
             )
-        el_grp = evalg.models.election.ElectionGroup.query.get(group_id)
         el_grp.meta['candidate_rules']['candidate_gender'] = args.get(
             'has_gender_quota')
         session.add(el_grp)
@@ -473,15 +471,15 @@ class SetElectionGroupKey(graphene.Mutation):
         public_key = args['public_key']
         session = get_session(info)
         user = get_current_user(info)
-        if not Permissions.can_manage_election_group(session, user, group_id):
+        group = session.query(evalg.models.election.ElectionGroup).get(
+            group_id)
+        if not permissions.can_manage_election_group(session, user, group):
             return SetElectionGroupKeyResponse(
                 success=False,
                 code='permission-denied',
                 message='Not allowed to set election group key for election '
                         'group {}'.format(group_id)
             )
-        group = session.query(evalg.models.election.ElectionGroup).get(
-            group_id)
         for election in group.elections:
             if group.public_key and group.published:
                 return SetElectionGroupKeyResponse(
@@ -525,13 +523,6 @@ class CountElectionGroup(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         group_id = args['id']
-        if not Permissions.can_manage_election_group(session, user, group_id):
-            return CountElectionGroupResponse(
-                success=False,
-                code='permission-denied',
-                message='Not allowed to count election group {}'.format(
-                    group_id)
-            )
 
         election_key = args['election_key']
 
@@ -541,6 +532,14 @@ class CountElectionGroup(graphene.Mutation):
             election_key
         )
 
+        if not permissions.can_manage_election_group(
+                session, user, election_group_counter.group):
+            return CountElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to count election group {}'.format(
+                    group_id)
+            )
         if evalg.proc.vote.get_persons_with_multiple_verified_voters(
                 session,
                 group_id

@@ -112,11 +112,8 @@ class ElectionGroupCounter:
         self.session = session
         self.group_id = group_id
         self.test_mode = test_mode
-        self.group = evalg.database.query.lookup(
-            self.session,
-            evalg.models.election.ElectionGroup,
-            id=group_id
-        )
+        self.group = session.query(evalg.models.election.ElectionGroup).get(
+            group_id)
         self.ballot_serializer = self._init_ballot_serializer(election_key)
         self.id2candidate = self._init_id2candidate()
         self.id2pollbook = self._init_id2pollbook()

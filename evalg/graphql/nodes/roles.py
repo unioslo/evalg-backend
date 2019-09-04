@@ -13,7 +13,7 @@ from evalg.graphql.nodes.base import (get_session,
 from evalg.proc.authz import (get_or_create_principal,
                               add_election_group_role,
                               delete_role)
-from evalg.authorization.permissions import Permissions
+from evalg.authorization import permissions
 
 #
 # Queries
@@ -96,8 +96,8 @@ class AddElectionGroupRoleByIdentifier(graphene.Mutation):
                 message='No election group identified by {}'.format(
                     election_group_id)
             )
-        if not Permissions.can_manage_election_group(session, user,
-                                                     election_group.id):
+        if not permissions.can_manage_election_group(session, user,
+                                                     election_group):
             return AddElectionGroupRoleByIdentifierResponse(
                 success=False,
                 code='permission-denied',
@@ -145,7 +145,7 @@ class RemoveElectionGroupRoleByGrant(graphene.Mutation):
                 message='No election group role grant identified by {}'.format(
                     grant_id)
             )
-        if not Permissions.can_manage_election_group(session, user, role.group.id):
+        if not permissions.can_manage_election_group(session, user, role.group):
             return RemoveElectionGroupRoleByGrantResponse(
                 success=False,
                 code='permission-denied',

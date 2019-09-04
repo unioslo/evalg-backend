@@ -7,7 +7,8 @@ import graphene_sqlalchemy
 import evalg.models.election_list
 import evalg.models.candidate
 from evalg.utils import convert_json
-from evalg import db
+from evalg.authorization import permissions
+from evalg.graphql.nodes.base import get_current_user, get_session
 
 
 #
@@ -34,6 +35,7 @@ class ElectionList(graphene_sqlalchemy.SQLAlchemyObjectType):
     """
     class Meta:
         model = evalg.models.election_list.ElectionList
+        default_resolver = permissions.permission_controlled_default_resolver
 
 
 def resolve_candidate_lists_by_fields(_, info, **args):
@@ -61,7 +63,9 @@ class Candidate(graphene_sqlalchemy.SQLAlchemyObjectType):
     """
     class Meta:
         model = evalg.models.candidate.Candidate
+        default_resolver = permissions.permission_controlled_default_resolver
 
+    @permissions.permission_control_field
     def resolve_meta(self, info):
         if self.meta is None:
             return None
@@ -101,14 +105,18 @@ class AddPrefElecCandidate(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
+        session = get_session(info)
+        user = get_current_user(info)
+        if not permissions.can_manage_election_list(session, user, **args):
+            return AddPrefElecCandidate(ok=False)
         meta = {'gender': args.get('gender')}
         candidate = evalg.models.candidate.Candidate(
             name=args.get('name'),
             meta=meta,
             list_id=args.get('list_id'),
             information_url=args.get('information_url'))
-        db.session.add(candidate)
-        db.session.commit()
+        session.add(candidate)
+        session.commit()
         return AddPrefElecCandidate(ok=True)
 
 
@@ -123,13 +131,17 @@ class UpdatePrefElecCandidate(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
+        session = get_session(info)
+        user = get_current_user(info)
+        if not permissions.can_manage_election_list(session, user, **args):
+            return UpdatePrefElecCandidate(ok=False)
         candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
         candidate.name = args.get('name')
         candidate.meta['gender'] = args.get('gender')
         candidate.list_id = args.get('list_id')
         candidate.information_url = args.get('information_url')
-        db.session.add(candidate)
-        db.session.commit()
+        session.add(candidate)
+        session.commit()
         return UpdatePrefElecCandidate(ok=True)
 
 
@@ -147,14 +159,18 @@ class AddTeamPrefElecCandidate(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
+        session = get_session(info)
+        user = get_current_user(info)
+        if not permissions.can_manage_election_list(session, user, **args):
+            return AddTeamPrefElecCandidate(ok=False)
         meta = {'co_candidates': args.get('co_candidates')}
         candidate = evalg.models.candidate.Candidate(
             name=args.get('name'),
             meta=meta,
             list_id=args.get('list_id'),
             information_url=args.get('information_url'))
-        db.session.add(candidate)
-        db.session.commit()
+        session.add(candidate)
+        session.commit()
         return AddTeamPrefElecCandidate(ok=True)
 
 
@@ -169,13 +185,17 @@ class UpdateTeamPrefElecCandidate(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
+        session = get_session(info)
+        user = get_current_user(info)
+        if not permissions.can_manage_election_list(session, user, **args):
+            return UpdateTeamPrefElecCandidate(ok=False)
         candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
         candidate.name = args.get('name')
         candidate.meta['co_candidates'] = args.get('co_candidates')
         candidate.list_id = args.get('list_id')
         candidate.information_url = args.get('information_url')
-        db.session.add(candidate)
-        db.session.commit()
+        session.add(candidate)
+        session.commit()
         return UpdateTeamPrefElecCandidate(ok=True)
 
 
@@ -189,7 +209,14 @@ class DeleteCandidate(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
-        candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
-        db.session.delete(candidate)
-        db.session.commit()
+        session = get_session(info)
+        user = get_current_user(info)
+        candidate = session.query(evalg.models.candidate.Candidate).get(
+            args.get('id')
+        )
+        args['list_id'] = candidate.list_id
+        if not permissions.can_manage_election_list(session, user, **args):
+            return DeleteCandidate(ok=False)
+        session.delete(candidate)
+        session.commit()
         return DeleteCandidate(ok=True)
