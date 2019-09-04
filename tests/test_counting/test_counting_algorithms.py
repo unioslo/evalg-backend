@@ -35,12 +35,15 @@ def test_counting_algorithms_uiostv(make_full_election):
     assert males
     # now the counting
     counter = Counter(election, [])  # no test_mode. Real randomization at work
-    election_count_tree = counter.count()
-    default_path = election_count_tree.default_path
-    result_dict = default_path.get_result().to_dict()
-    election_protocol_dict = default_path.get_protocol().to_dict()
+    default_path = counter.count().default_path
+    result = default_path.get_result()
+    protocol = default_path.get_protocol()
+    result_dict = result.to_dict()
+    election_protocol_dict = protocol.to_dict()
     # test result #
     assert result_dict
+    # test if result is JSON serializable #
+    assert result.to_json()
     # empty ballot election can only be decided by drawing
     assert result_dict['meta']['drawing']
     # 2 regular and 2 substitutes should have been elected
@@ -65,8 +68,10 @@ def test_counting_algorithms_uiostv(make_full_election):
                 elected_events_cnt += 1
     # all four candidates (regular + substitutes) must be elected by §19.1
     assert elected_events_cnt == 4
+    # test if protocol is JSON serializable #
+    assert protocol.to_json()
     # cheap check to make sure that the protocol rendering is complete
-    default_path.get_protocol().render()
+    assert protocol.render()
     # more tests / checks should be added in the future
 
 
@@ -101,12 +106,15 @@ def test_counting_algorithms_uiomv(make_full_election):
     assert len(candidates) == 2  # should be 2 candidates
     # now the counting
     counter = Counter(election, [])  # no test_mode. Real randomization at work
-    election_count_tree = counter.count()
-    default_path = election_count_tree.default_path
-    result_dict = default_path.get_result().to_dict()
-    election_protocol_dict = default_path.get_protocol().to_dict()
+    default_path = counter.count().default_path
+    result = default_path.get_result()
+    protocol = default_path.get_protocol()
+    result_dict = result.to_dict()
+    election_protocol_dict = protocol.to_dict()
     # test result #
     assert result_dict
+    # test if result is JSON serializable #
+    assert result.to_json()
     # empty ballot election can only be decided by drawing
     assert result_dict['meta']['drawing']
     # 1 regular candidate should have been elected
@@ -117,5 +125,6 @@ def test_counting_algorithms_uiomv(make_full_election):
             ''.join(election_protocol_dict['meta']['regular_candidate_ids']))
     # more detailed checks
     # cheap check to make sure that the protocol rendering is complete
-    default_path.get_protocol().render()
+    assert protocol.to_json()
+    assert protocol.render()
     # more tests / checks should be added in the future
