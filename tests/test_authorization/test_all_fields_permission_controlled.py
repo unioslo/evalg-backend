@@ -1,5 +1,5 @@
 from evalg.authorization.permissions import (
-    permission_control_decorate,
+    permission_control_field,
     permission_controlled_default_resolver
 )
 from evalg.graphql.nodes.election_group import (
@@ -13,7 +13,7 @@ def test_election_group_fields_permission_controlled():
             if attr_name[:7] == 'resolve':
                 if attr_name[8:] == 'id':
                     continue
-                assert (attr_name in permission_control_decorate.decorated_resolvers)
+                assert (attr_name in permission_control_field.decorated_resolvers)
 
     assert (ElectionGroup._meta.default_resolver.__name__ ==
             permission_controlled_default_resolver.__name__)

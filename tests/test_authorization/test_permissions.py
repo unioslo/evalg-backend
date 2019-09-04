@@ -17,11 +17,11 @@ def test_requirements_throw_PermissionDenied_on_deny(
 
 
 def test_can_manage_election_group_denies(
-        db_session, logged_in_user, election_group_foo):
-    assert not permissions.Permissions.can_manage_election_group(
+        db_session, logged_in_user, election_group_baz):
+    assert not permissions.can_manage_election_group(
         session=db_session,
         user=logged_in_user,
-        election_group_id=election_group_foo.id)
+        election_group=election_group_baz)
 
 
 def test_can_manage_election_group_allows(
@@ -33,7 +33,7 @@ def test_can_manage_election_group_allows(
         election_group=election_group_foo,
         principal=principal,
         role_name='admin')
-    assert permissions.Permissions.can_manage_election_group(
+    assert permissions.can_manage_election_group(
         session=db_session,
         user=logged_in_user,
         election_group_id=election_group_foo.id)

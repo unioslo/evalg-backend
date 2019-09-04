@@ -40,18 +40,19 @@ def config():
                 'a6733d24-8987-44b6-8cd0-308030710aa2': {
                     'id': 'a6733d24-8987-44b6-8cd0-308030710aa2',
                     'sec': {
-                        'feide': ('foo@example.org',),
-                        'nin': ('12128812345',),
+                        'feide': ('baz@example.org',),
+                        'nin': ('12128812337',),
                     },
                     'dp_user_info': {
                         'user': {
-                            'name': 'Foo Foo',
-                            'email': 'foo@example.org',
+                            'name': 'Baz Baz',
+                            'email': 'baz@example.org',
                         },
                         'audience': 'mock',
                     },
                 },
             },
+
         }
         BACKEND_PRIVATE_KEY = 'nnQjcDrXcIc8mpHabme8j7/xPBWqIkPElM8KtAJ4vgc='
         BACKEND_PUBLIC_KEY = 'KLUDKkCPrAEcK9SrYDyMsrLEShm6axS9uSG/sOfibCA='
@@ -129,11 +130,14 @@ def make_ou(db_session):
 
 
 @pytest.fixture
-def make_election_group(db_session, election_keys_foo):
+def make_election_group(db_session, election_keys_foo, make_person_principal,
+                        logged_in_user, make_role):
     """
     Election group fixture.
     """
-    def make_election_group(name):
+
+    def make_election_group(name, announced_at=None, published_at=None,
+                            admin=False):
         data = {
             'name': {
                 'nb': name,
@@ -144,6 +148,8 @@ def make_election_group(db_session, election_keys_foo):
                 'nb': 'Description foo',
                 'en': 'Description foo',
             },
+            'announced_at': announced_at,
+            'published_at': published_at,
             'public_key': election_keys_foo['public'],
         }
 
@@ -154,6 +160,9 @@ def make_election_group(db_session, election_keys_foo):
 
         db_session.add(election_group)
         db_session.flush()
+        if admin:
+            person_principal = make_person_principal(logged_in_user.person)
+            make_role(election_group, person_principal)
         return election_group
 
     return make_election_group
@@ -185,9 +194,13 @@ def make_election_group_from_template(db_session, make_ou):
     return make_election_group_from_template
 
 
+def election_group_baz(make_election_group):
+    return make_election_group('Baz')
+
+
 @pytest.fixture
 def election_group_foo(make_election_group):
-    return make_election_group('Election group foo fixture')
+    return make_election_group('Election group foo fixture',  admin=True)
 
 
 @pytest.fixture
@@ -225,18 +238,18 @@ def election_foo(make_election):
 
 
 election_list_data = {
-        "name": {
-            "nb": "Vitenskapelig ansatte",
-            "nn": "Vitskapeleg tilsette",
-            "en": "Academic staff",
-        },
-        "description": {
-            "nb": "Vitenskapelig ansatte",
-            "nn": "Vitskapeleg tilsette",
-            "en": "Academic staff"
-        },
-        "information_url": "https://uio.no",
-    }
+    "name": {
+        "nb": "Vitenskapelig ansatte",
+        "nn": "Vitskapeleg tilsette",
+        "en": "Academic staff",
+    },
+    "description": {
+        "nb": "Vitenskapelig ansatte",
+        "nn": "Vitskapeleg tilsette",
+        "en": "Academic staff"
+    },
+    "information_url": "https://uio.no",
+}
 
 
 @pytest.fixture
@@ -279,19 +292,19 @@ def election_list_team_pref_foo(db_session, election_foo):
 
 
 pref_candidates_data = [
-        {
-            "name": "Peder Aas",
-            "meta": {
-                "gender": "Male"
-            },
+    {
+        "name": "Peder Aas",
+        "meta": {
+            "gender": "Male"
         },
-        {
-            "name": "Marte Kirkerud",
-            "meta": {
-                "gender": "female"
-            },
+    },
+    {
+        "name": "Marte Kirkerud",
+        "meta": {
+            "gender": "female"
         },
-    ]
+    },
+]
 
 
 @pytest.fixture
@@ -421,6 +434,29 @@ def person_foo(persons):
 
 
 @pytest.fixture
+def make_person_principal(db_session):
+    def make_person_principal(person, principal_type='person'):
+        return evalg.proc.authz.get_or_create_principal(
+            db_session,
+            principal_type=principal_type,
+            person_id=person.id)
+
+    return make_person_principal
+
+
+@pytest.fixture
+def make_role(db_session):
+    def make_role(election_group, principal, role_name='admin'):
+        return evalg.proc.authz.add_election_group_role(
+            session=db_session,
+            election_group=election_group,
+            principal=principal,
+            role_name=role_name)
+
+    return make_role
+
+
+@pytest.fixture
 def make_pollbook_voter(db_session, persons, pollbook_foo):
     def make_pollbook_voter(person=None, pollbook=None):
 
@@ -443,6 +479,7 @@ def make_pollbook_voter(db_session, persons, pollbook_foo):
         db_session.add(pollbook_voter)
         db_session.flush()
         return pollbook_voter
+
     return make_pollbook_voter
 
 
@@ -521,31 +558,15 @@ def election_result_foo(db_session, election_foo, election_group_count_foo):
 
 
 @pytest.fixture
-def election_group_bar(db_session, election_keys_foo):
-    data = {
-        'name': {
-            'nb': 'Bar',
-            'en': 'Bar',
-        },
-        'type': 'single_election',
-        'description': {
-            'nb': 'Description bar',
-            'en': 'Description bar',
-        },
-        'announced_at': (datetime.datetime.now(datetime.timezone.utc) -
-                         datetime.timedelta(days=3)),
-        'published_at': (datetime.datetime.now(datetime.timezone.utc) -
-                         datetime.timedelta(days=3)),
-        'public_key': election_keys_foo['public'],
-
-    }
-    election_group = evalg.database.query.get_or_create(
-        db_session, ElectionGroup, **data)
-    election_group.publish()
-    election_group.announce()
-    db_session.add(election_group)
-    db_session.flush()
-    return election_group
+def election_group_bar(make_election_group):
+    return make_election_group(
+        'Bar',
+        announced_at=(datetime.datetime.now(datetime.timezone.utc) -
+                      datetime.timedelta(days=3)),
+        published_at=(datetime.datetime.now(datetime.timezone.utc) -
+                      datetime.timedelta(days=3)),
+        admin=True
+    )
 
 
 @pytest.fixture
@@ -694,14 +715,13 @@ def vote_bar(db_session, pollbook_voter_bar, envelope_bar):
 @pytest.fixture
 def make_full_election(make_election_group, make_election, make_pollbook,
                        make_person, make_pollbook_voter, make_pollbook_vote):
-
     def make_full_election(name, nr_of_elections=2, pollboks_per_election=1,
                            voters_per_pollbook=1):
         election_group = make_election_group('Test election group')
 
         elections = [make_election('{0} election {1}'.format(name, x),
                                    election_group=election_group) for x in
-                     range(1, nr_of_elections+1)]
+                     range(1, nr_of_elections + 1)]
 
         pollbooks = {}
         pollbook_voters = {}

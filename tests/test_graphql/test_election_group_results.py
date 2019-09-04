@@ -4,17 +4,13 @@ Test for all queries and mutations related to election results.
 Election Group Count and Election Results.
 """
 
-import pytest
-import datetime
-
 from evalg.graphql import get_context
-from evalg.models.election_group_count import ElectionGroupCount
-from evalg.models.election_result import ElectionResult
 
 
 # Election Group Count
 
-def test_query_election_group_count_by_id(client, election_group_count_foo):
+def test_query_election_group_count_by_id(client, election_group_count_foo,
+                                          logged_in_user):
     variables = {'id': str(election_group_count_foo.id)}
     query = """
     query electionGroupCount($id: UUID!) {
@@ -27,7 +23,8 @@ def test_query_election_group_count_by_id(client, election_group_count_foo):
         }
     }
     """
-    execution = client.execute(query, variables=variables)
+    context = get_context()
+    execution = client.execute(query, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['electionGroupCount']
     assert str(election_group_count_foo.id) == response['id']
@@ -35,9 +32,9 @@ def test_query_election_group_count_by_id(client, election_group_count_foo):
 
 
 def test_mutation_start_election_group_count(
-        client, db_session, pref_candidates_bar, pollbook_voter_bar,
-        election_group_bar, election_bar, pollbook_bar, election_list_pref_bar,
-        election_keys_foo):
+        client, db_session, logged_in_user, pref_candidates_bar,
+        pollbook_voter_bar, election_group_bar, election_bar, pollbook_bar,
+        election_list_pref_bar, election_keys_foo):
     variables = {
         'id': str(election_group_bar.id),
         'electionKey': election_keys_foo['private']
@@ -52,15 +49,15 @@ def test_mutation_start_election_group_count(
         }
         """
     context = get_context()
-    execution = client.execute(mutation, variables=variables,
-                               context=context)
+    execution = client.execute(mutation, variables=variables, context=context)
     assert not execution.get('errors')
     result = execution['data']['startElectionGroupCount']
+    print(result)
     assert result['success']
 
 
 def test_mutation_start_election_group_count_responses(
-        client, db_session,
+        client, db_session, logged_in_user,
         election_group_foo, election_foo, election_list_pref_foo,
         election_keys_foo):
     """Verify that the mutation gives correct responses when the count fails"""
@@ -78,8 +75,7 @@ def test_mutation_start_election_group_count_responses(
     }
     """
     context = get_context()
-    execution = client.execute(mutation, variables=variables,
-                               context=context)
+    execution = client.execute(mutation, variables=variables, context=context)
     assert not execution.get('errors')
     result = execution['data']['startElectionGroupCount']
     # The mutation should fail because election_foo is not closed
@@ -99,8 +95,8 @@ def test_mutation_start_election_group_count_responses(
             result['code'] == 'invalid-election-key')
 
 
-def test_query_election_group_counting_results(client,
-                                               election_group_count_foo):
+def test_query_election_group_counting_results(
+        client, db_session, logged_in_user, election_group_count_foo):
     variables = {'id': str(election_group_count_foo.group_id)}
     query = """
     query electionGroupCountingResults($id: UUID!) {
@@ -113,7 +109,8 @@ def test_query_election_group_counting_results(client,
         }
     }
     """
-    execution = client.execute(query, variables=variables)
+    context = get_context()
+    execution = client.execute(query, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['electionGroupCountingResults']
 
@@ -124,7 +121,8 @@ def test_query_election_group_counting_results(client,
 
 # Election Results
 
-def test_query_election_result_by_id(client, election_result_foo):
+def test_query_election_result_by_id(client, db_session, election_result_foo,
+                                     logged_in_user):
     variables = {'id': str(election_result_foo.id)}
     query = """
     query electionResult($id: UUID!) {
@@ -137,8 +135,8 @@ def test_query_election_result_by_id(client, election_result_foo):
         }
     }
     """
-    execution = client.execute(query, variables=variables)
-
+    context = get_context()
+    execution = client.execute(query, variables=variables, context=context)
     assert not execution.get('error')
     result = execution['data']['electionResult']
     assert result

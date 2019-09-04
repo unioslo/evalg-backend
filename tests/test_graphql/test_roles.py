@@ -81,13 +81,13 @@ def test_add_election_admin_when_election_group_does_not_exist(
 
 
 def test_add_election_admin_by_identifier_denies(
-        db_session, election_group_foo, logged_in_user, client):
+        db_session, election_group_baz, logged_in_user, client):
     """
     Ensure addElectionGroupRoleByIdentifier disallows adding new roles if the
     current user is not an admin for the election.
     """
     variables = {
-        'electionGroupId': str(election_group_foo.id),
+        'electionGroupId': str(election_group_baz.id),
         'role': 'admin',
         'idType': PersonIdType('feide_id').value,
         'idValue': 'someonerandom@example.org',
