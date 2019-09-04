@@ -376,7 +376,7 @@ def pollbook_foo(db_session, make_pollbook):
 
 @pytest.fixture
 def make_person(db_session):
-    def make_person(display_name, email):
+    def make_person(display_name, email, nin=None):
         data = {
             'email': email,
             'display_name': display_name,
@@ -392,7 +392,7 @@ def make_person(db_session):
             },
             {
                 'id_type': 'nin',
-                'id_value': ''.join([str(random.randint(0, 9)) for _ in
+                'id_value': nin or ''.join([str(random.randint(0, 9)) for _ in
                                      range(0, 10)]),
             },
         ]
@@ -418,7 +418,7 @@ def persons(db_session, make_person):
     persons = Person.query.all()
     if len(persons) <= 1:
         persons = [
-            make_person('Foo Foo', 'foo@example.org'),
+            make_person('Foo Foo', 'foo@example.org', nin='12128812345'),
             make_person('Bar Bar', 'bar@example.org')
         ]
 

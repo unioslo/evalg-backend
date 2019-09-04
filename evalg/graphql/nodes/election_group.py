@@ -24,12 +24,12 @@ import evalg.proc.election
 import evalg.proc.vote
 import evalg.proc.count
 from evalg import db
-from evalg.authorization import permissions
+from evalg.graphql.nodes.utils import permissions
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
-from evalg.graphql.nodes.base import (get_session,
-                                      get_current_user,
-                                      MutationResponse)
+from evalg.graphql.nodes.utils.base import (get_session,
+                                            get_current_user,
+                                            MutationResponse)
 from evalg.graphql.nodes.pollbook import Voter
 from evalg.graphql.nodes.person import Person
 from evalg.graphql.nodes.election import ElectionResult
@@ -156,7 +156,8 @@ class PersonWithVoters(graphene.ObjectType):
     voters = graphene.List(Voter)
 
 
-@permissions.permission_control_single_resolver(permissions.can_manage_election_group)
+@permissions.permission_control_single_resolver(
+    permissions.can_manage_election_group)
 def resolve_persons_with_multiple_verified_voters(_, info, **args):
     election_group_id = args.get('id')
     session = get_session(info)
@@ -211,7 +212,8 @@ class ElectionKeyMeta(graphene.ObjectType):
     generated_by = graphene.Field(Person)
 
 
-@permissions.permission_control_single_resolver(permissions.can_manage_election_group)
+@permissions.permission_control_single_resolver(
+    permissions.can_manage_election_group)
 def resolve_election_key_meta(_, info, **args):
     election_group_id = args['id']
     ElectionGroupVersion = version_class(evalg.models.election.ElectionGroup)

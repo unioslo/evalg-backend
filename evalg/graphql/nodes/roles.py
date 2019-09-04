@@ -7,13 +7,14 @@ import graphene_sqlalchemy
 import evalg.database.query
 import evalg.models.authorization
 from evalg.graphql.types import PersonIdType, ElectionGroupRoleType
-from evalg.graphql.nodes.base import (get_session,
-                                      get_current_user,
-                                      MutationResponse)
+from evalg.graphql.nodes.utils.base import (get_session,
+                                            get_current_user,
+                                            MutationResponse)
 from evalg.proc.authz import (get_or_create_principal,
                               add_election_group_role,
                               delete_role)
-from evalg.authorization import permissions
+from evalg.graphql.nodes.utils import permissions
+
 
 #
 # Queries

@@ -1,6 +1,7 @@
 from evalg.database.query import get_or_create
 from evalg.models.authorization import (PersonPrincipal,
                                         PersonIdentifierPrincipal)
+from evalg.models.person import PersonExternalId, Person
 from evalg.proc.authz import (get_or_create_principal,
                               get_person_identifier_principals,
                               get_principals_for_person)

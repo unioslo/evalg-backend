@@ -6,7 +6,7 @@ import graphene_sqlalchemy
 
 import evalg.models.group
 import evalg.proc.group
-from evalg.graphql.nodes.base import get_session
+from evalg.graphql.nodes.utils.base import get_session
 
 
 # TODO:

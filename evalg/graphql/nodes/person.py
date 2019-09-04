@@ -11,7 +11,7 @@ import evalg.proc.vote
 import evalg.models.person
 import evalg.authentication.user
 import evalg.database.query
-from evalg.graphql.nodes.base import get_session
+from evalg.graphql.nodes.utils.base import get_session
 from evalg.graphql.nodes.roles import Role
 
 # TODO:

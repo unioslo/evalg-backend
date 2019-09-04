@@ -7,10 +7,10 @@ from graphene.types.generic import GenericScalar
 import graphene_sqlalchemy
 
 import evalg.models.election
-from evalg.graphql.nodes.base import get_current_user, get_session
+from evalg.graphql.nodes.utils.base import get_current_user, get_session
 from evalg.graphql.nodes.votes import (resolve_election_count_by_id,
                                        ElectionVoteCounts)
-from evalg.authorization import permissions
+from evalg.graphql.nodes.utils import permissions
 from evalg.utils import convert_json
 
 from . import pollbook

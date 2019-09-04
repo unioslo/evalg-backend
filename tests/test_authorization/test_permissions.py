@@ -2,17 +2,17 @@ import pytest
 
 from evalg.authorization import (allows,
                                  PermissionDenied)
-from evalg.authorization import permissions
+from evalg.graphql.nodes.utils import permissions
 from evalg.proc.authz import get_or_create_principal, add_election_group_role
 
 
 def test_requirements_throw_PermissionDenied_on_deny(
-        db_session, logged_in_user, election_group_foo):
+        db_session, logged_in_user, election_group_baz):
     with pytest.raises(PermissionDenied):
         allows.run([
             permissions.IsElectionGroupAdmin(
                 session=db_session,
-                election_group_id=election_group_foo.id)
+                election_group_id=election_group_baz.id)
         ])
 
 
@@ -36,4 +36,4 @@ def test_can_manage_election_group_allows(
     assert permissions.can_manage_election_group(
         session=db_session,
         user=logged_in_user,
-        election_group_id=election_group_foo.id)
+        election_group=election_group_foo)

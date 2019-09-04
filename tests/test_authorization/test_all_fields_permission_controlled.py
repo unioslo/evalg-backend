@@ -1,4 +1,4 @@
-from evalg.authorization.permissions import (
+from evalg.graphql.nodes.utils.permissions import (
     permission_control_field,
     permission_controlled_default_resolver
 )

@@ -7,8 +7,8 @@ import graphene_sqlalchemy
 import evalg.models.election_list
 import evalg.models.candidate
 from evalg.utils import convert_json
-from evalg.authorization import permissions
-from evalg.graphql.nodes.base import get_current_user, get_session
+from evalg.graphql.nodes.utils import permissions
+from evalg.graphql.nodes.utils.base import get_current_user, get_session
 
 
 #
