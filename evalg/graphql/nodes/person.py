@@ -11,6 +11,7 @@ import evalg.proc.vote
 import evalg.models.person
 import evalg.authentication.user
 import evalg.database.query
+from evalg.graphql.nodes.utils import permissions
 from evalg.graphql.nodes.utils.base import get_session
 from evalg.graphql.nodes.roles import Role
 
@@ -38,6 +39,7 @@ class PersonIdentifier(graphene_sqlalchemy.SQLAlchemyObjectType):
 class Person(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.person.Person
+        default_resolver = permissions.permission_controlled_default_resolver
 
     identifiers = graphene.List(PersonIdentifier)
 

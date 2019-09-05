@@ -16,8 +16,10 @@ from evalg import db
 from evalg.graphql.types import PersonIdType
 from evalg.file_parser.parser import CensusFileParser
 from evalg.models.voter import VerifiedStatus, VERIFIED_STATUS_MAP
-from evalg.graphql.nodes.utils.base import get_session, MutationResponse
+from evalg.graphql.nodes.utils.base import (get_session, get_current_user,
+                                            MutationResponse)
 from evalg.graphql.nodes.person import Person
+from evalg.graphql.nodes.utils import permissions
 
 
 logger = logging.getLogger(__name__)
@@ -44,6 +46,7 @@ logger = logging.getLogger(__name__)
 class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.voter.Voter
+        default_resolver = permissions.permission_controlled_default_resolver
 
     verified_status = graphene.Enum.from_enum(
         evalg.models.voter.VerifiedStatus
@@ -51,6 +54,7 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     person = graphene.Field(Person)
 
+    @permissions.permission_control_field
     def resolve_person(self, info):
         voter_id = self.id
         session = get_session(info)
@@ -64,6 +68,7 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
 class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.pollbook.PollBook
+        default_resolver = permissions.permission_controlled_default_resolver
 
     self_added_voters = graphene.List(lambda: Voter)
     admin_added_voters = graphene.List(lambda: Voter)
@@ -73,32 +78,38 @@ class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
     voters_with_vote = graphene.List(lambda: Voter)
     voters_without_vote = graphene.List(lambda: Voter)
 
+    @permissions.permission_control_field
     def resolve_self_added_voters(self, info):
         session = get_session(info)
         return evalg.proc.vote.get_voters_by_self_added(session,
                                                         self.id,
                                                         self_added=True).all()
 
+    @permissions.permission_control_field
     def resolve_admin_added_voters(self, info):
         session = get_session(info)
         return evalg.proc.vote.get_voters_by_self_added(session,
                                                         self.id,
                                                         self_added=False).all()
 
+    @permissions.permission_control_field
     def resolve_verified_voters_count(self, info):
         session = get_session(info)
         return evalg.proc.vote.get_verified_voters_count(session, self.id)
 
+    @permissions.permission_control_field
     def resolve_verified_voters_with_votes_count(self, info):
         session = get_session(info)
         return evalg.proc.vote.get_verified_voters_with_votes_count(
             session, self.id)
 
+    @permissions.permission_control_field
     def resolve_voters_with_vote(self, info):
         session = get_session(info)
         return evalg.proc.pollbook.get_voters_with_vote_in_pollbook(
             session, self.id)
 
+    @permissions.permission_control_field
     def resolve_voters_without_vote(self, info):
         session = get_session(info)
         return evalg.proc.pollbook.get_voters_without_vote_in_pollbook(
@@ -187,7 +198,6 @@ class UpdateVoterPollBook(graphene.Mutation):
     Add a pre-existing voter to another pollbook?
     Is this even possible?
     """
-
     class Arguments:
         id = graphene.UUID(required=True)
         pollbook_id = graphene.UUID(required=True)
@@ -197,7 +207,11 @@ class UpdateVoterPollBook(graphene.Mutation):
     def mutate(self, info, **kwargs):
         # TODO:
         #   What even is this mutation?
-        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
+        session = get_session(info)
+        user = get_current_user(info)
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        if not permissions.can_vote(session, user, voter):
+            return UpdateVoterPollBook(ok=False)
         voter.pollbook_id = kwargs.get('pollbook_id')
         db.session.add(voter)
         db.session.commit()
@@ -216,10 +230,14 @@ class UpdateVoterReason(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
+        session = get_session(info)
+        user = get_current_user
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        if not permissions.can_vote(session, user, voter):
+            return UpdateVoterReason(ok=False)
         voter.reason = kwargs.get('reason')
-        db.session.add(voter)
-        db.session.commit()
+        session.add(voter)
+        session.commit()
         return UpdateVoterReason(ok=True)
 
 
@@ -241,7 +259,10 @@ class UndoReviewVoter(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
+        user = get_current_user
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        if not permissions.can_manage_voter(session, user, voter):
+            return UndoReviewVoter(ok=False)
         verified_status = VERIFIED_STATUS_MAP.get(
             (voter.self_added, voter.reviewed, voter.verified),
             None
@@ -269,7 +290,10 @@ class ReviewVoter(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
+        user = get_current_user
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        if not permissions.can_manage_voter(session, user, voter):
+            return ReviewVoter(ok=False)
         voter.reviewed = True
         voter.verified = kwargs.get('verify')
         session.add(voter)
@@ -288,7 +312,12 @@ class DeleteVotersInPollBook(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        pollbook = evalg.models.pollbook.PollBook.query.get(kwargs.get('id'))
+        session = get_session(info)
+        user = get_current_user
+        pollbook = session.query(evalg.models.pollbook.PollBook).get(
+            kwargs.get('id'))
+        if not permissions.can_manage_pollbook(session, user, pollbook):
+            return DeleteVotersInPollBook(ok=False)
         for voter in pollbook.voters:
             db.session.delete(voter)
         db.session.commit()
@@ -297,7 +326,7 @@ class DeleteVotersInPollBook(graphene.Mutation):
 
 class AddVoterByIdentifier(graphene.Mutation):
     """
-    Create a single voter object in a pollbook.
+    Create a single voter object in a pollbook. Only available to admin.
     """
 
     class Arguments:
@@ -315,6 +344,7 @@ class AddVoterByIdentifier(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
+        user = get_current_user(info)
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
         id_type = kwargs['id_type']
         id_value = kwargs['id_value']
@@ -326,6 +356,9 @@ class AddVoterByIdentifier(graphene.Mutation):
             session,
             evalg.models.pollbook.PollBook,
             id=pollbook_id)
+
+        if not permissions.can_manage_pollbook(session, user, pollbook):
+            return None
 
         voter = policy.add_voter_id(
             pollbook,
@@ -340,15 +373,12 @@ class AddVoterByIdentifier(graphene.Mutation):
 
 class AddVoterByPersonId(graphene.Mutation):
     """
-    Create a single voter object in a pollbook.
+    Create a single voter object in a pollbook. Used by person when voting.
     """
 
     class Arguments:
         person_id = graphene.UUID(required=True)
         pollbook_id = graphene.UUID(required=True)
-        approved = graphene.Boolean(
-            description='add a pre-approved voter to the poll book',
-        )
         reason = graphene.String(
             description='reason for adding voter to the poll book',
         )
@@ -360,7 +390,6 @@ class AddVoterByPersonId(graphene.Mutation):
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
         person_id = kwargs['person_id']
         pollbook_id = kwargs['pollbook_id']
-        self_added = not kwargs.get('approved', False)
         reason = kwargs.get('reason')
 
         person = evalg.database.query.lookup(
@@ -376,7 +405,7 @@ class AddVoterByPersonId(graphene.Mutation):
         voter = policy.add_voter(
             pollbook,
             person,
-            self_added=self_added,
+            self_added=True,
             reason=reason)
 
         db.session.commit()
@@ -401,7 +430,11 @@ class DeleteVoter(graphene.Mutation):
         #   Should we actually delete the object, or simply mark as deleted?
         #   If the object was added by an election admin from an import,
         #   shouldn't the voter entry stay there?
-        voter = evalg.models.voter.Voter.query.get(kwargs.get('id'))
+        session = get_session(info)
+        user = get_current_user(info)
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        if not permissions.can_manage_pollbook(session, user, voter.pollbook):
+            return DeleteVoter(ok=False)
         db.session.delete(voter)
         db.session.commit()
         return DeleteVoter(ok=True)
@@ -422,6 +455,7 @@ class UploadCensusFile(graphene.Mutation):
     Output = UploadCensusFileResponse
 
     def mutate(self, info, **kwargs):
+        user = get_current_user(info)
         pollbook_id = kwargs['pollbook_id']
         census_file = kwargs['census_file']
         session = get_session(info)
@@ -440,6 +474,9 @@ class UploadCensusFile(graphene.Mutation):
                 success=False,
                 code='pollbook-not-found',
                 message='No pollbook with id {!r}'.format(pollbook_id))
+
+        if not permissions.can_manage_pollbook(session, user, pollbook):
+            return UploadCensusFile(ok=False)
 
         logger.info('Updating %r from %r', pollbook, census_file)
         parser = CensusFileParser.factory(census_file)

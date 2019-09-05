@@ -156,11 +156,14 @@ class PersonWithVoters(graphene.ObjectType):
     voters = graphene.List(Voter)
 
 
-@permissions.permission_control_single_resolver(
-    permissions.can_manage_election_group)
 def resolve_persons_with_multiple_verified_voters(_, info, **args):
     election_group_id = args.get('id')
     session = get_session(info)
+    user = get_current_user(info)
+    el_grp = session.query(evalg.models.election.ElectionGroup).get(
+        election_group_id)
+    if not permissions.can_manage_election_group(session, user, el_grp):
+        return None
     query = evalg.proc.vote.get_persons_with_multiple_verified_voters(
         session,
         election_group_id
@@ -212,13 +215,18 @@ class ElectionKeyMeta(graphene.ObjectType):
     generated_by = graphene.Field(Person)
 
 
-@permissions.permission_control_single_resolver(
-    permissions.can_manage_election_group)
 def resolve_election_key_meta(_, info, **args):
     election_group_id = args['id']
+    session = get_session(info)
+    user = get_current_user(info)
+    el_grp = session.query(evalg.models.election.ElectionGroup).get(
+        election_group_id)
+    if not permissions.can_manage_election_group(session, user, el_grp):
+        return None
+
     ElectionGroupVersion = version_class(evalg.models.election.ElectionGroup)
 
-    key_meta = db.session.query(ElectionGroupVersion).filter(
+    key_meta = session.query(ElectionGroupVersion).filter(
         ElectionGroupVersion.id == election_group_id,
         ElectionGroupVersion.public_key_mod).order_by(
         ElectionGroupVersion.transaction_id.desc()).limit(1).all()
@@ -516,7 +524,6 @@ class CountElectionGroup(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         group_id = args['id']
-
         election_key = args['election_key']
 
         election_group_counter = evalg.proc.count.ElectionGroupCounter(

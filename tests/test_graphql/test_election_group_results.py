@@ -95,8 +95,10 @@ def test_mutation_start_election_group_count_responses(
             result['code'] == 'invalid-election-key')
 
 
-def test_query_election_group_counting_results(
-        client, db_session, logged_in_user, election_group_count_foo):
+def test_query_election_group_counting_results(client,
+                                               db_session,
+                                               logged_in_user,
+                                               election_group_count_foo):
     variables = {'id': str(election_group_count_foo.group_id)}
     query = """
     query electionGroupCountingResults($id: UUID!) {
@@ -121,7 +123,9 @@ def test_query_election_group_counting_results(
 
 # Election Results
 
-def test_query_election_result_by_id(client, db_session, election_result_foo,
+def test_query_election_result_by_id(client,
+                                     db_session,
+                                     election_result_foo,
                                      logged_in_user):
     variables = {'id': str(election_result_foo.id)}
     query = """
