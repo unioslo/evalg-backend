@@ -55,8 +55,8 @@ class IsPerson(Requirement):
 
 class IsVoter(Requirement):
     def __init__(self, session, voter):
-        self.voter = voter
         self.session = session
+        self.voter = voter
 
     def fulfill(self, user):
         if self.voter.id in [

@@ -115,6 +115,8 @@ def can_view_person(session, user, person, **args):
 
 @all_permissions
 def can_manage_voter(session, user, voter, **args):
+    logger.debug('')
+    logger.debug(user)
     if Permission(IsVoter(session, voter), identity=user):
         return True
     if Permission(
@@ -163,7 +165,6 @@ def permission_control_field(resolver):
 
     @functools.wraps(resolver)
     def wrapper(source, info, **args):
-        logger.debug(info.parent_type)
         if can_access_field(source, info, **args):
             return resolver(source, info, **args)
         return None

@@ -5,7 +5,7 @@ from evalg.graphql import get_context
 from evalg.models.pollbook import PollBook
 
 
-def test_get_pollbook_by_id(client, pollbook_foo):
+def test_get_pollbook_by_id(db_session, client, pollbook_foo, logged_in_user):
     """Test fetching pollbook by id."""
     variables = {'id': str(pollbook_foo.id)}
     query = """
@@ -16,14 +16,15 @@ def test_get_pollbook_by_id(client, pollbook_foo):
         }
     }
     """
-    execution = client.execute(query, variables=variables)
+    context = get_context()
+    execution = client.execute(query, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['pollbook']
     assert str(pollbook_foo.id) == response['id']
     assert pollbook_foo.name == response['name']
 
 
-def test_get_pollbooks(db_session, client, make_full_election):
+def test_get_pollbooks(db_session, client, logged_in_user, make_full_election):
     """Test fetching all pollbooks."""
     # Create more election data
     make_full_election('Test get pollbooks')
@@ -36,14 +37,17 @@ def test_get_pollbooks(db_session, client, make_full_election):
         }
     }
     """
-    execution = client.execute(query)
+    context = get_context()
+    execution = client.execute(query, context=context)
     assert not execution.get('errors')
     response = execution['data']['pollbooks']
     pollbooks = db_session.query(PollBook).all()
     assert len(response) == len(pollbooks)
 
 
-def test_pollbook_voting_report(client, make_full_election):
+def test_pollbook_voting_report(client,
+                                logged_in_user,
+                                make_full_election):
     """Test the pollbook voting report."""
     full_election = make_full_election('Test voting report')
     query = """
@@ -62,6 +66,7 @@ def test_pollbook_voting_report(client, make_full_election):
     execution = client.execute(query, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['pollbooks']
+    print(response)
     assert response
 
     for pollbook in response:

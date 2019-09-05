@@ -259,7 +259,7 @@ class UndoReviewVoter(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
-        user = get_current_user
+        user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not permissions.can_manage_voter(session, user, voter):
             return UndoReviewVoter(ok=False)
@@ -290,7 +290,7 @@ class ReviewVoter(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
-        user = get_current_user
+        user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not permissions.can_manage_voter(session, user, voter):
             return ReviewVoter(ok=False)
@@ -313,7 +313,7 @@ class DeleteVotersInPollBook(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
-        user = get_current_user
+        user = get_current_user(info)
         pollbook = session.query(evalg.models.pollbook.PollBook).get(
             kwargs.get('id'))
         if not permissions.can_manage_pollbook(session, user, pollbook):
