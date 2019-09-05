@@ -404,7 +404,6 @@ def persons(db_session, make_person):
     """
     persons = Person.query.all()
     if len(persons) <= 1:
-        print('Her')
         persons = [
             make_person('Foo Foo', 'foo@example.org'),
             make_person('Bar Bar', 'bar@example.org')
