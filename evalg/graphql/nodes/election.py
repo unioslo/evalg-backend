@@ -7,10 +7,11 @@ from graphene.types.generic import GenericScalar
 import graphene_sqlalchemy
 
 import evalg.models.election
+from evalg.graphql.nodes.utils.base import get_current_user, get_session
 from evalg.graphql.nodes.votes import (resolve_election_count_by_id,
                                        ElectionVoteCounts)
+from evalg.graphql.nodes.utils import permissions
 from evalg.utils import convert_json
-from evalg import db
 
 from . import pollbook
 from .. import types
@@ -34,17 +35,19 @@ from .. import types
 class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.election.Election
+        default_resolver = permissions.permission_controlled_default_resolver
 
+    @permissions.permission_control_field
     def resolve_meta(self, info):
         if self.meta is None:
             return None
         return convert_json(self.meta)
 
     is_ongoing = graphene.Boolean()
-    # TODO: Wouldn't we have to do this for our other models as well?
     pollbooks = graphene.List(pollbook.PollBook)
     vote_count = graphene.Field(lambda: ElectionVoteCounts)
 
+    @permissions.permission_control_field
     def resolve_vote_count(self, info):
         return resolve_election_count_by_id(None, info, id=self.id)
 
@@ -70,9 +73,11 @@ get_election_query = graphene.Field(
 class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.election_result.ElectionResult
+        default_resolver = permissions.permission_controlled_default_resolver
 
     ballots_with_metadata = graphene.Field(GenericScalar)
 
+    @permissions.permission_control_field
     def resolve_ballots_with_metadata(self, info):
         ballots_with_metadata = dict()
 
@@ -109,6 +114,7 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
 
         return convert_json(ballots_with_metadata)
 
+    @permissions.permission_control_field
     def resolve_election_protocol(self, info):
         return self.election_protocol_text
 
@@ -117,7 +123,7 @@ def resolve_election_result_by_id(_, info, **args):
     return ElectionResult.get_query(info).get(args['id'])
 
 
-get_election_group_count_query = graphene.Field(
+get_election_result_query = graphene.Field(
     ElectionResult,
     id=graphene.Argument(graphene.UUID, required=True),
     resolver=resolve_election_result_by_id)
@@ -158,22 +164,28 @@ class UpdateVotingPeriods(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
+        session = get_session(info)
+        user = get_current_user(info)
         elections = args.get('elections')
         if not args.get('has_multiple_times'):
             # TODO: Do we need this? Could we not just send a datetime input
             # for each election?
             for e in elections:
                 election = evalg.models.election.Election.query.get(e['id'])
+                if not permissions.can_manage_election(session, user, election):
+                    return UpdateVotingPeriods(ok=False)
                 election.start = elections[0].start
                 election.end = elections[0].end
-                db.session.add(election)
+                session.add(election)
         else:
             for e in elections:
                 election = evalg.models.election.Election.query.get(e['id'])
+                if not permissions.can_manage_election(session, user, election):
+                    return UpdateVotingPeriods(ok=False)
                 election.start = e.start
                 election.end = e.end
-                db.session.add(election)
-        db.session.commit()
+                session.add(election)
+        session.commit()
         return UpdateVotingPeriods(ok=True)
 
 
@@ -198,14 +210,18 @@ class UpdateVoterInfo(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
+        session = get_session(info)
+        user = get_current_user(info)
         elections = args.get('elections')
         for e in elections:
             election = evalg.models.election.Election.query.get(e['id'])
+            if not permissions.can_manage_election(session, user, election):
+                return UpdateVotingPeriods(ok=False)
             election.mandate_period_start = e.mandate_period_start
             election.mandate_period_end = e.mandate_period_end
             election.contact = e.contact
             election.information_url = e.information_url
-            db.session.add(election)
+            session.add(election)
 
-        db.session.commit()
+        session.commit()
         return UpdateVoterInfo(ok=True)

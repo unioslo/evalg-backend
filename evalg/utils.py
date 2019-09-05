@@ -1,7 +1,7 @@
 import datetime
 import enum
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from types import DynamicClassAttribute
 
 under_pat = re.compile(r'_([a-z])')
@@ -99,3 +99,21 @@ def make_descriptive_enum(name, values, description=None):
 
     return enum.unique(
         enum.Enum(name, enum_values, type=description_mixin))
+
+
+class Name2Callable(Mapping):
+    def __init__(self):
+        self.map = {}
+
+    def __iter__(self):
+        iter(self.map)
+
+    def __len__(self):
+        len(self.map)
+
+    def __getitem__(self, item):
+        return self.map[item]
+
+    def __call__(self, method, **kwargs):
+        self.map[method.__name__] = method
+        return method

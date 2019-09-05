@@ -10,7 +10,7 @@ import evalg.models.pollbook
 import evalg.models.voter
 import evalg.models.election
 
-from evalg.graphql.nodes.base import get_session
+from evalg.graphql.nodes.utils.base import get_session
 
 
 #

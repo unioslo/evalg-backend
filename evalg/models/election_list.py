@@ -37,3 +37,7 @@ class ElectionList(ModelBase):
         lazy='joined')
 
     candidates = db.relationship('Candidate')
+
+    @property
+    def election_status(self):
+        return self.election.status

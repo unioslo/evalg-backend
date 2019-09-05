@@ -6,8 +6,7 @@ This module
  - things
 """
 import logging
-
-from flask_allows import Permission, Requirement as OriginalRequirement
+from flask_allows import Requirement as OriginalRequirement
 
 from evalg.proc.authz import get_principals_for_person
 
@@ -45,7 +44,15 @@ class IsElectionGroupAdmin(Requirement):
             group_id=self.election_group_id)
 
 
-def can_manage_election_group(session, user, election_group_id):
-    return Permission(
-        IsElectionGroupAdmin(session, election_group_id),
-        identity=user)
+class IsVisible(Requirement):
+    def __init__(self, source):
+        self.source = source
+
+    def fulfill(self, user):
+        if hasattr(self.source, 'election_status'):
+            return self.source.election_status in ('announced', 'published',
+                                                   'ongoing')
+        elif hasattr(self.source, 'status'):
+            return self.source.status in (
+                'announced', 'published', 'ongoing')
+        return False

@@ -1,4 +1,3 @@
-from evalg.graphql import get_context
 from evalg.models.candidate import Candidate
 from evalg.models.election_list import ElectionList
 from evalg.models.election import ElectionGroup
@@ -134,7 +133,8 @@ def test_query_elections(election_foo, client):
         }
     }
     """
-    execution = client.execute(query)
+    context = get_context()
+    execution = client.execute(query, context=context)
     assert not execution.get('errors')
     response = execution['data']['elections']
     assert len(response) == 1
@@ -154,7 +154,8 @@ def test_query_election_by_id(election_foo, client):
         }
     }
     """
-    execution = client.execute(query, variables=variables)
+    context = get_context()
+    execution = client.execute(query, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['election']
     assert str(election_foo.id) == response['id']
@@ -181,7 +182,8 @@ def test_query_election_list_by_id(pref_candidates_foo,
         }
     }
     """
-    execution = client.execute(query, variables=variables)
+    context = get_context()
+    execution = client.execute(query, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['electionList']
     assert str(election_list_pref_foo.id) == response['id']
@@ -214,7 +216,8 @@ def test_query_election_list(election_list_pref_foo, client):
         }
     }
     """
-    execution = client.execute(query)
+    context = get_context()
+    execution = client.execute(query, context=context)
     assert not execution.get('errors')
     response = execution['data']['electionLists']
     assert len(response) == 1
@@ -231,7 +234,7 @@ def test_query_election_list(election_list_pref_foo, client):
 
 
 def test_delete_candidate_mutation(pref_candidates_foo, election_list_pref_foo,
-                                   client):
+                                   client, logged_in_user):
     """Test the delete candidate mutation."""
     candidate = pref_candidates_foo[0]
 
@@ -243,7 +246,8 @@ def test_delete_candidate_mutation(pref_candidates_foo, election_list_pref_foo,
         }
     }
     """
-    execution = client.execute(mutation, variables=variables)
+    context = get_context()
+    execution = client.execute(mutation, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['deleteCandidate']
     assert response['ok']
@@ -256,7 +260,8 @@ def test_delete_candidate_mutation(pref_candidates_foo, election_list_pref_foo,
     assert candidate.id not in [x.id for x in election_list_after.candidates]
 
 
-def test_add_pref_elec_candidate_mutation(election_list_pref_foo, client):
+def test_add_pref_elec_candidate_mutation(election_list_pref_foo, client,
+                                          logged_in_user):
     """Test the add pref elec candidate mutation."""
     candidates_before = {str(x.id): x for x in
                          election_list_pref_foo.candidates}
@@ -280,7 +285,8 @@ def test_add_pref_elec_candidate_mutation(election_list_pref_foo, client):
         }
     }
     """
-    execution = client.execute(mutation, variables=variables)
+    context = get_context()
+    execution = client.execute(mutation, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['addPrefElecCandidate']
     assert response['ok']
@@ -299,7 +305,7 @@ def test_add_pref_elec_candidate_mutation(election_list_pref_foo, client):
 
 
 def test_update_pref_elec_candidate_mutation(pref_candidates_foo,
-                                             client):
+                                             client, logged_in_user):
     """Test the update pref elec candidate mutation."""
     candidate_before = pref_candidates_foo[0]
 
@@ -329,7 +335,8 @@ def test_update_pref_elec_candidate_mutation(pref_candidates_foo,
         }
     }
     """
-    execution = client.execute(mutation, variables=variables)
+    context = get_context()
+    execution = client.execute(mutation, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['updatePrefElecCandidate']
     assert response['ok']
@@ -349,7 +356,7 @@ def test_update_pref_elec_candidate_mutation(pref_candidates_foo,
 
 
 def test_add_team_pref_elec_candidate_mutation(election_list_team_pref_foo,
-                                               client):
+                                               client, logged_in_user):
     """Test the add pref elec candidate mutation."""
     candidates_before = {str(x.id): x for x in
                          election_list_team_pref_foo.candidates}
@@ -375,7 +382,8 @@ def test_add_team_pref_elec_candidate_mutation(election_list_team_pref_foo,
     }
     """
 
-    execution = client.execute(mutation, variables=variables)
+    context = get_context()
+    execution = client.execute(mutation, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['addTeamPrefElecCandidate']
     assert response['ok']
@@ -395,7 +403,7 @@ def test_add_team_pref_elec_candidate_mutation(election_list_team_pref_foo,
 
 def test_update_team_pref_elec_candidate_mutation(
         team_pref_candidates_foo,
-        client):
+        client, logged_in_user):
     """Test the update team pref elec candidate mutation."""
 
     candidate_before = team_pref_candidates_foo[0]
@@ -425,7 +433,8 @@ def test_update_team_pref_elec_candidate_mutation(
         }
     }
     """
-    execution = client.execute(mutation, variables=variables)
+    context = get_context()
+    execution = client.execute(mutation, variables=variables, context=context)
     assert not execution.get('errors')
     response = execution['data']['updateTeamPrefElecCandidate']
     assert response['ok']

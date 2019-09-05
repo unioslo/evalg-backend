@@ -31,7 +31,7 @@ def test_query_person_by_id(persons, client):
     assert foo_ids == response_ids
 
 
-def test_query_persons(persons, client):
+def test_query_persons(persons, client, logged_in_user):
     """Test the persons query."""
     query = """
     query persons {
@@ -51,16 +51,15 @@ def test_query_persons(persons, client):
     response = execution['data']['persons']
     print(response)
 
-    assert len(response) == len(persons)
-
-    for person in response:
-        assert person['id'] in persons
-        assert persons[person['id']].display_name == person['displayName']
-        assert persons[person['id']].email == person['email']
-
+    for person_id, person in persons.items():
+        response_person = filter(
+            lambda p: p['id'] == person_id, response
+        ).__next__()
+        print(response_person)
+        assert(person.display_name == response_person['displayName'])
+        assert(person.email == response_person['email'])
         fixture_ids = {
-            x.id_type: x.id_value for x in persons[person['id']].identifiers}
+            x.id_type: x.id_value for x in person.identifiers}
         response_ids = {x['idType']: x['idValue']
-                        for x in person['identifiers']}
-
+                        for x in response_person['identifiers']}
         assert fixture_ids == response_ids

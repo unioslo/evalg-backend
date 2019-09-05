@@ -16,7 +16,7 @@ from evalg import db
 from evalg.graphql.types import PersonIdType
 from evalg.file_parser.parser import CensusFileParser
 from evalg.models.voter import VerifiedStatus, VERIFIED_STATUS_MAP
-from evalg.graphql.nodes.base import get_session, MutationResponse
+from evalg.graphql.nodes.utils.base import get_session, MutationResponse
 from evalg.graphql.nodes.person import Person
 
 
