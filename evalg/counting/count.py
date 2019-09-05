@@ -165,21 +165,22 @@ class CountingEvent:
             if 'count_result_stats' in event_data:
                 new_count_result_stats = {}
                 for pbook, value in event_data['count_result_stats'].items():
-                    pbook_name = str(pbook.name)
-                    new_count_result_stats[pbook_name] = {}
-                    new_count_result_stats[pbook_name]['total'] = str(
+                    pbook_id = str(pbook.id)
+                    new_count_result_stats[pbook_id] = {}
+                    new_count_result_stats[pbook_id]['total'] = str(
                         event_data['count_result_stats'][pbook]['total'])
                     for cand, items in value.items():
                         if cand == 'total':
                             # the pollbook total
                             continue
                         # regular candidate
-                        new_count_result_stats[pbook_name][
-                            str(cand.id)] = {}
-                        new_count_result_stats[pbook_name][
-                            str(cand.id)]['total'] = str(items['total'])
-                        new_count_result_stats[pbook_name][
-                            str(cand.id)]['percent_pollbook'] = str(
+                        cand_id = str(cand.id)
+                        new_count_result_stats[pbook_id][
+                            str(cand_id)] = {}
+                        new_count_result_stats[pbook_id][
+                            str(cand_id)]['total'] = str(items['total'])
+                        new_count_result_stats[pbook_id][
+                            str(cand_id)]['percent_pollbook'] = str(
                                 items['percent_pollbook'])
                 self.event_data['count_result_stats'] = new_count_result_stats
 
@@ -552,7 +553,9 @@ class ElectionCountPath:
                 self.get_elected_substitute_candidates()],
             'empty_ballots_count': election.total_amount_empty_ballots}
         pollbook_meta = []
+        pollbook_mappings = {}
         for pollbook in election.pollbooks:
+            pollbook_mappings.update({str(pollbook.id): pollbook.name})
             pollbook_meta.append(
                 {'id': str(pollbook.id),
                  'name': pollbook.name,
@@ -562,6 +565,7 @@ class ElectionCountPath:
                  'weight': pollbook.weight,
                  'weight_per_vote': str(pollbook.weight_per_vote),
                  'weight_per_pollbook': str(pollbook.weight_per_pollbook)})
+        meta['pollbook_mappings'] = pollbook_mappings
         meta['pollbooks'] = pollbook_meta
         quota_meta = []
         for quota in counter_obj.quotas:

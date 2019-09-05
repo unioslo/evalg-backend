@@ -27,6 +27,7 @@ class Result(base.Result):
         """
         super().__init__(meta)
         self.regular_candidates = regular_candidates
+        self.substitute_candidates = tuple()
 
 
 class Protocol(base.Protocol):
@@ -166,8 +167,8 @@ class Round:
                 count.CountingEventType.NEW_COUNT,
                 {'count_results': count_results,
                  'count_result_stats': count_result_stats,
-                 'half_score': total_score / decimal.Decimal(2),
-                 'total_score': total_score}))
+                 'half_score': str(total_score / decimal.Decimal(2)),
+                 'total_score': str(total_score)}))
         for vcount in count_results:
             # debugging mostly
             candidate, candidate_count = vcount
