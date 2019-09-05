@@ -14,6 +14,7 @@ from evalg.models.election import ElectionGroup, Election
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.election_list import ElectionList
 from evalg.models.election_result import ElectionResult
+from evalg.models.ou import OrganizationalUnit
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import PollBook
 from evalg.models.voter import Voter
@@ -106,6 +107,28 @@ def election_vote_policy_foo(db_session):
 
 
 @pytest.fixture
+def make_ou(db_session):
+
+    def make_ou(name):
+        data = {
+            'name': {
+                'nb': 'nb: {0}'.format(name),
+                'nn': 'nn: {0}'.format(name),
+                'en': 'en: {0}'.format(name),
+            },
+            'external_id': '{0}'.format(name)
+        }
+
+        ou = evalg.database.query.get_or_create(
+            db_session, OrganizationalUnit, **data)
+        db_session.add(ou)
+        db_session.flush()
+        return ou
+
+    return make_ou
+
+
+@pytest.fixture
 def make_election_group(db_session, election_keys_foo):
     """
     Election group fixture.
@@ -134,6 +157,32 @@ def make_election_group(db_session, election_keys_foo):
         return election_group
 
     return make_election_group
+
+
+@pytest.fixture
+def make_election_group_from_template(db_session, make_ou):
+
+    def make_election_group_from_template(ou_name, template_name,
+                                          current_user):
+
+        ou = make_ou(name=ou_name)
+
+        election_group = evalg.proc.election.make_group_from_template(
+            db_session, template_name, ou)
+        current_user_principal = evalg.proc.authz.get_or_create_principal(
+            db_session,
+            principal_type='person',
+            person_id=current_user.person.id)
+        evalg.proc.authz.add_election_group_role(
+            session=db_session,
+            election_group=election_group,
+            principal=current_user_principal,
+            role_name='admin')
+        db_session.commit()
+
+        return election_group
+
+    return make_election_group_from_template
 
 
 @pytest.fixture
@@ -348,10 +397,17 @@ def make_person(db_session):
 
 @pytest.fixture
 def persons(db_session, make_person):
-    persons = [
-        make_person('Foo Foo', 'foo@example.org'),
-        make_person('Bar Bar', 'bar@example.org')
-    ]
+    """
+    Returns all persons in the test database.
+
+    We add a couple if the database is empty.
+    """
+    persons = Person.query.all()
+    if len(persons) <= 1:
+        persons = [
+            make_person('Foo Foo', 'foo@example.org'),
+            make_person('Bar Bar', 'bar@example.org')
+        ]
 
     return {str(x.id): x for x in persons}
 
