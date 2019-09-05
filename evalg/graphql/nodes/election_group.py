@@ -344,10 +344,6 @@ class ElectionBaseSettingsInput(graphene.InputObjectType):
     active = graphene.Boolean(required=True)
 
 
-class UpdateBaseSettingsResponse(MutationResponse):
-    pass
-
-
 class UpdateBaseSettings(graphene.Mutation):
     """
     Update settings for elections in an election group.
@@ -369,12 +365,7 @@ class UpdateBaseSettings(graphene.Mutation):
         group_id = args.get('id')
         el_grp = evalg.models.election.ElectionGroup.query.get(group_id)
         if not permissions.can_manage_election_group(session, user, el_grp):
-            return UpdateBaseSettingsResponse(
-                success=False,
-                code='permission-denied',
-                message='Not allowed to update base settings for election '
-                        'group {}'.format(group_id)
-            )
+            return UpdateBaseSettings(ok=False)
         el_grp.meta['candidate_rules']['candidate_gender'] = args.get(
             'has_gender_quota')
         session.add(el_grp)
@@ -385,7 +376,7 @@ class UpdateBaseSettings(graphene.Mutation):
             election.active = e.active
             session.add(election)
         session.commit()
-        return UpdateBaseSettings(success=True)
+        return UpdateBaseSettings(ok=True)
 
 
 class PublishElectionGroup(graphene.Mutation):

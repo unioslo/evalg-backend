@@ -194,6 +194,7 @@ def make_election_group_from_template(db_session, make_ou):
     return make_election_group_from_template
 
 
+@pytest.fixture
 def election_group_baz(make_election_group):
     return make_election_group('Baz')
 

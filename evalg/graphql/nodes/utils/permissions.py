@@ -43,7 +43,6 @@ def is_visible(session, user, source, **args):
 @all_permissions
 def can_manage_election_group(session, user, election_group, **args):
     if hasattr(election_group, 'id'):
-        logger.error(user)
         return Permission(
             IsElectionGroupAdmin(session, election_group.id),
             identity=user)
@@ -75,7 +74,6 @@ def can_manage_election_list(session, user, **args):
 
 @all_permissions
 def can_access_election_result(session, user, election_result, **args):
-    logger.error(user.person)
     if hasattr(election_result, 'election'):
         election = election_result.election
     else:
@@ -132,7 +130,7 @@ def permission_control_field(resolver):
     @functools.wraps(resolver)
     def wrapper(source, info, **args):
         logger.debug(info.parent_type)
-        if can_access_field(source.id, info, **args):
+        if can_access_field(source, info, **args):
             return resolver(source, info, **args)
         return None
 

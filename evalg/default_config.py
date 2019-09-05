@@ -78,12 +78,21 @@ PERMISSIONS = {
                 'cancelled': 'allow',
                 'deleted': 'allow',
                 'status': 'allow',
-                'election_group_counts': 'can_manage_election_group'
+                'election_group_counts': 'can_manage_election_group',
+                'publication_blockers': 'can_manage_election_group',
+                'roles': 'can_manage_election_group'
             }
         },
         'Election': {
             'Fields': {
                 'name': 'allow',
+                'start': 'allow',
+                'end': 'allow',
+                'information_url': 'allow',
+                'mandate_period_start': 'allow',
+                'mandate_period_end': 'allow',
+                'group_id': 'allow',
+                'election_group': 'allow',
                 'description': 'allow',
                 'meta': 'allow',
                 'active': 'allow',
@@ -97,6 +106,7 @@ PERMISSIONS = {
                 'vote_count': 'can_manage_election',
                 'status': 'allow',
                 'pollbooks': 'allow',
+                'lists': 'allow',
                 'election_results': 'can_manage_election'
             }
         },
