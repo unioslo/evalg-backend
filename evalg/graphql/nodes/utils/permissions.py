@@ -4,7 +4,6 @@ This module methods for permission control
 import logging
 import functools
 
-
 from flask import current_app
 
 from graphene.types.resolver import get_default_resolver
@@ -46,12 +45,8 @@ def is_visible(session, user, source, **args):
 
 @all_permissions
 def can_manage_election_group(session, user, election_group, **args):
-    if hasattr(election_group, 'id'):
-        return Permission(
-            IsElectionGroupAdmin(session, election_group.id),
-            identity=user)
     return Permission(
-        IsElectionGroupAdmin(session, args.get('id')),
+        IsElectionGroupAdmin(session, election_group.id),
         identity=user)
 
 
@@ -158,22 +153,28 @@ def can_access_field(source, info, **args):
     return False
 
 
-def permission_control_field(resolver):
-    permission_control_field.decorated_resolvers.append(
-        resolver.__name__
-    )
+class PermissionController(object):
+    def __init__(self):
+        self.cache = []
+        self.controlled_fields = {}
 
-    @functools.wraps(resolver)
-    def wrapper(source, info, **args):
-        if can_access_field(source, info, **args):
-            return resolver(source, info, **args)
-        return None
+    def __call__(self, resolver):
+        self.cache.append(resolver.__name__)
 
-    return wrapper
+        @functools.wraps(resolver)
+        def wrapper(source, info, **args):
+            if can_access_field(source, info, **args):
+                return resolver(source, info, **args)
+            return None
+        return wrapper
+
+    def control_object_type(self, object_type):
+        self.controlled_fields[object_type.__name__] = self.cache
+        self.cache = []
+        return object_type
 
 
-# For testing permission control
-permission_control_field.decorated_resolvers = []
+permission_controller = PermissionController()
 
 
 def permission_controlled_default_resolver(attname, default_value, root, info,

@@ -57,6 +57,8 @@ FEIDE_BASIC_USERS = []
 #
 # Permissions
 #
+# Defines what method should be used for checking that the user has access to
+# a field on an SQLAlchemyObjectType.
 PERMISSIONS = {
     'ElectionGroup': {
         'name': 'allow',

@@ -11,16 +11,22 @@ import evalg.models.voter
 import evalg.models.election
 
 from evalg.graphql.nodes.utils.base import get_session, get_current_user
-from evalg.graphql.nodes.utils import permissions
+from evalg.graphql.nodes.utils.permissions import (
+    permission_controlled_default_resolver,
+    permission_controller,
+    can_manage_election,
+    can_vote,
+)
 
 
 #
 # Query
 #
+@permission_controller.control_object_type
 class Vote(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.votes.Vote
-        default_resolver = permissions.permission_controlled_default_resolver
+        default_resolver = permission_controlled_default_resolver
 
 
 def resolve_votes_by_person_id(_, info, **args):
@@ -82,7 +88,7 @@ def resolve_election_count_by_id(_, info, **args):
         session,
         evalg.models.election.Election,
         id=elec_id)
-    if not permissions.can_manage_election(session, user, election):
+    if not can_manage_election(session, user, election):
         return None
     data = {
         'id': elec_id,
@@ -121,7 +127,7 @@ class AddVote(graphene.Mutation):
         if not voter:
             return AddVote(ok=False)
 
-        if not permissions.can_vote(session, user, voter):
+        if not can_vote(session, user, voter):
             return AddVote(ok=False)
 
         if not vote_policy.verify_election_is_ongoing(voter):
