@@ -1,5 +1,6 @@
 """
-This module methods for permission control
+This module contains functionality for applying permission control to graphql
+fields and mutations.
 """
 import logging
 import functools
@@ -154,12 +155,20 @@ def can_access_field(source, info, **args):
 
 
 class PermissionController(object):
+    """
+    Class for adding permission control to ObjectTypes and Fields, and keep
+    track of which Fields have been controlled.
+    """
     def __init__(self):
-        self.cache = []
+        self.fields_cache = []
         self.controlled_fields = {}
 
     def __call__(self, resolver):
-        self.cache.append(resolver.__name__)
+        """Decorator which adds permission control to a resolver
+
+         :type resolver: function
+         """
+        self.fields_cache.append(resolver.__name__)
 
         @functools.wraps(resolver)
         def wrapper(source, info, **args):
@@ -169,8 +178,12 @@ class PermissionController(object):
         return wrapper
 
     def control_object_type(self, object_type):
-        self.controlled_fields[object_type.__name__] = self.cache
-        self.cache = []
+        """Class decorator which helps keep track of controlled fields
+
+        :type object_type: subclass of SQLAlchemyObjectType
+        """
+        self.controlled_fields[object_type.__name__] = self.fields_cache
+        self.fields_cache = []
         return object_type
 
 
