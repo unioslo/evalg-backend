@@ -57,7 +57,7 @@ def test_mutation_start_election_group_count(
 
 
 def test_mutation_start_election_group_count_responses(
-        client, db_session, logged_in_user,
+        client, db_session, logged_in_user, election_group_baz,
         election_group_foo, election_foo, election_list_pref_foo,
         election_keys_foo):
     """Verify that the mutation gives correct responses when the count fails"""
@@ -93,6 +93,18 @@ def test_mutation_start_election_group_count_responses(
     # The mutation should fail because the wrong code is given
     assert (not result['success'] and
             result['code'] == 'invalid-election-key')
+
+    variables = {
+        'id': str(election_group_baz.id),
+        'electionKey': election_keys_foo['public']
+    }
+    execution = client.execute(mutation, variables=variables,
+                               context=context)
+    assert not execution.get('errors')
+    result = execution['data']['startElectionGroupCount']
+    # The mutation should fail because the wrong code is given
+    assert (not result['success'] and
+            result['code'] == 'permission-denied')
 
 
 def test_query_election_group_counting_results(client,

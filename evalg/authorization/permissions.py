@@ -59,10 +59,12 @@ class IsVoter(Requirement):
         self.voter = voter
 
     def fulfill(self, user):
-        if self.voter.id in [
-            v.id for v in get_voters_for_person(self.session, user.person)
-        ]:
-            return True
+        return self.voter.id in [
+            v.id for v in get_voters_for_person(
+                self.session,
+                user.person
+            ).all()
+        ]
 
 
 class IsVisible(Requirement):

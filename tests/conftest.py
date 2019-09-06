@@ -457,11 +457,11 @@ def make_role(db_session):
 
 
 @pytest.fixture
-def make_pollbook_voter(db_session, persons, pollbook_foo):
+def make_pollbook_voter(db_session, person_foo, pollbook_foo):
     def make_pollbook_voter(person=None, pollbook=None):
 
         if not person:
-            person = next(iter(persons.values()))
+            person = person_foo
         if not pollbook:
             pollbook = pollbook_foo
 
@@ -646,8 +646,8 @@ def pollbook_bar(db_session, election_bar):
 
 
 @pytest.fixture
-def pollbook_voter_bar(db_session, persons, pollbook_bar):
-    person = next(iter(persons.values()))
+def pollbook_voter_bar(db_session, person_foo, pollbook_bar):
+    person = person_foo
 
     data = {
         'id_type': person.identifiers[0].id_type,
