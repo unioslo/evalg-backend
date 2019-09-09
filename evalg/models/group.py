@@ -6,6 +6,7 @@ import uuid
 
 # from sqlalchemy.orm import relationship
 # from sqlalchemy.schema import Column
+from sqlalchemy import schema
 
 import evalg.database.types
 from evalg import db
@@ -29,6 +30,7 @@ class Group(ModelBase):
 
     name = db.Column(
         db.UnicodeText,
+        unique=True,
         nullable=False)
 
     last_update = db.Column(
@@ -79,3 +81,28 @@ class GroupExternalID(ModelBase):
         back_populates='external_ids')
 
     id_type = db.relationship('GroupExternalIDType')  # no b.ref needed
+
+
+class GroupMembership(ModelBase):
+    """ Group memberships. """
+
+    __versioned__ = {}
+
+    id = db.Column(
+        evalg.database.types.UuidType,
+        primary_key=True,
+        default=uuid.uuid4)
+
+    group_id = db.Column(
+        evalg.database.types.UuidType,
+        db.ForeignKey('group.id'),
+        nullable=False)
+
+    person_id = db.Column(
+        evalg.database.types.UuidType,
+        db.ForeignKey('person.id'),
+        nullable=False)
+
+    __table_args__ = (schema.UniqueConstraint(
+        'group_id',
+        'person_id'),)

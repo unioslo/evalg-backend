@@ -192,6 +192,14 @@ PERMISSIONS = {
 }
 
 #
+# Feide entitlement to group mappings.
+#
+FEIDE_ENTITLEMENT_MAPPING = { 
+    'publisher': [],  
+    'global_admin': [], 
+}
+
+#
 # Ballot encryption/serialization
 #
 ENVELOPE_TYPE = 'base64-nacl'
