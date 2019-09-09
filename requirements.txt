@@ -5,7 +5,7 @@ click
 Flask==1.0.2
 flask-allows
 flask-cors
-flask-feide-gatekeeper==0.0.6
+flask-feide-gatekeeper==0.0.7
 flask-graphql
 flask-migrate
 flask-shell-ipython
