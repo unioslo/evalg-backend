@@ -34,14 +34,14 @@ def update_unit(unit, new_unit):
                     unit.external_id,
                     unit.name,
                     new_unit['name'])
-        unit.name == new_unit['name']
+        unit.name = new_unit['name']
 
     if unit.tag != new_unit['tag']:
         logger.info('Found updated tag, ou: %s, old_tag: %s, new_tag: %s',
                     unit.external_id,
                     unit.tag,
                     new_unit['tag'])
-        unit.tag == new_unit['tag']
+        unit.tag = new_unit['tag']
 
     evalg.db.session.flush()
 
