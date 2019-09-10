@@ -668,7 +668,10 @@ class RegularRound:
                 count.CountingEvent(
                     count.CountingEventType.CANDIDATE_ELECTED_19_1,
                     {'candidate': str(candidate.id)}))
-        self._vcount_results_remaining.pop(candidate)
+        if self._vcount_results_remaining.pop(candidate, None) is None:
+            logger.warning(
+                "Candidate %s not found in vcount_results_remaining",
+                candidate)
         self._state.add_elected_candidate(candidate)  # update the round-state
         self._state.all_elected_candidates = self._elected
         self._check_election_quota_reached()
@@ -720,7 +723,10 @@ class RegularRound:
                     {'candidate': str(candidate.id)}))
             return
         self._excluded.append(candidate)
-        self._vcount_results_remaining.pop(candidate)
+        if self._vcount_results_remaining.pop(candidate, None) is None:
+            logger.warning(
+                "Candidate %s not found in vcount_results_remaining",
+                candidate)
         self._state.add_excluded_candidate(candidate)  # update the round-state
         logger.info("Candidate %s is excluded", candidate)
         self._state.add_event(
@@ -2002,7 +2008,10 @@ class SubstituteRound(RegularRound):
                     self._potentially_elected.index(candidate))
             if not self._state.paragraph_19_1:
                 self._update_surplus_for_elected_candidate(candidate)
-            self._vcount_results_remaining.pop(candidate)
+            if self._vcount_results_remaining.pop(candidate, None) is None:
+                logger.warning(
+                    "Candidate %s not found in vcount_results_remaining",
+                    candidate)
             self._elected_earlier.append(candidate)
             # update the state as if it is a normal election because of
             # transferring surplus
@@ -2056,7 +2065,9 @@ class SubstituteRound(RegularRound):
         if not last_substitute_candidate:
             if not self._state.paragraph_19_1:
                 self._update_surplus_for_elected_candidate(candidate)
-            self._vcount_results_remaining.pop(candidate)
+            if self._vcount_results_remaining.pop(candidate, None) is None:
+                logger.warning("Candidate %s not in vcount_results_remaining",
+                               candidate)
         self._state.add_elected_candidate(candidate)  # update the round-state
         self._state.all_elected_candidates = self._elected
         self._state.all_elected_substitutes = self._elected_substitutes
