@@ -14,6 +14,8 @@ from evalg.models.election import ElectionGroup, Election
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.election_list import ElectionList
 from evalg.models.election_result import ElectionResult
+from evalg.models.group import Group
+from evalg.models.group import GroupMembership
 from evalg.models.ou import OrganizationalUnit
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import PollBook
@@ -431,6 +433,38 @@ def person_foo(persons):
         if x.email == 'foo@example.org':
             return x
     assert False
+
+
+@pytest.fixture
+def make_group(db_session):
+    """Returns a method that create new groups."""
+    def make_group(name):
+        data = {
+            'name': name,
+        }
+        group = evalg.database.query.get_or_create(db_session, Group, **data)
+        db_session.add(group)
+        db_session.flush()
+        return group
+    return make_group
+
+
+@pytest.fixture
+def make_group_membership(db_session):
+    """Returns a method for adding persons to groups."""
+    def make_group_membership(group, person):
+        data = {
+            'group_id': group.id,
+            'person_id': person.id,
+        }
+        membership = evalg.database.query.get_or_create(
+            db_session,
+            GroupMembership,
+            **data)
+        db_session.add(membership)
+        db_session.flush()
+        return membership
+    return make_group_membership
 
 
 @pytest.fixture
