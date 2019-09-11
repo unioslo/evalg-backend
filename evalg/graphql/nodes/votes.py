@@ -121,30 +121,28 @@ class AddVote(graphene.Mutation):
         voter_id = args['voter_id']
         ballot_data = args['ballot']
         session = get_session(info)
-        vote_policy = evalg.proc.vote.ElectionVotePolicy(session)
+        vote_policy = evalg.proc.vote.ElectionVotePolicy(session, voter_id)
 
-        voter = vote_policy.get_voter(voter_id)
-        if not voter:
+        if not vote_policy.voter:
             return AddVote(ok=False)
 
-        if not can_vote(session, user, voter):
+        if not can_vote(session, user, vote_policy.voter):
             return AddVote(ok=False)
 
-        if not vote_policy.verify_election_is_ongoing(voter):
+        if not vote_policy.verify_election_is_ongoing():
             return AddVote(ok=False)
 
-        if not vote_policy.verify_ballot_content(ballot_data,
-                                                 voter.pollbook.election.id):
+        if not vote_policy.verify_ballot_content(ballot_data):
             return AddVote(ok=False)
 
         ballot_data.__delitem__('isBlankVote')
-        ballot_data['pollbookId'] = str(voter.pollbook.id)
-        vote = vote_policy.add_vote(voter, ballot_data)
+        ballot_data['pollbookId'] = str(vote_policy.voter.pollbook.id)
+        vote = vote_policy.add_vote(ballot_data)
         session.flush()
 
         node = AddVote(
             ballot_id=vote.ballot_id,
-            election_id=voter.pollbook.election.id,
+            election_id=vote_policy.voter.pollbook.election.id,
             ok=True)
         session.commit()
         return node

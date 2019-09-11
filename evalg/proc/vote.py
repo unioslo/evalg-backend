@@ -21,12 +21,13 @@ logger = logging.getLogger(__name__)
 class ElectionVotePolicy(object):
     """Helper class used to create and store ballots correctly."""
 
-    def __init__(self, session):
+    def __init__(self, session, voter_id):
         self.session = session
         config = current_app.config
         self._envelope_type = config.get('ENVELOPE_TYPE')
         self._backend_private_key = config.get('BACKEND_PRIVATE_KEY')
         self._envelope_padded_len = config.get('ENVELOPE_PADDED_LEN')
+        self.voter = self.get_voter(voter_id)
 
     def get_voter(self, voter_id):
         try:
@@ -35,11 +36,11 @@ class ElectionVotePolicy(object):
                                                 id=voter_id)
         except evalg.database.query.TooFewError:
             logger.error('Voter %r does not exist', voter_id)
-            return
+            return None
         return voter
 
-    def verify_election_is_ongoing(self, voter):
-        if not voter.pollbook.election.is_ongoing:
+    def verify_election_is_ongoing(self):
+        if not self.voter.pollbook.election.is_ongoing:
             logger.error('Can not vote, election is closed')
             return False
         return True
@@ -63,12 +64,13 @@ class ElectionVotePolicy(object):
                 return False
         return True
 
-    def verify_ballot_content(self, ballot_data, election_id):
+    def verify_ballot_content(self, ballot_data):
         ranked_candidate_ids = ballot_data['rankedCandidateIds']
         if ranked_candidate_ids and ballot_data['isBlankVote']:
             logger.error('A blank vote can not contain preferred candidates')
             return False
-        if not self.verify_candidates_exist(ranked_candidate_ids, election_id):
+        if not self.verify_candidates_exist(ranked_candidate_ids,
+                                            self.voter.pollbook.election_id):
             logger.error('Selected candidate(s) does not exist (%r)',
                          ranked_candidate_ids)
             return False
@@ -83,16 +85,6 @@ class ElectionVotePolicy(object):
         """
         return self._envelope_type
 
-    @property
-    def ballot_type(self):
-        """
-        Ballot type.
-
-        Is this in use?
-        TODO: Implement, get this from the election group maybe?
-        """
-        return 'test_ballot'
-
     def make_ballot(self, ballot_data, election_public_key):
         """Create a envelope object with containing the serialized ballot."""
         # Future work: create serializer factory.
@@ -103,24 +95,24 @@ class ElectionVotePolicy(object):
         )
         ballot = Envelope(
             envelope_type=self.envelope_type,
-            ballot_type=self.ballot_type,
             ballot_data=serializer.serialize(ballot_data)
         )
         return ballot
 
-    def make_vote(self, voter, envelope):
+    def make_vote(self, envelope):
         """Create a Vote object mapping a envelope to a voter."""
         vote = evalg.database.query.get_or_create(
-            self.session, Vote, voter_id=voter.id)
+            self.session, Vote, voter_id=self.voter.id)
         vote.ballot_id = envelope.id
         return vote
 
-    def add_vote(self, voter, ballot_data):
+    def add_vote(self, ballot_data):
         """Add a vote to a given election."""
         logger.info("Adding vote in election/pollbook %r/%r",
-                    voter.pollbook.election, voter.pollbook)
+                    self.voter.pollbook.election, self.voter.pollbook)
 
-        election_public_key = voter.pollbook.election.election_group.public_key
+        election_public_key = (
+            self.voter.pollbook.election.election_group.public_key)
         if not election_public_key:
             raise Exception('Election key is missing.')
 
@@ -129,7 +121,7 @@ class ElectionVotePolicy(object):
         self.session.flush()
         logger.info("Stored ballot %r", envelope)
 
-        vote = self.make_vote(voter, envelope)
+        vote = self.make_vote(envelope)
         self.session.add(vote)
         self.session.flush()
         logger.info("Stored vote %r", vote)

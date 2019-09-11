@@ -95,7 +95,7 @@ class ElectionGroup(AbstractElection):
     # Deleted if set
     deleted_at = db.Column(evalg.database.types.UtcDateTime)
 
-    # Name of the temlate used to create the election group
+    # Name of the template used to create the election group
     template_name = db.Column(db.UnicodeText)
 
     # Internal use

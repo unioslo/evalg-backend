@@ -52,14 +52,6 @@ class Envelope(ModelBase):
         nullable=False,
     )
 
-    # Describe which ballot implementation (type and version) we're using.
-    # E.g. stv:2, list:1
-    ballot_type = schema.Column(
-        sqltypes.UnicodeText,
-        doc='a reference to the ballot object type used for this ballot',
-        nullable=False,
-    )
-
     # Ballot contents
     ballot_data = schema.Column(
         sqltypes.LargeBinary,
