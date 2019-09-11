@@ -24,12 +24,12 @@ def get_group(group_name):
         name=group_name).first()
 
 
-@click.command('create-groups',
+@click.command('init-authorization',
                short_help='Create entitlement groups if missing.')
 @flask.cli.with_appcontext
 def create_groups():
     import os
-    os.environ['EVALG_JOB_NAME'] = "create-units"
+    os.environ['EVALG_JOB_NAME'] = "init-authorization"
     config = flask.current_app.config
     mapping = config.get('FEIDE_ENTITLEMENT_MAPPING')
     changes = False
