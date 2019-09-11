@@ -65,16 +65,3 @@ def test_get_principals_for_person(db_session, person_foo):
     db_session.flush()
     principals = get_principals_for_person(db_session, person_foo)
     assert len(principals) == 2
-
-
-def test_can_publish_election(db_session,
-                              make_person,
-                              make_group,
-                              make_group_membership):
-    """Test can_publish_election."""
-    publisher_group = make_group('publisher')
-    person_a = make_person('test_can_publish_a', 'can_publish@a.no')
-    person_b = make_person('test_can_publish_b', 'can_publish@b.no')
-    make_group_membership(publisher_group, person_a)
-    assert can_publish_election(db_session, person_a)
-    assert not can_publish_election(db_session, person_b)
