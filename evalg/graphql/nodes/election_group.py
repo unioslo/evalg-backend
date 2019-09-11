@@ -18,6 +18,7 @@ import evalg.models.ou
 import evalg.models.person
 import evalg.proc.authz
 import evalg.proc.election
+import evalg.proc.pollbook
 import evalg.proc.vote
 import evalg.proc.count
 from evalg import db
@@ -162,7 +163,7 @@ def resolve_persons_with_multiple_verified_voters(_, info, **args):
         election_group_id)
     if not can_manage_election_group(session, user, el_grp):
         return None
-    query = evalg.proc.vote.get_persons_with_multiple_verified_voters(
+    query = evalg.proc.pollbook.get_persons_with_multiple_verified_voters(
         session,
         election_group_id
     )
@@ -669,7 +670,7 @@ class CountElectionGroup(graphene.Mutation):
                 message='Not allowed to count election group {}'.format(
                     group_id)
             )
-        if evalg.proc.vote.get_persons_with_multiple_verified_voters(
+        if evalg.proc.pollbook.get_persons_with_multiple_verified_voters(
                 session,
                 group_id
         ).all():
@@ -679,7 +680,7 @@ class CountElectionGroup(graphene.Mutation):
                 message='There are person(s) who have multiple verified votes'
             )
 
-        if evalg.proc.vote.get_voters_in_election_group(
+        if evalg.proc.pollbook.get_voters_in_election_group(
                 session,
                 group_id,
                 self_added=True,

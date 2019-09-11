@@ -9,9 +9,10 @@ This includes:
 """
 import logging
 
-from sqlalchemy.sql import and_
+from sqlalchemy import and_, func
 
 import evalg.database.query
+from evalg.models.election import Election, ElectionGroup
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import PollBook
 from evalg.models.votes import Vote
@@ -197,3 +198,157 @@ class ElectionVoterPolicy(object):
                                       election=pollbook.election)
         voter = query.filter(Voter.pollbook_id == pollbook.id).first()
         return voter
+
+
+def get_person_for_voter(session, voter):
+    query = session.query(
+        Person
+    ).join(
+        PersonExternalId,
+        and_(
+            Person.id == PersonExternalId.person_id,
+        )
+    ).join(
+        Voter,
+        and_(
+            Voter.id_type == PersonExternalId.id_type,
+            Voter.id_value == PersonExternalId.id_value
+        )
+    ).filter(
+        Voter.id == voter.id
+    ).first()
+
+    return query
+
+
+def get_voters_in_election_group(session, election_group_id, self_added=None,
+                                 reviewed=None, verified=None,
+                                 has_voted=None):
+    query = session.query(
+        Voter
+    ).join(
+        PollBook,
+        and_(
+            Voter.pollbook_id == PollBook.id
+        )
+    ).join(
+        Election,
+        and_(
+            PollBook.election_id == Election.id
+        )
+    ).join(
+        ElectionGroup,
+        and_(
+            Election.group_id == election_group_id
+        )
+    )
+    if self_added is not None:
+        query = query.filter(Voter.self_added == self_added)
+    if reviewed is not None:
+        query = query.filter(Voter.reviewed == reviewed)
+    if verified is not None:
+        query = query.filter(Voter.verified == verified)
+    if has_voted is not None:
+        query = query.join(
+            Vote,
+            and_(
+                Voter.id == Vote.voter_id
+            )
+        ).group_by(
+            Voter.id
+        )
+        if has_voted:
+            query = query.having(func.count(Vote.ballot_id) > 0)
+        else:
+            query = query.having(func.count(Vote.ballot_id) == 0)
+    return query
+
+
+def get_voters_by_self_added(session, pollbook_id, self_added):
+    query = session.query(
+        Voter
+    ).filter(
+        Voter.self_added == self_added,
+        Voter.pollbook_id == pollbook_id
+    )
+    return query
+
+
+def get_verified_voters_count(session, pollbook_id):
+    return session.query(
+        func.count(Voter.id)
+    ).filter(
+        Voter.pollbook_id == pollbook_id,
+        Voter.verified,
+    ).scalar()
+
+
+def get_verified_voters_with_votes_count(session, pollbook_id):
+    return session.query(
+        func.count(Voter.id)
+    ).filter(
+        Voter.pollbook_id == pollbook_id,
+        Voter.verified,
+        Voter.votes
+    ).scalar()
+
+
+def get_persons_with_multiple_verified_voters(session, election_group_id):
+    """Get persons who have more than one verified voter
+
+    :param election_group_id: the election group to look for voters in
+    :return: a query object where each row consists of a person and one of the
+        person's voters.
+    """
+    s_election_group_voters = get_voters_in_election_group(
+        session,
+        election_group_id,
+        verified=True,
+        has_voted=True
+    ).subquery()
+
+    s_election_group_voter_ids = session.query(
+        s_election_group_voters.c.id
+    ).subquery()
+
+    s_voting_persons = session.query(
+        PersonExternalId.person_id,
+        func.count(Voter.id).label('voter_count')
+    ).join(
+        Voter,
+        and_(
+            Voter.id_type == PersonExternalId.id_type,
+            Voter.id_value == PersonExternalId.id_value,
+        )
+    ).filter(
+        Voter.id.in_(s_election_group_voter_ids)
+    ).group_by(
+        PersonExternalId.person_id
+    ).subquery()
+
+    s_persons_with_multiple_votes = session.query(
+        s_voting_persons.c.person_id
+    ).filter(
+        s_voting_persons.c.voter_count > 1
+    ).subquery()
+
+    query = session.query(Person, Voter).join(
+        PersonExternalId,
+        and_(
+            Person.id == PersonExternalId.person_id
+        )
+    ).join(
+        Voter,
+        and_(
+            Voter.id_type == PersonExternalId.id_type,
+            Voter.id_value == PersonExternalId.id_value,
+        )
+    ).filter(
+        PersonExternalId.person_id.in_(s_persons_with_multiple_votes)
+    ).filter(
+        Voter.id.in_(s_election_group_voter_ids)
+    ).order_by(
+        PersonExternalId.person_id
+    )
+
+    return query

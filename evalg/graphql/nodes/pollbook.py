@@ -68,7 +68,7 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
             session,
             evalg.models.voter.Voter,
             id=voter_id)
-        return evalg.proc.vote.get_person_for_voter(session, voter)
+        return evalg.proc.pollbook.get_person_for_voter(session, voter)
 
 
 @permission_controller.control_object_type
@@ -88,26 +88,26 @@ class PollBook(graphene_sqlalchemy.SQLAlchemyObjectType):
     @permission_controller
     def resolve_self_added_voters(self, info):
         session = get_session(info)
-        return evalg.proc.vote.get_voters_by_self_added(session,
-                                                        self.id,
-                                                        self_added=True).all()
+        return evalg.proc.pollbook.get_voters_by_self_added(session,
+                                                            self.id,
+                                                            self_added=True).all()
 
     @permission_controller
     def resolve_admin_added_voters(self, info):
         session = get_session(info)
-        return evalg.proc.vote.get_voters_by_self_added(session,
-                                                        self.id,
-                                                        self_added=False).all()
+        return evalg.proc.pollbook.get_voters_by_self_added(session,
+                                                            self.id,
+                                                            self_added=False).all()
 
     @permission_controller
     def resolve_verified_voters_count(self, info):
         session = get_session(info)
-        return evalg.proc.vote.get_verified_voters_count(session, self.id)
+        return evalg.proc.pollbook.get_verified_voters_count(session, self.id)
 
     @permission_controller
     def resolve_verified_voters_with_votes_count(self, info):
         session = get_session(info)
-        return evalg.proc.vote.get_verified_voters_with_votes_count(
+        return evalg.proc.pollbook.get_verified_voters_with_votes_count(
             session, self.id)
 
     @permission_controller
@@ -148,7 +148,7 @@ def resolve_voters_by_fields(_, info):
 def resolve_search_voters(_, info, **args):
     election_group_id = args.pop('election_group_id')
     session = get_session(info)
-    return evalg.proc.vote.get_voters_in_election_group(
+    return evalg.proc.pollbook.get_voters_in_election_group(
         session, election_group_id, **args
     ).all()
 
