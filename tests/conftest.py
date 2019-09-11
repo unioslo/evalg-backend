@@ -170,7 +170,6 @@ def make_election_group(db_session, election_keys_foo, make_person_principal,
 
 @pytest.fixture
 def make_election_group_from_template(db_session, make_ou):
-
     def make_election_group_from_template(ou_name, template_name,
                                           current_user):
 
@@ -196,7 +195,7 @@ def make_election_group_from_template(db_session, make_ou):
 
 @pytest.fixture
 def election_group_baz(make_election_group):
-    return make_election_group('Baz')
+    return make_election_group('Baz', admin=False)
 
 
 @pytest.fixture
@@ -458,11 +457,11 @@ def make_role(db_session):
 
 
 @pytest.fixture
-def make_pollbook_voter(db_session, persons, pollbook_foo):
+def make_pollbook_voter(db_session, person_foo, pollbook_foo):
     def make_pollbook_voter(person=None, pollbook=None):
 
         if not person:
-            person = next(iter(persons.values()))
+            person = person_foo
         if not pollbook:
             pollbook = pollbook_foo
 
@@ -647,8 +646,8 @@ def pollbook_bar(db_session, election_bar):
 
 
 @pytest.fixture
-def pollbook_voter_bar(db_session, persons, pollbook_bar):
-    person = next(iter(persons.values()))
+def pollbook_voter_bar(db_session, person_foo, pollbook_bar):
+    person = person_foo
 
     data = {
         'id_type': person.identifiers[0].id_type,
@@ -718,7 +717,7 @@ def make_full_election(make_election_group, make_election, make_pollbook,
                        make_person, make_pollbook_voter, make_pollbook_vote):
     def make_full_election(name, nr_of_elections=2, pollboks_per_election=1,
                            voters_per_pollbook=1):
-        election_group = make_election_group('Test election group')
+        election_group = make_election_group('Test election group', admin=True)
 
         elections = [make_election('{0} election {1}'.format(name, x),
                                    election_group=election_group) for x in

@@ -10,7 +10,11 @@ import evalg.models.election
 from evalg.graphql.nodes.utils.base import get_current_user, get_session
 from evalg.graphql.nodes.votes import (resolve_election_count_by_id,
                                        ElectionVoteCounts)
-from evalg.graphql.nodes.utils import permissions
+from evalg.graphql.nodes.utils.permissions import (
+    permission_controller,
+    permission_controlled_default_resolver,
+    can_manage_election,
+)
 from evalg.utils import convert_json
 
 from . import pollbook
@@ -31,13 +35,13 @@ from .. import types
 # Query
 #
 
-
+@permission_controller.control_object_type
 class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.election.Election
-        default_resolver = permissions.permission_controlled_default_resolver
+        default_resolver = permission_controlled_default_resolver
 
-    @permissions.permission_control_field
+    @permission_controller
     def resolve_meta(self, info):
         if self.meta is None:
             return None
@@ -47,7 +51,7 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
     pollbooks = graphene.List(pollbook.PollBook)
     vote_count = graphene.Field(lambda: ElectionVoteCounts)
 
-    @permissions.permission_control_field
+    @permission_controller
     def resolve_vote_count(self, info):
         return resolve_election_count_by_id(None, info, id=self.id)
 
@@ -70,14 +74,15 @@ get_election_query = graphene.Field(
     id=graphene.Argument(graphene.UUID, required=True))
 
 
+@permission_controller.control_object_type
 class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.election_result.ElectionResult
-        default_resolver = permissions.permission_controlled_default_resolver
+        default_resolver = permission_controlled_default_resolver
 
     ballots_with_metadata = graphene.Field(GenericScalar)
 
-    @permissions.permission_control_field
+    @permission_controller
     def resolve_ballots_with_metadata(self, info):
         ballots_with_metadata = dict()
 
@@ -114,7 +119,7 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
 
         return convert_json(ballots_with_metadata)
 
-    @permissions.permission_control_field
+    @permission_controller
     def resolve_election_protocol(self, info):
         return self.election_protocol_text
 
@@ -172,7 +177,7 @@ class UpdateVotingPeriods(graphene.Mutation):
             # for each election?
             for e in elections:
                 election = evalg.models.election.Election.query.get(e['id'])
-                if not permissions.can_manage_election(session, user, election):
+                if not can_manage_election(session, user, election):
                     return UpdateVotingPeriods(ok=False)
                 election.start = elections[0].start
                 election.end = elections[0].end
@@ -180,7 +185,7 @@ class UpdateVotingPeriods(graphene.Mutation):
         else:
             for e in elections:
                 election = evalg.models.election.Election.query.get(e['id'])
-                if not permissions.can_manage_election(session, user, election):
+                if not can_manage_election(session, user, election):
                     return UpdateVotingPeriods(ok=False)
                 election.start = e.start
                 election.end = e.end
@@ -215,7 +220,7 @@ class UpdateVoterInfo(graphene.Mutation):
         elections = args.get('elections')
         for e in elections:
             election = evalg.models.election.Election.query.get(e['id'])
-            if not permissions.can_manage_election(session, user, election):
+            if not can_manage_election(session, user, election):
                 return UpdateVotingPeriods(ok=False)
             election.mandate_period_start = e.mandate_period_start
             election.mandate_period_end = e.mandate_period_end

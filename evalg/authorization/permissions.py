@@ -9,6 +9,7 @@ import logging
 from flask_allows import Requirement as OriginalRequirement
 
 from evalg.proc.authz import get_principals_for_person
+from evalg.proc.pollbook import get_voters_for_person
 
 logger = logging.getLogger(__name__)
 
@@ -44,15 +45,23 @@ class IsElectionGroupAdmin(Requirement):
             group_id=self.election_group_id)
 
 
-class IsVisible(Requirement):
-    def __init__(self, source):
-        self.source = source
+class IsPerson(Requirement):
+    def __init__(self, person):
+        self.person = person
 
     def fulfill(self, user):
-        if hasattr(self.source, 'election_status'):
-            return self.source.election_status in ('announced', 'published',
-                                                   'ongoing')
-        elif hasattr(self.source, 'status'):
-            return self.source.status in (
-                'announced', 'published', 'ongoing')
-        return False
+        return user.person.id == self.person.id
+
+
+class IsVoter(Requirement):
+    def __init__(self, session, voter):
+        self.session = session
+        self.voter = voter
+
+    def fulfill(self, user):
+        return self.voter.id in [
+            v.id for v in get_voters_for_person(
+                self.session,
+                user.person
+            ).all()
+        ]

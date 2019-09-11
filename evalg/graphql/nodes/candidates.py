@@ -7,7 +7,11 @@ import graphene_sqlalchemy
 import evalg.models.election_list
 import evalg.models.candidate
 from evalg.utils import convert_json
-from evalg.graphql.nodes.utils import permissions
+from evalg.graphql.nodes.utils.permissions import (
+    permission_controller,
+    permission_controlled_default_resolver,
+    can_manage_election_list,
+)
 from evalg.graphql.nodes.utils.base import get_current_user, get_session
 
 
@@ -29,13 +33,14 @@ from evalg.graphql.nodes.utils.base import get_current_user, get_session
 #   evalg.candidates in order to show or mutate candidate lists or candidates.
 
 
+@permission_controller.control_object_type
 class ElectionList(graphene_sqlalchemy.SQLAlchemyObjectType):
     """
     A list of candidates in a given election.
     """
     class Meta:
         model = evalg.models.election_list.ElectionList
-        default_resolver = permissions.permission_controlled_default_resolver
+        default_resolver = permission_controlled_default_resolver
 
 
 def resolve_candidate_lists_by_fields(_, info, **args):
@@ -57,15 +62,16 @@ get_candidate_list_query = graphene.Field(
     id=graphene.Argument(graphene.UUID, required=True))
 
 
+@permission_controller.control_object_type
 class Candidate(graphene_sqlalchemy.SQLAlchemyObjectType):
     """
     A candidate that may appear in a given election.
     """
     class Meta:
         model = evalg.models.candidate.Candidate
-        default_resolver = permissions.permission_controlled_default_resolver
+        default_resolver = permission_controlled_default_resolver
 
-    @permissions.permission_control_field
+    @permission_controller
     def resolve_meta(self, info):
         if self.meta is None:
             return None
@@ -107,7 +113,7 @@ class AddPrefElecCandidate(graphene.Mutation):
     def mutate(self, info, **args):
         session = get_session(info)
         user = get_current_user(info)
-        if not permissions.can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **args):
             return AddPrefElecCandidate(ok=False)
         meta = {'gender': args.get('gender')}
         candidate = evalg.models.candidate.Candidate(
@@ -133,7 +139,7 @@ class UpdatePrefElecCandidate(graphene.Mutation):
     def mutate(self, info, **args):
         session = get_session(info)
         user = get_current_user(info)
-        if not permissions.can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **args):
             return UpdatePrefElecCandidate(ok=False)
         candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
         candidate.name = args.get('name')
@@ -161,7 +167,7 @@ class AddTeamPrefElecCandidate(graphene.Mutation):
     def mutate(self, info, **args):
         session = get_session(info)
         user = get_current_user(info)
-        if not permissions.can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **args):
             return AddTeamPrefElecCandidate(ok=False)
         meta = {'co_candidates': args.get('co_candidates')}
         candidate = evalg.models.candidate.Candidate(
@@ -187,7 +193,7 @@ class UpdateTeamPrefElecCandidate(graphene.Mutation):
     def mutate(self, info, **args):
         session = get_session(info)
         user = get_current_user(info)
-        if not permissions.can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **args):
             return UpdateTeamPrefElecCandidate(ok=False)
         candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
         candidate.name = args.get('name')
@@ -215,7 +221,7 @@ class DeleteCandidate(graphene.Mutation):
             args.get('id')
         )
         args['list_id'] = candidate.list_id
-        if not permissions.can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **args):
             return DeleteCandidate(ok=False)
         session.delete(candidate)
         session.commit()

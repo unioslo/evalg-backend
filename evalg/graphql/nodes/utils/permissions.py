@@ -1,22 +1,25 @@
-
+"""
+This module contains functionality for applying permission control to graphql
+fields and mutations.
+"""
 import logging
 import functools
 
-
 from flask import current_app
 
-from sqlalchemy.sql import and_
 from graphene.types.resolver import get_default_resolver
 from flask_sqlalchemy.model import camel_to_snake_case
 from flask_allows import Permission
 
+from evalg.proc.pollbook import get_voters_for_person
 from evalg.utils import Name2Callable
-from evalg.models.election import Election, ElectionGroup
-from evalg.models.election_result import ElectionResult
 from evalg.models.election_list import ElectionList
 from evalg.graphql.nodes.utils.base import (get_session,
                                             get_current_user)
-from evalg.authorization.permissions import IsElectionGroupAdmin, IsVisible
+from evalg.authorization.permissions import (IsElectionGroupAdmin,
+                                             IsPerson,
+                                             IsVoter)
+
 
 all_permissions = Name2Callable()
 logger = logging.getLogger(__name__)
@@ -33,23 +36,10 @@ def allow(*args, **kwargs):
 
 
 @all_permissions
-def is_visible(session, user, source, **args):
-    return Permission(
-        IsVisible(source),
-        identity=user,
-    )
-
-
-@all_permissions
 def can_manage_election_group(session, user, election_group, **args):
-    if hasattr(election_group, 'id'):
-        return Permission(
-            IsElectionGroupAdmin(session, election_group.id),
-            identity=user)
-    else:
-        return Permission(
-            IsElectionGroupAdmin(session, args.get('id')),
-            identity=user)
+    return Permission(
+        IsElectionGroupAdmin(session, election_group.id),
+        identity=user)
 
 
 @all_permissions
@@ -61,36 +51,35 @@ def can_manage_election(session, user, election, **args):
 
 
 @all_permissions
-def can_manage_election_list(session, user, **args):
-    election_list = None
-    if 'list_id' in args:
-        logger.error(args.get('list_id'))
-        election_list = session.query(ElectionList).get(args.get('list_id'))
+def can_manage_pollbook(session, user, pollbook, **args):
     return Permission(
-        IsElectionGroupAdmin(session, election_list.election.group_id),
+        IsElectionGroupAdmin(session, pollbook.election.group_id),
         identity=user
     )
 
 
 @all_permissions
+def can_manage_election_list(session, user, **args):
+    if 'list_id' in args:
+        election_list = session.query(ElectionList).get(args.get('list_id'))
+        return Permission(
+            IsElectionGroupAdmin(session, election_list.election.group_id),
+            identity=user
+        )
+    return False
+
+
+@all_permissions
 def can_access_election_result(session, user, election_result, **args):
-    if hasattr(election_result, 'election'):
-        election = election_result.election
-    else:
-        election = session.query(ElectionGroup).join(
-            ElectionResult,
-            and_(
-                ElectionResult.election_id == Election.id,
-                ElectionResult.id == args.get('id')
-            )
-        ).one()
     return Permission(
-        IsElectionGroupAdmin(session, election.group_id),
+        IsElectionGroupAdmin(session, election_result.election.group_id),
         identity=user)
 
 
 @all_permissions
-def can_access_election_group_count(session, user, election_group_count,
+def can_access_election_group_count(session,
+                                    user,
+                                    election_group_count,
                                     **args):
     return Permission(
         IsElectionGroupAdmin(session, election_group_count.group_id),
@@ -98,8 +87,43 @@ def can_access_election_group_count(session, user, election_group_count,
     )
 
 
+@all_permissions
+def can_view_person(session, user, person, **args):
+    if Permission(IsPerson(person), identity=user):
+        return True
+    voters = get_voters_for_person(session, person).all()
+    for voter in voters:
+        if Permission(
+                IsElectionGroupAdmin(session,
+                                     voter.pollbook.election.group_id),
+                identity=user):
+            return True
+    return False
+
+
+@all_permissions
+def can_manage_voter(session, user, voter, **args):
+    if Permission(IsVoter(session, voter), identity=user):
+        return True
+    if Permission(
+            IsElectionGroupAdmin(session, voter.pollbook.election.group_id),
+            identity=user):
+        return True
+    return False
+
+
+@all_permissions
+def can_vote(session, user, voter):
+    return Permission(IsVoter(session, voter), identity=user)
+
+
+@all_permissions
+def can_view_vote(session, user, vote):
+    return Permission(IsVoter(session, vote.voter), identity=user)
+
+
 @functools.lru_cache(maxsize=1)
-def get_permissions_config():
+def permissions_config():
     return current_app.config.get('PERMISSIONS')
 
 
@@ -110,35 +134,50 @@ def can_access_field(source, info, **args):
     """
     session = get_session(info)
     user = get_current_user(info)
-    permissions = get_permissions_config()['ObjectTypes'].get(
-        str(info.parent_type))
-    if 'Fields' not in permissions.keys():
+    permissions = permissions_config().get(str(info.parent_type))
+    if permissions is None:
         return False
     field_name = camel_to_snake_case(info.field_name)
-    permission = permissions['Fields'].get(field_name)
-    if all_permissions.get(permission, deny)(session, user, source,
-                                             **args):
+    permission = permissions.get(field_name)
+    if all_permissions.get(permission, deny)(session, user, source, **args):
         return True
     return False
 
 
-def permission_control_field(resolver):
-    permission_control_field.decorated_resolvers.append(
-        resolver.__name__
-    )
+class PermissionController(object):
+    """
+    Class for adding permission control to ObjectTypes and Fields, and keep
+    track of which Fields have been controlled.
+    """
+    def __init__(self):
+        self.fields_cache = []
+        self.controlled_fields = {}
 
-    @functools.wraps(resolver)
-    def wrapper(source, info, **args):
-        logger.debug(info.parent_type)
-        if can_access_field(source, info, **args):
-            return resolver(source, info, **args)
-        return None
+    def __call__(self, resolver):
+        """Decorator which adds permission control to a resolver
 
-    return wrapper
+         :type resolver: function
+         """
+        self.fields_cache.append(resolver.__name__)
+
+        @functools.wraps(resolver)
+        def wrapper(source, info, **args):
+            if can_access_field(source, info, **args):
+                return resolver(source, info, **args)
+            return None
+        return wrapper
+
+    def control_object_type(self, object_type):
+        """Class decorator which helps keep track of controlled fields
+
+        :type object_type: subclass of SQLAlchemyObjectType
+        """
+        self.controlled_fields[object_type.__name__] = self.fields_cache
+        self.fields_cache = []
+        return object_type
 
 
-# For testing permission control
-permission_control_field.decorated_resolvers = []
+permission_controller = PermissionController()
 
 
 def permission_controlled_default_resolver(attname, default_value, root, info,
@@ -147,18 +186,3 @@ def permission_controlled_default_resolver(attname, default_value, root, info,
         return get_default_resolver()(attname, default_value, root, info,
                                       **args)
     return None
-
-
-def permission_control_single_resolver(permission_func):
-    def decorate(resolver):
-        @functools.wraps(resolver)
-        def wrapper(source, info, **args):
-            session = get_session(info)
-            user = get_current_user(info)
-            if permission_func(session, user, source, **args):
-                return resolver(source, info, **args)
-            return None
-
-        return wrapper
-
-    return decorate

@@ -104,6 +104,7 @@ def make_descriptive_enum(name, values, description=None):
 class Name2Callable(Mapping):
     def __init__(self):
         self.map = {}
+        self.last_item_added = None
 
     def __iter__(self):
         iter(self.map)
@@ -114,6 +115,7 @@ class Name2Callable(Mapping):
     def __getitem__(self, item):
         return self.map[item]
 
-    def __call__(self, method, **kwargs):
-        self.map[method.__name__] = method
-        return method
+    def __call__(self, callable_, **kwargs):
+        self.map[callable_.__name__] = callable_
+        self.last_item_added = callable_
+        return callable_
