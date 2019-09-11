@@ -14,7 +14,8 @@ Basic idea:
 import uuid
 
 from sqlalchemy import types
-from sqlalchemy.sql import schema
+from sqlalchemy.sql import schema, and_, or_
+from sqlalchemy.sql.expression import false, true, null
 from sqlalchemy.orm import relationship, validates
 
 from evalg.database.types import UuidType
@@ -221,6 +222,24 @@ class ElectionGroupRole(Role):
         'ElectionGroup',
         backref='roles',
         lazy='joined')
+
+    global_role = schema.Column(
+        types.Boolean)
+
+    __table_args__ = (
+        schema.CheckConstraint(
+            or_(
+                and_(
+                    global_role == true(),
+                    group_id == null()),
+
+                or_(
+                    global_role == null(),
+                    global_role == false()
+                )
+            ),
+            name='no_eg_when_global'),
+    )
 
     # principal_id = schema.Column(
     #     UuidType,

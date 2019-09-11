@@ -13,6 +13,7 @@ from evalg.models.authorization import (ElectionGroupRole,
                                         PersonPrincipal)
 from evalg.models.person import PersonExternalId
 from evalg.models.authorization import PersonIdentifierPrincipal
+from evalg.proc.group import get_user_groups
 
 
 def get_or_create_principal(session, principal_type, **kwargs):
@@ -44,6 +45,12 @@ def get_or_create_principal(session, principal_type, **kwargs):
     return principal
 
 
+def get_principals_for_group(session, group):
+    """Get all principals for a group."""
+    return session.query(GroupPrincipal).filter(
+        GroupPrincipal.group_id == group.id).all()
+
+
 def get_principals_for_person(session, person):
     # TODO: could and should cache here
     principals = []
@@ -53,9 +60,11 @@ def get_principals_for_person(session, person):
         session, person).all()
     if identifier_principals:
         principals.extend(identifier_principals)
-    # for group in person.groups
-    #     find group principal
-    #     principals.append(group.principal)
+
+    for group in get_user_groups(session, person):
+        group_principals = get_principals_for_group(session, group)
+        if group_principals:
+            principals.extend(group_principals)
     return [x for x in principals if x is not None]
 
 
