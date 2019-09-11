@@ -198,7 +198,6 @@ class EvalgUser(object):
             user_entitlements = extended_user_data['eduPersonEntitlement']
             for group, entitlements in self._entitlement_mapping.items():
                 if any(x in entitlements for x in user_entitlements):
-                    logger.info(self._entitlement_groups)
                     dp_groups.append(self._entitlement_groups[group])
         return dp_groups
 
