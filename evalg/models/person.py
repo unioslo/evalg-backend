@@ -17,6 +17,9 @@ class Person(ModelBase):
 
     __versioned__ = {}
 
+    # Prioritized order of external ids to use when eg creating a voter object
+    preferred_ids = ('feide_id', 'nin')
+
     id = db.Column(
         evalg.database.types.UuidType,
         primary_key=True,
@@ -47,7 +50,7 @@ class Person(ModelBase):
         cascade='all, delete-orphan',
         )
 
-    def get_preferred_id(self, *preference):
+    def get_preferred_id(self):
         """
         Get the first available *preferred* identifier
 
@@ -62,10 +65,9 @@ class Person(ModelBase):
         """
         for obj in sorted(
                 (obj for obj in self.identifiers
-                 if obj.id_type in preference),
-                key=lambda o: preference.index(o.id_type)):
+                 if obj.id_type in self.preferred_ids),
+                key=lambda o: self.preferred_ids.index(o.id_type)):
             return obj
-        # TODO: Or raise LookupError?
         return None
 
 

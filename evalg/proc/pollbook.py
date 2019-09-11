@@ -1,10 +1,10 @@
 """
-This module implements pollbook maintenance.
+This module implements functionality related to pollbooks
 
 This includes:
 
-- TODO: Updating the pollbook from sources
-- Manually "moving" a voter from one pollbook to another
+- Adding a voter to a pollbook
+- Querying the database for information about a pollbook and voters
 
 """
 import logging
@@ -87,19 +87,9 @@ def get_person_for_id(session, id_type, id_value):
         PersonExternalId
     ).filter(
         PersonExternalId.id_type == id_type,
-        PersonExternalId.id_value == id_type,
+        PersonExternalId.id_value == id_value,
     )
     return person_query
-
-
-def get_voter(session, voter_id):
-    """
-    Get a voter object by ``Voter.id``.
-    """
-    return evalg.database.query.lookup(
-        session,
-        evalg.models.voter.Voter,
-        id=voter_id)
 
 
 def get_voters_with_vote_in_pollbook(session, pollbook_id):
@@ -134,14 +124,6 @@ def get_voters_without_vote_in_pollbook(session, pollbook_id):
 
 
 class ElectionVoterPolicy(object):
-    """
-    TODO:
-
-    This is super messy. Our database model is not made for this.
-    """
-
-    preferred_ids = ('feide_id', 'nin')
-
     def __init__(self, session):
         self.session = session
 
@@ -180,7 +162,7 @@ class ElectionVoterPolicy(object):
         if voter:
             return voter
 
-        id_obj = person.get_preferred_id(*self.preferred_ids)
+        id_obj = person.get_preferred_id()
 
         if not id_obj:
             raise ValueError('no valid external ids available for %r'
