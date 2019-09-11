@@ -14,7 +14,7 @@ from flask import current_app
 from sqlalchemy.sql import and_
 
 from evalg.models.election import ElectionGroup, Election
-from evalg.models.pollbook import PollBook
+from evalg.models.pollbook import Pollbook
 from evalg.models.election_list import ElectionList
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.utils import utcnow
@@ -212,7 +212,7 @@ def make_group_from_template(session, template_name, ou, principals=()):
         return cand_list
 
     def make_pollbook(kw):
-        return PollBook(**kw)
+        return Pollbook(**kw)
 
     def make_election(e):
         if group_type == 'single_election':

@@ -7,7 +7,7 @@ from sqlalchemy.sql import and_, select, func
 
 import evalg.database.query
 from evalg.models.ballot import Envelope
-from evalg.models.pollbook import PollBook
+from evalg.models.pollbook import Pollbook
 from evalg.models.voter import Voter, VERIFIED_STATUS_MAP
 from evalg.models.votes import Vote
 from evalg.models.candidate import Candidate
@@ -136,8 +136,8 @@ def get_election_vote_counts(session, election):
     """
     voters_subq = select([Voter.id]).where(
         Voter.pollbook_id.in_(
-            select([PollBook.id]).where(
-                PollBook.election_id == election.id)))
+            select([Pollbook.id]).where(
+                Pollbook.election_id == election.id)))
     query = session.query(
         Voter.self_added,
         Voter.reviewed,
@@ -173,7 +173,7 @@ def get_votes_for_person(session, person):
     ).join(
         Voter
     ).join(
-        PollBook
+        Pollbook
     ).join(
         PersonExternalId,
         and_(
@@ -182,6 +182,6 @@ def get_votes_for_person(session, person):
     ).filter(
         PersonExternalId.person_id == person.id
     ).order_by(
-        PollBook.priority
+        Pollbook.priority
     )
     return vote_query

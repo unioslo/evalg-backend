@@ -2,7 +2,7 @@
 import evalg.database.query
 
 from evalg.graphql import get_context
-from evalg.models.pollbook import PollBook
+from evalg.models.pollbook import Pollbook
 
 
 def test_get_pollbook_by_id(db_session, client, pollbook_foo, logged_in_user):
@@ -41,7 +41,7 @@ def test_get_pollbooks(db_session, client, logged_in_user, make_full_election):
     execution = client.execute(query, context=context)
     assert not execution.get('errors')
     response = execution['data']['pollbooks']
-    pollbooks = db_session.query(PollBook).all()
+    pollbooks = db_session.query(Pollbook).all()
     assert len(response) == len(pollbooks)
 
 

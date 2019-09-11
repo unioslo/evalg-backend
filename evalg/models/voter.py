@@ -87,7 +87,7 @@ class Voter(ModelBase):
         nullable=False)
 
     pollbook = db.relationship(
-        'PollBook',
+        'Pollbook',
         back_populates='voters')
     
     self_added = db.Column(

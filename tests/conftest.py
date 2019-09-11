@@ -18,7 +18,7 @@ from evalg.models.group import Group
 from evalg.models.group import GroupMembership
 from evalg.models.ou import OrganizationalUnit
 from evalg.models.person import Person, PersonExternalId
-from evalg.models.pollbook import PollBook
+from evalg.models.pollbook import Pollbook
 from evalg.models.voter import Voter
 from evalg.proc.vote import ElectionVotePolicy
 
@@ -369,7 +369,7 @@ def make_pollbook(db_session, election_foo):
             "election_id": election.id,
         }
         pollbook = evalg.database.query.get_or_create(
-            db_session, PollBook, **data)
+            db_session, Pollbook, **data)
         db_session.add(pollbook)
         db_session.flush()
         return pollbook
@@ -735,7 +735,7 @@ def pollbook_bar(db_session, election_bar):
     }
 
     pollbook = evalg.database.query.get_or_create(db_session,
-                                                  PollBook,
+                                                  Pollbook,
                                                   **data)
 
     db_session.add(pollbook)

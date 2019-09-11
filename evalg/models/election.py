@@ -195,7 +195,7 @@ class Election(AbstractElection):
 
     lists = db.relationship('ElectionList')
 
-    pollbooks = db.relationship('PollBook')
+    pollbooks = db.relationship('Pollbook')
 
     # Whether election is active.
     # We usually create more elections than needed to make templates consistent.

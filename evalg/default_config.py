@@ -173,7 +173,7 @@ PERMISSIONS = {
         'voter': 'can_view_vote',
         'record': 'can_view_vote',
     },
-    'PollBook': {
+    'Pollbook': {
         'name': 'allow',
         'weight': 'can_manage_pollbook',
         'priority': 'can_manage_pollbook',

@@ -14,7 +14,7 @@ from sqlalchemy import and_, func
 import evalg.database.query
 from evalg.models.election import Election, ElectionGroup
 from evalg.models.person import Person, PersonExternalId
-from evalg.models.pollbook import PollBook
+from evalg.models.pollbook import Pollbook
 from evalg.models.votes import Vote
 from evalg.models.voter import Voter
 
@@ -49,11 +49,11 @@ def get_voters_for_person(session, person, election=None):
             Voter.id_type == PersonExternalId.id_type,
             Voter.id_value == PersonExternalId.id_value)
     ).join(
-        PollBook
+        Pollbook
     ).filter(
         cond
     ).order_by(
-        PollBook.priority
+        Pollbook.priority
     )
     return voter_query
 
@@ -72,11 +72,11 @@ def get_voters_for_id(session, id_type, id_value, election=None):
     voter_query = session.query(
         Voter
     ).join(
-        PollBook
+        Pollbook
     ).filter(
         cond
     ).order_by(
-        PollBook.priority
+        Pollbook.priority
     )
     return voter_query
 
@@ -227,14 +227,14 @@ def get_voters_in_election_group(session, election_group_id, self_added=None,
     query = session.query(
         Voter
     ).join(
-        PollBook,
+        Pollbook,
         and_(
-            Voter.pollbook_id == PollBook.id
+            Voter.pollbook_id == Pollbook.id
         )
     ).join(
         Election,
         and_(
-            PollBook.election_id == Election.id
+            Pollbook.election_id == Election.id
         )
     ).join(
         ElectionGroup,
