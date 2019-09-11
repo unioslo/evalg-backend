@@ -61,7 +61,6 @@ class Envelope(ModelBase):
     )
 
     # Ballot contents
-    # TODO: This should probably be a BLOB?
     ballot_data = schema.Column(
         sqltypes.LargeBinary,
         doc='the ballot content',
