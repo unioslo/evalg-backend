@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 class EvalgUser(object):
     MAX_PERSON_DATA_AGE = 60  # in minutes
-    MAX_ENTITLEMENT_DATA_AGE = 60  # in minutes
 
     # map from Dataporten user info endpoint schema to Person model
     DP_ATTRIBUTE_MAP = {
@@ -132,6 +131,7 @@ class EvalgUser(object):
     def update_person(self, person):
         self.update_person_data(person)
         self.update_person_ids(person)
+        self.update_entitlement_groups(person)
         db.session.add(person)
         db.session.commit()
 
@@ -184,10 +184,10 @@ class EvalgUser(object):
                               list(self._entitlement_mapping.keys())]
         return {x.name: x for x in entitlement_groups if x is not None}
 
-    def _get_persons_entitlement_group(self):
+    def _get_persons_entitlement_group(self, person):
         """Get all entitlement groups a user is a member of."""
         return [x for x in list(self._entitlement_groups.values()) if
-                is_member_of_group(db.session, x, self._person)]
+                is_member_of_group(db.session, x, person)]
 
     def _get_dp_entitlement_groups(self):
         """Get the users entitlement groups as defined in DP."""
@@ -201,51 +201,46 @@ class EvalgUser(object):
                     dp_groups.append(self._entitlement_groups[group])
         return dp_groups
 
-    def update_entitlement_groups(self):
+    def update_entitlement_groups(self, person):
         """Update entitlement_groups."""
-        person = self._person
-        too_old = utcnow() - datetime.timedelta(
-            minutes=self.MAX_ENTITLEMENT_DATA_AGE)
-        if (person.last_update_from_feide is None or
-                person.last_update_from_feide < too_old):
-            current_app.logger.info('Updating person entitlements for '
-                                    'person_id=%r', person.id)
+        current_app.logger.info('Updating person entitlements for '
+                                'person_id=%r', person.id)
 
-            self._entitlement_mapping = current_app.config[
-                    'FEIDE_ENTITLEMENT_MAPPING']
+        self._entitlement_mapping = current_app.config[
+                'FEIDE_ENTITLEMENT_MAPPING']
 
-            self._entitlement_groups = self._get_entitlement_groups()
+        self._entitlement_groups = self._get_entitlement_groups()
 
-            current_groups = self._get_persons_entitlement_group()
-            dp_groups = self._get_dp_entitlement_groups()
+        current_groups = self._get_persons_entitlement_group(person)
+        dp_groups = self._get_dp_entitlement_groups()
 
-            # Find groups to remove the user from
-            current_groups_names = [x.name for x in current_groups]
-            to_remove = [x for x in current_groups if x.name not in
-                         current_groups_names]
+        # Find groups to remove the user from
+        current_groups_names = [x.name for x in current_groups]
+        to_remove = [x for x in current_groups if x.name not in
+                     current_groups_names]
 
-            # Find groups to add the user to
-            to_add = [x for x in dp_groups if x.name not in
-                      current_groups_names]
-            try:
-                for group in to_remove:
-                    remove_person_from_group(db.session, group, person)
-                    current_app.logger.info(
-                        'Removing user=%s from entitlement group=%s',
-                        person.id,
-                        group.name)
-                for group in to_add:
-                    add_person_to_group(db.session, group, person)
-                    current_app.logger.info(
-                        'Adding user=%s to entitlement group=%s',
-                        person.id,
-                        group.name)
+        # Find groups to add the user to
+        to_add = [x for x in dp_groups if x.name not in
+                  current_groups_names]
+        try:
+            for group in to_remove:
+                remove_person_from_group(db.session, group, person)
+                current_app.logger.info(
+                    'Removing user=%s from entitlement group=%s',
+                    person.id,
+                    group.name)
+            for group in to_add:
+                add_person_to_group(db.session, group, person)
+                current_app.logger.info(
+                    'Adding user=%s to entitlement group=%s',
+                    person.id,
+                    group.name)
 
-                db.session.commit()
-            except IntegrityError:
-                db.session.rollback()
-                current_app.logger.info('Skipping entitlement groups, '
-                                        'added by another request.')
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            current_app.logger.info('Skipping entitlement groups, '
+                                    'added by another request.')
 
     def person_needs_update(self, person):
         too_old = utcnow() - datetime.timedelta(

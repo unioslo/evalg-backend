@@ -19,8 +19,10 @@ def get_or_create_group(group_name):
     group = evalg.models.group.Group.query.filter_by(
         name=group_name).first()
     if group:
+        current_app.logger.info('Found entitlement group, name: %s',
+                                group_name)
         return group
-    current_app.logger.info('Adding missing entitlement group, name: %s',
+    current_app.logger.info('Creating entitlement group, name: %s',
                             group_name)
     group = evalg.models.group.Group()
     group.name = group_name
@@ -33,11 +35,13 @@ def get_or_create_group_principal(group):
     principal = evalg.models.authorization.GroupPrincipal.query.filter_by(
         group_id=group.id
     ).first()
-
     if principal:
-        current_app.logger.info('here!!')
-        current_app.logger.info(principal)
+        current_app.logger.info('Found principal for group=%s',
+                                group.id)
         return principal
+
+    current_app.logger.info('Creating principal for group=%s',
+                            group.id)
     principal = evalg.models.authorization.GroupPrincipal()
     principal.group_id = group.id
     evalg.db.session.add(principal)
@@ -56,7 +60,7 @@ def get_or_create_election_group_role(role_name, principal):
         current_app.logger.info('Found role for grant_id=%s', role.grant_id)
         return role
 
-    current_app.logger.info('Creating role for grant_id=%s', role.grant_id)
+    current_app.logger.info('Creating role for %s', role_name)
     role = evalg.models.authorization.ElectionGroupRole()
     role.principal = principal
     role.name = role_name
