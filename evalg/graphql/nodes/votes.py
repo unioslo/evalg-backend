@@ -100,13 +100,6 @@ def resolve_election_count_by_id(_, info, **args):
 #
 # Mutations
 #
-
-# TODO:
-#   Or should voting be a two step process?
-#   1. Store ballot and get a ballot_id
-#   2. Commit vote (e.g. create and store a Vote that binds a voter_id to the
-#      ballot_id)
-
 class AddVote(graphene.Mutation):
     class Arguments:
         voter_id = graphene.UUID(required=True)

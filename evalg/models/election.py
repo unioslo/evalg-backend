@@ -161,11 +161,6 @@ class ElectionGroup(AbstractElection):
             return statuses.pop()
         return 'multipleStatuses'
 
-    # @status.expression
-    # def status(cls):
-    #     # TODO: make expression
-    #     return ''
-
 
 class Election(AbstractElection):
     """ Election. """
