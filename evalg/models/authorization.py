@@ -14,7 +14,7 @@ Basic idea:
 import uuid
 
 from sqlalchemy import types
-from sqlalchemy.sql import schema, and_, or_, column
+from sqlalchemy.sql import schema, and_, or_
 from sqlalchemy.sql.expression import false, true, null
 from sqlalchemy.orm import relationship, validates
 
@@ -230,12 +230,12 @@ class ElectionGroupRole(Role):
         schema.CheckConstraint(
             or_(
                 and_(
-                    column('global_role') == true(),
-                    column('group_id') == null()),
+                    global_role == true(),
+                    group_id == null()),
 
                 or_(
-                    column('global_role') == null(),
-                    column('global_role') == false()
+                    global_role == null(),
+                    global_role == false()
                 )
             ),
             name='no_eg_when_global'),
