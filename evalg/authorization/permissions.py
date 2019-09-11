@@ -68,7 +68,6 @@ class IsVoter(Requirement):
 
 
 class IsPublisher(Requirement):
-
     def __init__(self, session):
         self.session = session
 
@@ -76,6 +75,7 @@ class IsPublisher(Requirement):
         principals = get_principals_for_person(self.session, user.person)
         return role_in_principals(
             principals,
-            target_type='global-role',
-            name='publisher'
+            target_type='election-group-role',
+            name='publisher',
+            global_role=True
         )
