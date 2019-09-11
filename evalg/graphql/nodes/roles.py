@@ -71,6 +71,7 @@ class AddElectionGroupRoleByIdentifier(graphene.Mutation):
     """
     Add an election group role to a user identifier.
     """
+
     class Arguments:
         election_group_id = graphene.UUID(required=True)
         role = ElectionGroupRoleType(required=True)
@@ -80,6 +81,7 @@ class AddElectionGroupRoleByIdentifier(graphene.Mutation):
     Output = AddElectionGroupRoleByIdentifierResponse
 
     def mutate(self, info, **args):
+        valid_roles = ['admin']
         session = get_session(info)
         user = get_current_user(info)
         election_group_id = args.get('election_group_id')
@@ -104,6 +106,17 @@ class AddElectionGroupRoleByIdentifier(graphene.Mutation):
                 message='Not allowed to add roles for election {}'.format(
                     election_group_id)
             )
+        if role_name not in valid_roles:
+            # TODO improve this at some point.
+            #   We need to check this to stop someone from adding a
+            #   publisher or global_admin role.
+            return AddElectionGroupRoleByIdentifierResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to add role of type {}'.format(
+                    role_name)
+            )
+
         principal = get_or_create_principal(
             session=session,
             principal_type='person_identifier',
