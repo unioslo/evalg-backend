@@ -222,6 +222,16 @@ class ElectionGroupRole(Role):
         backref='roles',
         lazy='joined')
 
+    global_role = schema.Column(
+        types.Boolean)
+
+    __table_args__ = (
+        schema.CheckConstraint(
+            '(global_role IS TRUE AND group_id is NULL) OR (global_role IS '
+            'NULL)',
+            name='no_eg_when_global'),
+    )
+
     # principal_id = schema.Column(
     #     UuidType,
     #     schema.ForeignKey('principal.id'),
