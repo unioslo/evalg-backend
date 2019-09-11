@@ -65,17 +65,3 @@ class IsVoter(Requirement):
                 user.person
             ).all()
         ]
-
-
-class IsVisible(Requirement):
-    def __init__(self, source):
-        self.source = source
-
-    def fulfill(self, user):
-        if hasattr(self.source, 'election_status'):
-            return self.source.election_status in ('announced', 'published',
-                                                   'ongoing')
-        if hasattr(self.source, 'status'):
-            return self.source.status in (
-                'announced', 'published', 'ongoing')
-        return False

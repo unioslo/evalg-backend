@@ -17,7 +17,6 @@ from evalg.models.election_list import ElectionList
 from evalg.graphql.nodes.utils.base import (get_session,
                                             get_current_user)
 from evalg.authorization.permissions import (IsElectionGroupAdmin,
-                                             IsVisible,
                                              IsPerson,
                                              IsVoter)
 
@@ -34,14 +33,6 @@ def deny(*args, **kwargs):
 @all_permissions
 def allow(*args, **kwargs):
     return True
-
-
-@all_permissions
-def is_visible(session, user, source, **args):
-    return Permission(
-        IsVisible(source),
-        identity=user,
-    )
 
 
 @all_permissions
