@@ -8,7 +8,7 @@ Create Date: 2019-09-11 09:32:04.442055
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import and_, or_, column
-from sqlalchemy.sql.expression import true, null
+from sqlalchemy.sql.expression import false, true, null
 import evalg.database.types
 
 
@@ -31,7 +31,11 @@ def upgrade():
             and_(
                 column('global_role') == true(),
                 column('group_id') == null()),
-            column('global_role') == null())
+            or_(
+                column('global_role') == null(),
+                column('global_role') == false()
+            )
+        )
     )
 
 

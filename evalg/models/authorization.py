@@ -15,7 +15,7 @@ import uuid
 
 from sqlalchemy import types
 from sqlalchemy.sql import schema, and_, or_, column
-from sqlalchemy.sql.expression import true, null
+from sqlalchemy.sql.expression import false, true, null
 from sqlalchemy.orm import relationship, validates
 
 from evalg.database.types import UuidType
@@ -232,7 +232,11 @@ class ElectionGroupRole(Role):
                 and_(
                     column('global_role') == true(),
                     column('group_id') == null()),
-                column('global_role') == null()
+
+                or_(
+                    column('global_role') == null(),
+                    column('global_role') == false()
+                )
             ),
             name='no_eg_when_global'),
     )
