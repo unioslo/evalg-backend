@@ -28,6 +28,7 @@ def get_or_create_group(group_name):
     group.name = group_name
     evalg.db.session.add(group)
     evalg.db.session.flush()
+    return group
 
 
 def get_or_create_group_principal(group):
