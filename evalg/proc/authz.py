@@ -13,7 +13,7 @@ from evalg.models.authorization import (ElectionGroupRole,
                                         PersonPrincipal)
 from evalg.models.person import PersonExternalId
 from evalg.models.authorization import PersonIdentifierPrincipal
-
+from evalg.proc.group import is_member_of_group, get_group_by_name
 
 def get_or_create_principal(session, principal_type, **kwargs):
     """
@@ -126,3 +126,11 @@ def add_election_group_role(session, election_group, principal,
     session.add(role)
     session.flush()
     return role
+
+
+def can_publish_election(session, person):
+    """Check if user can publish elections."""
+    publisher_group = get_group_by_name(session, 'publisher')
+    if not publisher_group:
+        return False
+    return is_member_of_group(session, publisher_group, person)
