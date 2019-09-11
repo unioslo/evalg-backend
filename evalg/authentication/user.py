@@ -7,6 +7,8 @@ import datetime
 import functools
 import logging
 
+from sqlalchemy.exc import IntegrityError
+
 from flask import current_app, request
 from flask_feide_gk.utils import ContextAttribute
 from flask_feide_gk.mock.gatekeeper import MockGatekeeperData
@@ -51,7 +53,15 @@ class EvalgUser(object):
                 return
             self.feide_api = feide_api
             self._auth_finished = False
-            self.find_or_create_person()
+            if self._person is None:
+                person = self.find_or_create_person()
+                if self.person_needs_update(person):
+                    self.update_person(person)
+                self._person = person
+            logger.info('Identified dp_user_id=%r as person_id=%r',
+                        self.dp_user_id,
+                        self._person.id)
+            self._auth_finished = True
 
     def get_dp_user_info(self):
         if self._dp_user_info is None:
@@ -59,15 +69,18 @@ class EvalgUser(object):
         return self._dp_user_info
 
     def find_or_create_person(self):
-        if self._person == None:
-            person = self.find_person()
-            if person is None:
-                person = Person()
+        person = self.find_person()
+        if person is None:
+            person = Person()
+            try:
                 self.update_person(person)
                 logger.info('Creating a new person for dp_user_id=%r',
                             self.dp_user_id)
-            self.set_person(person)
-        self._auth_finished = True
+            except IntegrityError as e:
+                logger.warning('Could not create person. \n %r', e)
+                db.session.rollback()
+                person = self.find_person()
+        return person
 
     def find_person(self):
         if (current_app.config['AUTH_METHOD'] == 'feide'
@@ -87,7 +100,6 @@ class EvalgUser(object):
                 self.dp_user_id,
                 match.id_type)
         else:
-            # TODO: we're in deep shit
             raise Exception('Matched multiple persons :-(')
         return person
 
@@ -151,16 +163,11 @@ class EvalgUser(object):
         db.session.flush()
         logger.info('Identifiers: %s', repr(person.identifiers))
 
-    def set_person(self, person):
+    def person_needs_update(self, person):
         too_old = utcnow() - datetime.timedelta(
             minutes=self.MAX_PERSON_DATA_AGE)
-        if (person.last_update_from_feide is None or
-                person.last_update_from_feide < too_old):
-            self.update_person(person)
-        self._person = person
-        current_app.logger.info(
-            'Identified dp_user_id=%r as person_id=%r',
-            self.dp_user_id, person.id)
+        return (person.last_update_from_feide is None or
+                person.last_update_from_feide < too_old)
 
     @property
     def person(self):
