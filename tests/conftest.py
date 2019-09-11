@@ -105,9 +105,10 @@ def election_keys_foo():
 
 
 @pytest.fixture
-def election_vote_policy_foo(db_session):
-    return ElectionVotePolicy(db_session)
-
+def make_election_vote_policy(db_session):
+    def election_vote_policy(voter_id):
+        return ElectionVotePolicy(db_session, voter_id)
+    return election_vote_policy
 
 @pytest.fixture
 def make_ou(db_session):
@@ -600,16 +601,15 @@ def election_pref_vote(pref_candidates_foo):
 @pytest.fixture
 def make_pollbook_vote(db_session, election_pref_vote,
                        pollbook_voter_foo,
-                       election_vote_policy_foo):
+                       make_election_vote_policy):
     def make_pollbook_vote(pollbook_voter=None, ballot_data=None):
         if not ballot_data:
             ballot_data = election_pref_vote
 
         if not pollbook_voter:
             pollbook_voter = pollbook_voter_foo
-
-        return election_vote_policy_foo.add_vote(pollbook_voter,
-                                                 ballot_data.copy())
+        election_vote_policy = make_election_vote_policy(pollbook_voter.id)
+        return election_vote_policy.add_vote(ballot_data.copy())
 
     return make_pollbook_vote
 
@@ -780,7 +780,6 @@ def envelope_bar(db_session, config, pref_candidates_bar, election_keys_foo,
     }
     data = {
         'envelope_type': 'base64-nacl',
-        'ballot_type': 'test_ballot',
         'ballot_data': ballot_serializer.serialize(ballot_data)
     }
     envelope = evalg.database.query.get_or_create(
