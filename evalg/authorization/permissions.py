@@ -65,3 +65,17 @@ class IsVoter(Requirement):
                 user.person
             ).all()
         ]
+
+
+class IsPublisher(Requirement):
+
+    def __init__(self, session):
+        self.session = session
+
+    def fulfill(self, user, request=None):
+        principals = get_principals_for_person(self.session, user.person)
+        return role_in_principals(
+            principals,
+            target_type='global-role',
+            name='publisher'
+        )
