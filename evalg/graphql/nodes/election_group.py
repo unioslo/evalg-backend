@@ -5,14 +5,11 @@ This module defines the GraphQL ObjectType that represents election group, as
 well as queries and mutations for this object.
 """
 import graphene
-from graphene.types.generic import GenericScalar
-
 import graphene_sqlalchemy
 
+from graphene.types.generic import GenericScalar
 from graphql import GraphQLError
-
 from sqlalchemy.sql import or_
-
 from sqlalchemy_continuum import version_class
 
 import evalg.models.election
@@ -55,9 +52,8 @@ from evalg.utils import convert_json
 #
 @permission_controller.control_object_type
 class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
-    """
-    A group of elections.
-    """
+    """A group of elections."""
+
     class Meta:
         model = evalg.models.election.ElectionGroup
         default_resolver = permission_controlled_default_resolver
@@ -122,16 +118,12 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 
 def resolve_election_groups(_, info):
-    """
-    List all election groups that should be visible to the current user.
-    """
+    """List all election groups that should be visible to the current user."""
     return ElectionGroup.get_query_visible_to_current_user(info).all()
 
 
 def resolve_election_group_by_id(_, info, **args):
-    """
-    Get a single election group that should be visible to the current user.
-    """
+    """Get a single election group that's visible to the current user."""
     admin_roles = ElectionGroup.get_current_user_admin_roles(info)
     admin_for = [role.group_id for role in admin_roles]
     election_group = ElectionGroup.get_query(info).get(args['id'])
@@ -214,9 +206,8 @@ get_election_template_query = graphene.Field(
 
 
 class ElectionKeyMeta(graphene.ObjectType):
-    """
-    Election key meta info.
-    """
+    """Election key meta info."""
+
     generated_at = types.DateTime()
     generated_by = graphene.Field(Person)
 
@@ -315,9 +306,7 @@ list_election_group_counting_results_query = graphene.List(
 
 
 class CreateNewElectionGroup(graphene.Mutation):
-    """
-    Create an ElectionGroup from a template.
-    """
+    """Create an ElectionGroup from a template."""
 
     class Arguments:
         ou_id = graphene.UUID()
@@ -350,9 +339,8 @@ class CreateNewElectionGroup(graphene.Mutation):
 
 
 class ElectionBaseSettingsInput(graphene.InputObjectType):
-    """
-    Individual settings input for elections in an election group.
-    """
+    """Individual settings input for elections in an election group."""
+
     id = graphene.UUID(required=True)
     seats = graphene.Int(required=True)
     substitutes = graphene.Int(required=True)
@@ -360,9 +348,7 @@ class ElectionBaseSettingsInput(graphene.InputObjectType):
 
 
 class UpdateBaseSettings(graphene.Mutation):
-    """
-    Update settings for elections in an election group.
-    """
+    """Update settings for elections in an election group."""
 
     class Arguments:
         id = graphene.UUID(required=True)
@@ -395,9 +381,7 @@ class UpdateBaseSettings(graphene.Mutation):
 
 
 class PublishElectionGroup(graphene.Mutation):
-    """
-    Publish an ElectionGroup.
-    """
+    """Publish an ElectionGroup."""
 
     class Arguments:
         id = graphene.UUID(required=True)
@@ -421,9 +405,7 @@ class PublishElectionGroup(graphene.Mutation):
 
 
 class UnpublishElectionGroup(graphene.Mutation):
-    """
-    Unpublish an ElectionGroup.
-    """
+    """Unpublish an ElectionGroup."""
 
     class Arguments:
         id = graphene.UUID(required=True)
