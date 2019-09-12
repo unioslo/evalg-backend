@@ -34,11 +34,6 @@ logger = logging.getLogger(__name__)
 #
 
 # TODO:
-#   We should use an explicit db session passed through the `info.context`
-#   object, rather than relying on the builtin `Model.query`.
-#   E.g. Model.get_query(info) -> info.context.session.query(Model)
-
-# TODO:
 #   All Queries and Mutations should be implemented using functionality from
 #   elsewhere in order to show or mutate objects. The business logic should not
 #   be tied to GraphQL.
@@ -60,10 +55,7 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
     def resolve_person(self, info):
         voter_id = self.id
         session = get_session(info)
-        voter = evalg.database.query.lookup(
-            session,
-            evalg.models.voter.Voter,
-            id=voter_id)
+        voter = session.query(evalg.models.voter.Voter).get(voter_id)
         return evalg.proc.pollbook.get_person_for_voter(session, voter)
 
 
@@ -160,10 +152,7 @@ def resolve_voter_by_id(_, info, **args):
 def resolve_voters_by_person_id(_, info, **args):
     person_id = args['id']
     session = get_session(info)
-    person = evalg.database.query.lookup(
-        session,
-        evalg.models.person.Person,
-        id=person_id)
+    person = session.query(evalg.models.person.Person).get(person_id)
     return evalg.proc.pollbook.get_voters_for_person(session, person).all()
 
 
@@ -220,8 +209,8 @@ class UpdateVoterPollbook(graphene.Mutation):
         if not can_vote(session, user, voter):
             return UpdateVoterPollbook(ok=False)
         voter.pollbook_id = kwargs.get('pollbook_id')
-        db.session.add(voter)
-        db.session.commit()
+        session.add(voter)
+        session.commit()
         return UpdateVoterPollbook(ok=True)
 
 
@@ -326,8 +315,8 @@ class DeleteVotersInPollbook(graphene.Mutation):
         if not can_manage_pollbook(session, user, pollbook):
             return DeleteVotersInPollbook(ok=False)
         for voter in pollbook.voters:
-            db.session.delete(voter)
-        db.session.commit()
+            session.delete(voter)
+        session.commit()
         return DeleteVotersInPollbook(ok=True)
 
 
@@ -359,10 +348,8 @@ class AddVoterByIdentifier(graphene.Mutation):
         self_added = not kwargs.get('approved', False)
         reason = kwargs.get('reason')
 
-        pollbook = evalg.database.query.lookup(
-            session,
-            evalg.models.pollbook.Pollbook,
-            id=pollbook_id)
+        pollbook = session.query(evalg.models.pollbook.Pollbook).get(
+            pollbook_id)
 
         if not can_manage_pollbook(session, user, pollbook):
             return None
@@ -374,7 +361,7 @@ class AddVoterByIdentifier(graphene.Mutation):
             self_added=self_added,
             reason=reason)
 
-        db.session.commit()
+        session.commit()
         return voter
 
 
@@ -399,15 +386,10 @@ class AddVoterByPersonId(graphene.Mutation):
         pollbook_id = kwargs['pollbook_id']
         reason = kwargs.get('reason')
 
-        person = evalg.database.query.lookup(
-            session,
-            evalg.models.person.Person,
-            id=person_id)
+        person = session.query(evalg.models.person.Person).get(person_id)
 
-        pollbook = evalg.database.query.lookup(
-            session,
-            evalg.models.pollbook.Pollbook,
-            id=pollbook_id)
+        pollbook = session.query(evalg.models.pollbook.Pollbook).get(
+            pollbook_id)
 
         voter = policy.add_voter(
             pollbook,
@@ -415,7 +397,7 @@ class AddVoterByPersonId(graphene.Mutation):
             self_added=True,
             reason=reason)
 
-        db.session.commit()
+        session.commit()
         return voter
 
 
@@ -442,8 +424,8 @@ class DeleteVoter(graphene.Mutation):
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not can_manage_pollbook(session, user, voter.pollbook):
             return DeleteVoter(ok=False)
-        db.session.delete(voter)
-        db.session.commit()
+        session.delete(voter)
+        session.commit()
         return DeleteVoter(ok=True)
 
 
@@ -472,10 +454,8 @@ class UploadCensusFile(graphene.Mutation):
         logger.debug('kwargs %r', kwargs)
 
         try:
-            pollbook = evalg.database.query.lookup(
-                evalg.db.session,
-                evalg.models.pollbook.Pollbook,
-                id=pollbook_id)
+            pollbook = session.query(evalg.models.pollbook.Pollbook).get(
+                pollbook_id)
         except Exception as e:
             return UploadCensusFileResponse(
                 success=False,
