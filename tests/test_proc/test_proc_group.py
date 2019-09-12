@@ -12,10 +12,10 @@ from evalg.proc.group import (add_person_to_group,
 
 
 def test_search_group(db_session):
-    group = get_or_create(db_session, Group, name='foo')
+    group = get_or_create(db_session, Group, name='foo1234-123')
     db_session.add(group)
     db_session.flush()
-    results = search_groups(session=db_session, filter_string='o')
+    results = search_groups(session=db_session, filter_string='foo1234')
     assert results.count() == 1
 
 

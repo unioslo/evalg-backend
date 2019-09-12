@@ -468,6 +468,15 @@ def make_group_membership(db_session):
 
 
 @pytest.fixture
+def make_person_publisher(db_session, global_roles, make_group_membership):
+    """Make a giver person a publisher."""
+    def make_person_publisher(person):
+        publisher_group = global_roles['publisher']['group']
+        return make_group_membership(publisher_group, person)
+    return make_person_publisher
+
+
+@pytest.fixture
 def make_person_principal(db_session):
     def make_person_principal(person, principal_type='person'):
         return evalg.proc.authz.get_or_create_principal(
@@ -479,8 +488,23 @@ def make_person_principal(db_session):
 
 
 @pytest.fixture
+def make_group_principal(db_session):
+    """Returns a method for creating group principals."""
+    def make_group_principal(group):
+        return evalg.proc.authz.get_or_create_principal(
+            db_session,
+            principal_type='group',
+            group_id=group.id,
+        )
+    return make_group_principal
+
+
+@pytest.fixture
 def make_role(db_session):
-    def make_role(election_group, principal, role_name='admin'):
+    def make_role(election_group,
+                  principal,
+                  role_name='admin',
+                  global_role=False):
         return evalg.proc.authz.add_election_group_role(
             session=db_session,
             election_group=election_group,
@@ -488,6 +512,41 @@ def make_role(db_session):
             role_name=role_name)
 
     return make_role
+
+
+@pytest.fixture
+def global_roles(db_session, make_group, make_group_principal):
+    """Create the global roles and groups."""
+    publisher_group = make_group('publisher')
+    global_admin_group = make_group('global_admin')
+    publisher_principal = make_group_principal(publisher_group)
+    global_admin_principal = make_group_principal(global_admin_group)
+    publisher_role = evalg.proc.authz.add_election_group_role(
+        session=db_session,
+        election_group=None,
+        principal=publisher_principal,
+        role_name='publisher',
+        global_role=True
+    )
+    global_admin_role = evalg.proc.authz.add_election_group_role(
+        session=db_session,
+        election_group=None,
+        principal=global_admin_principal,
+        role_name='global_admin',
+        global_role=True
+    )
+    return {
+        'publisher': {
+            'group': publisher_group,
+            'principal': publisher_principal,
+            'role': publisher_role
+        },
+        'global_admin': {
+            'group': global_admin_group,
+            'principal': global_admin_principal,
+            'role': global_admin_role
+        }
+    }
 
 
 @pytest.fixture
