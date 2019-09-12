@@ -18,6 +18,7 @@ from evalg.graphql.nodes.utils.base import (get_session,
                                             get_current_user)
 from evalg.authorization.permissions import (IsElectionGroupAdmin,
                                              IsPerson,
+                                             IsPublisher,
                                              IsVoter)
 
 
@@ -40,6 +41,13 @@ def can_manage_election_group(session, user, election_group, **args):
     return Permission(
         IsElectionGroupAdmin(session, election_group.id),
         identity=user)
+
+
+@all_permissions
+def can_publish_election_groups(session, user, **kargs):
+    return Permission(
+        IsPublisher(session),
+        identify=user)
 
 
 @all_permissions
