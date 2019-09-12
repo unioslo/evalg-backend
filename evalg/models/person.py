@@ -18,7 +18,7 @@ class Person(ModelBase):
     __versioned__ = {}
 
     # Prioritized order of external ids to use when eg creating a voter object
-    preferred_ids = ('feide_id', 'nin')
+    PREFERRED_IDS = ('feide_id', 'nin')
 
     id = db.Column(
         evalg.database.types.UuidType,
@@ -50,7 +50,7 @@ class Person(ModelBase):
         cascade='all, delete-orphan',
         )
 
-    def get_preferred_id(self):
+    def get_preferred_id(self, *preference):
         """
         Get the first available *preferred* identifier
 
@@ -63,10 +63,12 @@ class Person(ModelBase):
             Returns the most preferred ``PersonExternalId`` object, or ``None``
             if the person does not have any of the given id types.
         """
+        preferred_ids = preference or self.PREFERRED_IDS
+
         for obj in sorted(
                 (obj for obj in self.identifiers
-                 if obj.id_type in self.preferred_ids),
-                key=lambda o: self.preferred_ids.index(o.id_type)):
+                 if obj.id_type in preferred_ids),
+                key=lambda o: preferred_ids.index(o.id_type)):
             return obj
         return None
 
