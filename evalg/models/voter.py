@@ -64,11 +64,6 @@ class Voter(ModelBase):
         primary_key=True,
         default=uuid.uuid4)
 
-    tag = sqlalchemy.schema.Column(
-        sqlalchemy.types.UnicodeText,
-        doc='TODO: what is this used for?',
-    )
-
     id_type = sqlalchemy.schema.Column(
         sqlalchemy.types.UnicodeText,
         doc='person identifier type',

@@ -154,7 +154,6 @@ PERMISSIONS = {
         'identifiers': 'can_view_person',
     },
     'Voter': {
-        'tag': 'can_manage_voter',
         'id_type': 'can_manage_voter',
         'id_value': 'can_manage_voter',
         'pollbook_id': 'can_manage_voter',
