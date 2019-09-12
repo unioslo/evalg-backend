@@ -216,8 +216,9 @@ class EvalgUser(object):
 
         # Find groups to remove the user from
         current_groups_names = [x.name for x in current_groups]
+        dp_groups_names = [x.name for x in dp_groups]
         to_remove = [x for x in current_groups if x.name not in
-                     current_groups_names]
+                     dp_groups_names]
 
         # Find groups to add the user to
         to_add = [x for x in dp_groups if x.name not in
