@@ -12,10 +12,8 @@ import evalg.models.person
 import evalg.models.pollbook
 import evalg.models.voter
 import evalg.proc.pollbook
-from evalg import db
 from evalg.graphql.types import PersonIdType
 from evalg.file_parser.parser import CensusFileParser
-from evalg.models.voter import VerifiedStatus, VERIFIED_STATUS_MAP
 from evalg.graphql.nodes.utils.base import (get_session, get_current_user,
                                             MutationResponse)
 from evalg.graphql.nodes.person import Person
@@ -29,16 +27,10 @@ from evalg.graphql.nodes.utils.permissions import (
 
 logger = logging.getLogger(__name__)
 
+
 #
 # Query
 #
-
-# TODO:
-#   All Queries and Mutations should be implemented using functionality from
-#   elsewhere in order to show or mutate objects. The business logic should not
-#   be tied to GraphQL.
-
-
 @permission_controller.control_object_type
 class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
@@ -237,16 +229,6 @@ class UpdateVoterReason(graphene.Mutation):
         return UpdateVoterReason(ok=True)
 
 
-def undo_review_self_added_voter(voter):
-    voter.reviewed = False
-    voter.verified = False
-
-
-def undo_review_admin_added_voter(voter):
-    voter.reviewed = False
-    voter.verified = True
-
-
 class UndoReviewVoter(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)
@@ -259,19 +241,8 @@ class UndoReviewVoter(graphene.Mutation):
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not can_manage_voter(session, user, voter):
             return UndoReviewVoter(ok=False)
-        verified_status = VERIFIED_STATUS_MAP.get(
-            (voter.self_added, voter.reviewed, voter.verified),
-            None
-        )
 
-        if verified_status in (VerifiedStatus.SELF_ADDED_VERIFIED,
-                               VerifiedStatus.SELF_ADDED_REJECTED):
-            undo_review_self_added_voter(voter)
-        elif verified_status is VerifiedStatus.ADMIN_ADDED_REJECTED:
-            undo_review_admin_added_voter(voter)
-        else:
-            return UndoReviewVoter(ok=False)
-
+        voter.undo_review()
         session.add(voter)
         session.commit()
         return UndoReviewVoter(ok=True)
@@ -315,7 +286,8 @@ class DeleteVotersInPollbook(graphene.Mutation):
         if not can_manage_pollbook(session, user, pollbook):
             return DeleteVotersInPollbook(ok=False)
         for voter in pollbook.voters:
-            session.delete(voter)
+            if not voter.votes:
+                session.delete(voter)
         session.commit()
         return DeleteVotersInPollbook(ok=True)
 
@@ -401,9 +373,6 @@ class AddVoterByPersonId(graphene.Mutation):
         return voter
 
 
-#
-# TODO: Do we ever want to delete a voter? What do we do about any votes?
-#
 class DeleteVoter(graphene.Mutation):
     """
     Delete a single voter object from a pollbook.
@@ -415,15 +384,14 @@ class DeleteVoter(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        # TODO:
-        #   Should we actually delete the object, or simply mark as deleted?
-        #   If the object was added by an election admin from an import,
-        #   shouldn't the voter entry stay there?
         session = get_session(info)
         user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not can_manage_pollbook(session, user, voter.pollbook):
             return DeleteVoter(ok=False)
+        if voter.votes:
+            return DeleteVoter(ok=False)
+
         session.delete(voter)
         session.commit()
         return DeleteVoter(ok=True)

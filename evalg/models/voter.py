@@ -112,6 +112,15 @@ class Voter(ModelBase):
         doc='reason why this voter should be included in the pollbook',
         nullable=True)
 
+    def undo_review(self):
+        if self.verified_status in (VerifiedStatus.SELF_ADDED_VERIFIED,
+                                    VerifiedStatus.SELF_ADDED_REJECTED):
+            self.reviewed = False
+            self.verified = False
+        elif self.verified_status is VerifiedStatus.ADMIN_ADDED_REJECTED:
+            self.reviewed = False
+            self.verified = True
+
     @hybrid_property
     def verified_status(self):
         return VERIFIED_STATUS_MAP[(self.self_added,
