@@ -47,7 +47,7 @@ def can_manage_election_group(session, user, election_group, **args):
 def can_publish_election_groups(session, user, **kargs):
     return Permission(
         IsPublisher(session),
-        identify=user)
+        identity=user)
 
 
 @all_permissions
