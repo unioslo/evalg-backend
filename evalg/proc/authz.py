@@ -29,7 +29,7 @@ def get_or_create_principal(session, principal_type, **kwargs):
             'id_value': kwargs.get('id_value'),
         }),
         'group': (GroupPrincipal, {
-            'person_id': kwargs.get('person_id'),
+            'group_id': kwargs.get('group_id'),
         })
     }
     assert principal_type in lookup_opts
@@ -122,7 +122,7 @@ def delete_role(session, role):
 
 
 def add_election_group_role(session, election_group, principal,
-                            role_name):
+                            role_name, global_role=False):
     """
     Add an election group role.
     """
@@ -131,7 +131,8 @@ def add_election_group_role(session, election_group, principal,
         ElectionGroupRole,
         name=role_name,
         principal=principal,
-        group=election_group)
+        group=election_group,
+        global_role=global_role)
     session.add(role)
     session.flush()
     return role
