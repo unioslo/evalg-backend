@@ -108,11 +108,13 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 
 def resolve_pollbooks_by_fields(_, info):
-    return Pollbook.get_query(info).all()
+    session = get_session(info)
+    return session.query(evalg.models.pollbook.Pollbook).all()
 
 
 def resolve_pollbook_by_id(_, info, **args):
-    return Pollbook.get_query(info).get(args['id'])
+    session = get_session(info)
+    return session.query(evalg.models.pollbook.Pollbook).get(args['id'])
 
 
 list_pollbooks_query = graphene.List(
@@ -126,7 +128,8 @@ get_pollbook_query = graphene.Field(
 
 
 def resolve_voters_by_fields(_, info):
-    return Voter.get_query(info).all()
+    session = get_session(info)
+    return session.query(evalg.models.voter.Voter).all()
 
 
 def resolve_search_voters(_, info, **args):
@@ -138,7 +141,8 @@ def resolve_search_voters(_, info, **args):
 
 
 def resolve_voter_by_id(_, info, **args):
-    return Voter.get_query(info).get(args['id'])
+    session = get_session(info)
+    return session.query(evalg.models.voter.Voter).get(args['id'])
 
 
 def resolve_voters_by_person_id(_, info, **args):
