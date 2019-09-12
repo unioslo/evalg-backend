@@ -28,6 +28,7 @@ from evalg.graphql.nodes.utils.permissions import (
     permission_controlled_default_resolver,
     permission_controller,
     can_manage_election_group,
+    can_publish_election_groups,
 )
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
@@ -407,11 +408,14 @@ class PublishElectionGroup(graphene.Mutation):
         session = get_session(info)
         election_group = evalg.models.election.ElectionGroup.query.get(
             args.get('id'))
-
+        user = get_current_user(info)
+        if not can_manage_election_group(session, user, election_group):
+            return UpdateBaseSettings(ok=False)
+        if not can_publish_election_groups(session, user):
+            return UpdateBaseSettings(ok=False)
         for election in election_group.elections:
             if not election.meta['counting_rules']['method']:
                 evalg.proc.election.set_counting_method(session, election)
-
         evalg.proc.election.publish_group(session, election_group)
         return PublishElectionGroup(ok=True)
 
@@ -430,6 +434,11 @@ class UnpublishElectionGroup(graphene.Mutation):
         session = get_session(info)
         election_group = evalg.models.election.ElectionGroup.query.get(
             args.get('id'))
+        user = get_current_user(info)
+        if not can_manage_election_group(session, user, election_group):
+            return UpdateBaseSettings(ok=False)
+        if not can_publish_election_groups(session, user):
+            return UpdateBaseSettings(ok=False)
         evalg.proc.election.unpublish_group(session, election_group)
         return UnpublishElectionGroup(ok=True)
 
@@ -444,6 +453,11 @@ class AnnounceElectionGroup(graphene.Mutation):
         session = get_session(info)
         election_group = evalg.models.election.ElectionGroup.query.get(
             args.get('id'))
+        user = get_current_user(info)
+        if not can_manage_election_group(session, user, election_group):
+            return UpdateBaseSettings(ok=False)
+        if not can_publish_election_groups(session, user):
+            return UpdateBaseSettings(ok=False)
         evalg.proc.election.announce_group(session, election_group)
         return AnnounceElectionGroup(ok=True)
 
@@ -458,6 +472,11 @@ class UnannounceElectionGroup(graphene.Mutation):
         session = get_session(info)
         election_group = evalg.models.election.ElectionGroup.query.get(
             args.get('id'))
+        user = get_current_user(info)
+        if not can_manage_election_group(session, user, election_group):
+            return UpdateBaseSettings(ok=False)
+        if not can_publish_election_groups(session, user):
+            return UpdateBaseSettings(ok=False)
         evalg.proc.election.unannounce_group(session, election_group)
         return UnannounceElectionGroup(ok=True)
 
