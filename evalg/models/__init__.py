@@ -16,6 +16,7 @@ from . import group
 from . import ou
 from . import person
 from . import pollbook
+from . import privkeys_backup
 from . import voter
 from . import votes
 
@@ -32,6 +33,7 @@ __all__ = [
     'ou',
     'person',
     'pollbook',
+    'privkeys_backup',
     'voter',
     'votes',
 ]
