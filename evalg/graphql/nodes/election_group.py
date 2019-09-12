@@ -43,10 +43,6 @@ from evalg.utils import convert_json
 #   object, rather than relying on the builtin `Model.query`.
 #   E.g. Model.get_query(info) -> info.context.session.query(Model)
 
-# TODO:
-#   All Queries and Mutations should be implemented using functionality from
-#   elsewhere.
-
 
 #
 # Query
@@ -310,15 +306,14 @@ class CreateNewElectionGroup(graphene.Mutation):
     """Create an ElectionGroup from a template."""
 
     class Arguments:
-        ou_id = graphene.UUID()
+        ou_id = graphene.UUID(required=True)
         template = graphene.Boolean()
-        template_name = graphene.String()
+        template_name = graphene.String(required=True)
 
     ok = graphene.Boolean()
     election_group = graphene.Field(lambda: ElectionGroup)
 
     def mutate(self, info, ou_id, template, template_name):
-        # TODO: Looks like template_name is required?
         session = get_session(info)
         ou = session.query(evalg.models.ou.OrganizationalUnit).get(ou_id)
         election_group = evalg.proc.election.make_group_from_template(

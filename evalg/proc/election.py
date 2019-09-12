@@ -145,11 +145,6 @@ def make_group_from_template(session, template_name, ou, principals=()):
                             ou)
     election_templates = current_app.config.get('ELECTION_GROUP_TEMPLATES')
 
-    # if current_app.config['AUTH_ENABLED'] and not \
-    #        check_perms(principals, 'create-election', ou=ou):
-    #    current_app.logger.info('Testing %s', principals)
-    #    raise PermissionDenied()
-
     template = election_templates[template_name]
     name = template['name']
     group_type = template['settings']['group_type']

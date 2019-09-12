@@ -7,14 +7,10 @@ how the binary data is encoded.
 
 To leave a ballot, the process should be as follows:
 
-1. A ballot is received from the client, and deserialized into a mapping/dict
-   structure.
-2. The ballot is mapped to a ballot format defined in (TODO)
-   py:mod:`evalg.ballot`, based on which format the election type uses. An
-   object is created based on the ballot dict.
-3. A serializer (envelope type) defined in (TODO) py:mod:`evalg.ballot` is then
-   used to serialize and encrypt the ballot with the eleciton key.
-4. The ballot type, envelope type and serialized output is stored as an
+1. Ballot data in the form of a dict is received from the client.
+2. A serializer (envelope type) defined in py:mod:`evalg.ballot_serializer`
+   is then used to serialize and encrypt the ballot with the eleciton key.
+3. The envelope type and serialized output is stored as an
    py:class:`Envelope` in the database.
 
 The ``Envelope.id`` can later be used to commit the vote by using a
