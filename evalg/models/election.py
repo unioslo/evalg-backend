@@ -53,16 +53,15 @@ class AbstractElection(ModelBase):
         evalg.database.types.UuidType,
         default=uuid.uuid4,
         primary_key=True)
-    """ Election id """
 
+    # Translated name
     name = db.Column(evalg.database.types.MutableJson)
-    """ Translated name """
 
+    # Translated text
     description = db.Column(evalg.database.types.MutableJson)
-    """ Translated text """
 
+    # Template metadata
     meta = db.Column(evalg.database.types.NestedMutableJson)
-    """ Template metadata """
 
 
 class ElectionGroup(AbstractElection):
@@ -76,38 +75,38 @@ class ElectionGroup(AbstractElection):
 
     ou = db.relationship('OrganizationalUnit')
 
+    # Organizational unit
     elections = db.relationship('Election')
-    """ Organizational unit. """
 
     election_group_counts = db.relationship('ElectionGroupCount')
 
+    # Public election key
     public_key = db.Column(db.Text)
-    """ Public election key """
 
+    # Announced if set
     announced_at = db.Column(evalg.database.types.UtcDateTime)
-    """ Announced if set """
 
+    # Published if set
     published_at = db.Column(evalg.database.types.UtcDateTime)
-    """ Published if set """
 
+    # Cancelled if set
     cancelled_at = db.Column(evalg.database.types.UtcDateTime)
-    """ Cancelled if set """
 
+    # Deleted if set
     deleted_at = db.Column(evalg.database.types.UtcDateTime)
-    """ Deleted if set """
 
+    # Name of the temlate used to create the election group
     template_name = db.Column(db.UnicodeText)
-    """ Name of the temlate used to create the election group """
 
+    # Internal use
     type = db.Column(db.UnicodeText)
-    """ Internal use """
 
     def announce(self):
-        """ Mark as announced. """
+        """Mark as announced."""
         self.announced_at = utcnow()
 
     def unannounce(self):
-        """ Mark as unannounced. """
+        """Mark as unannounced."""
         self.announced_at = None
 
     @hybrid_property
@@ -119,11 +118,11 @@ class ElectionGroup(AbstractElection):
         return cls.announced_at.isnot(None)
 
     def publish(self):
-        """ Mark as published. """
+        """Mark as published."""
         self.published_at = utcnow()
 
     def unpublish(self):
-        """ Mark as unpublished. """
+        """Mark as unpublished."""
         self.published_at = None
 
     @hybrid_property
@@ -173,8 +172,8 @@ class Election(AbstractElection):
 
     __versioned__ = {}
 
+    # Some ID for the UI
     sequence = db.Column(db.Text)
-    """ Some ID for the UI """
 
     start = db.Column(evalg.database.types.UtcDateTime)
 
@@ -203,11 +202,11 @@ class Election(AbstractElection):
 
     pollbooks = db.relationship('PollBook')
 
+    # Whether election is active.
+    # We usually create more elections than needed to make templates consistent.
+    # But not all elections should be used. This can improve voter UI, by
+    # telling voter that their group does not have an active election.
     active = db.Column(db.Boolean, default=False)
-    """ Whether election is active.
-    We usually create more elections than needed to make templates consistent.
-    But not all elections should be used. This can improve voter UI, by telling
-    voter that their group does not have an active election. """
 
     @hybrid_property
     def announced_at(self):
@@ -240,7 +239,6 @@ class Election(AbstractElection):
     def status(self):
         """
         inactive → draft → announced → published → ongoing/closed/cancelled
-
         """
         if not self.active:
             return 'inactive'
@@ -271,7 +269,7 @@ class Election(AbstractElection):
 
     @hybrid_property
     def has_started(self):
-        """ Check if an election is past its start time. """
+        """Check if an election is past its start time."""
         return bool(self.start and self.start <= utcnow())
 
     @has_started.expression
