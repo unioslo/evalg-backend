@@ -12,7 +12,7 @@ import evalg.database.types
 
 # revision identifiers, used by Alembic.
 revision = 'e0c99670d3b4'
-down_revision = '275f3b23941e'
+down_revision = 'cc2a0e03e20a'
 branch_labels = None
 depends_on = None
 
