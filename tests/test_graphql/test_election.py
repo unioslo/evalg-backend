@@ -42,7 +42,7 @@ def test_announce_election_group(
     mutation = """
     mutation ($id: UUID!) {
         announceElectionGroup(id: $id) {
-            ok
+            success
         }
     }
     """
@@ -52,7 +52,7 @@ def test_announce_election_group(
         context=get_context())
     assert not execution.get('errors')
     response = execution['data']['announceElectionGroup']
-    assert response['ok']
+    assert response['success']
     election_group_after_after = ElectionGroup.query.get(election_group.id)
     assert election_group_after_after.announced
 
@@ -72,7 +72,7 @@ def test_unannounce_election_group(
     mutation = """
     mutation ($id: UUID!) {
         unannounceElectionGroup(id: $id) {
-            ok
+            success
         }
     }
     """
@@ -82,7 +82,7 @@ def test_unannounce_election_group(
         context=get_context())
     assert not execution.get('errors')
     response = execution['data']['unannounceElectionGroup']
-    assert response['ok']
+    assert response['success']
     election_group_after_after = ElectionGroup.query.get(election_group.id)
     assert not election_group_after_after.announced
 
@@ -104,7 +104,7 @@ def test_publish_election_group(
     mutation = """
     mutation ($id: UUID!) {
         publishElectionGroup(id: $id) {
-            ok
+            success
         }
     }
     """
@@ -114,7 +114,7 @@ def test_publish_election_group(
         context=get_context())
     assert not execution.get('errors')
     response = execution['data']['publishElectionGroup']
-    assert response['ok']
+    assert response['success']
     election_group_after_after = ElectionGroup.query.get(election_group.id)
     assert election_group_after_after.published
 
@@ -134,7 +134,7 @@ def test_unpublish_election_group(
     mutation = """
     mutation ($id: UUID!) {
         unpublishElectionGroup(id: $id) {
-            ok
+            success
         }
     }
     """
@@ -144,7 +144,7 @@ def test_unpublish_election_group(
         context=get_context())
     assert not execution.get('errors')
     response = execution['data']['unpublishElectionGroup']
-    assert response['ok']
+    assert response['success']
     election_group_after_after = ElectionGroup.query.get(election_group.id)
     assert not election_group_after_after.published
 
