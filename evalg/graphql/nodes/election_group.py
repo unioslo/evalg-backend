@@ -5,14 +5,11 @@ This module defines the GraphQL ObjectType that represents election group, as
 well as queries and mutations for this object.
 """
 import graphene
-from graphene.types.generic import GenericScalar
-
 import graphene_sqlalchemy
 
+from graphene.types.generic import GenericScalar
 from graphql import GraphQLError
-
 from sqlalchemy.sql import or_
-
 from sqlalchemy_continuum import version_class
 
 import evalg.models.election
@@ -28,6 +25,7 @@ from evalg.graphql.nodes.utils.permissions import (
     permission_controlled_default_resolver,
     permission_controller,
     can_manage_election_group,
+    can_publish_election_groups,
 )
 from evalg.election_templates import election_template_builder
 from evalg.graphql import types
@@ -54,9 +52,8 @@ from evalg.utils import convert_json
 #
 @permission_controller.control_object_type
 class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
-    """
-    A group of elections.
-    """
+    """A group of elections."""
+
     class Meta:
         model = evalg.models.election.ElectionGroup
         default_resolver = permission_controlled_default_resolver
@@ -121,16 +118,12 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 
 def resolve_election_groups(_, info):
-    """
-    List all election groups that should be visible to the current user.
-    """
+    """List all election groups that should be visible to the current user."""
     return ElectionGroup.get_query_visible_to_current_user(info).all()
 
 
 def resolve_election_group_by_id(_, info, **args):
-    """
-    Get a single election group that should be visible to the current user.
-    """
+    """Get a single election group that's visible to the current user."""
     admin_roles = ElectionGroup.get_current_user_admin_roles(info)
     admin_for = [role.group_id for role in admin_roles]
     election_group = ElectionGroup.get_query(info).get(args['id'])
@@ -213,9 +206,8 @@ get_election_template_query = graphene.Field(
 
 
 class ElectionKeyMeta(graphene.ObjectType):
-    """
-    Election key meta info.
-    """
+    """Election key meta info."""
+
     generated_at = types.DateTime()
     generated_by = graphene.Field(Person)
 
@@ -314,9 +306,7 @@ list_election_group_counting_results_query = graphene.List(
 
 
 class CreateNewElectionGroup(graphene.Mutation):
-    """
-    Create an ElectionGroup from a template.
-    """
+    """Create an ElectionGroup from a template."""
 
     class Arguments:
         ou_id = graphene.UUID()
@@ -349,9 +339,8 @@ class CreateNewElectionGroup(graphene.Mutation):
 
 
 class ElectionBaseSettingsInput(graphene.InputObjectType):
-    """
-    Individual settings input for elections in an election group.
-    """
+    """Individual settings input for elections in an election group."""
+
     id = graphene.UUID(required=True)
     seats = graphene.Int(required=True)
     substitutes = graphene.Int(required=True)
@@ -359,9 +348,7 @@ class ElectionBaseSettingsInput(graphene.InputObjectType):
 
 
 class UpdateBaseSettings(graphene.Mutation):
-    """
-    Update settings for elections in an election group.
-    """
+    """Update settings for elections in an election group."""
 
     class Arguments:
         id = graphene.UUID(required=True)
@@ -393,73 +380,196 @@ class UpdateBaseSettings(graphene.Mutation):
         return UpdateBaseSettings(ok=True)
 
 
+class PublishElectionGroupResponse(MutationResponse):
+    """Mutation response for the PublishElectionGroup mutation."""
+    pass
+
+
 class PublishElectionGroup(graphene.Mutation):
-    """
-    Publish an ElectionGroup.
-    """
+    """Publish an ElectionGroup."""
 
     class Arguments:
         id = graphene.UUID(required=True)
 
-    ok = graphene.Boolean()
+    Output = PublishElectionGroupResponse
 
     def mutate(self, info, **args):
         session = get_session(info)
+        group_id = args.get('id')
         election_group = evalg.models.election.ElectionGroup.query.get(
-            args.get('id'))
+            group_id)
+        user = get_current_user(info)
 
+        if not election_group:
+            return PublishElectionGroupResponse(
+                success=False,
+                code='election-group-not-found',
+                message='Election group {} not found'.format(group_id)
+            )
+        if not user:
+            return PublishElectionGroupResponse(
+                success=False,
+                code='user-not-found',
+                message='Could not find current user'
+            )
+        if not can_manage_election_group(session, user, election_group):
+            return PublishElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to manage election group '
+                        'group {}'.format(group_id)
+            )
+        if not can_publish_election_groups(session, user):
+            return PublishElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to publish election groups'
+            )
         for election in election_group.elections:
             if not election.meta['counting_rules']['method']:
                 evalg.proc.election.set_counting_method(session, election)
-
         evalg.proc.election.publish_group(session, election_group)
-        return PublishElectionGroup(ok=True)
+        return PublishElectionGroupResponse(success=True)
+
+
+class UnpublishElectionGroupResponse(MutationResponse):
+    """Mutation response for the UnpublishElectionGroup mutation."""
+    pass
 
 
 class UnpublishElectionGroup(graphene.Mutation):
-    """
-    Unpublish an ElectionGroup.
-    """
+    """Unpublish an ElectionGroup."""
 
     class Arguments:
         id = graphene.UUID(required=True)
 
-    ok = graphene.Boolean()
+    Output = UnpublishElectionGroupResponse
 
     def mutate(self, info, **args):
         session = get_session(info)
+        group_id = args.get('id')
         election_group = evalg.models.election.ElectionGroup.query.get(
-            args.get('id'))
+            group_id)
+        user = get_current_user(info)
+        if not election_group:
+            return UnpublishElectionGroupResponse(
+                success=False,
+                code='election-group-not-found',
+                message='Election group {} not found'.format(group_id)
+            )
+        if not user:
+            return UnpublishElectionGroupResponse(
+                success=False,
+                code='user-not-found',
+                message='Could not find current user'
+            )
+        if not can_manage_election_group(session, user, election_group):
+            return UnpublishElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to manage election group '
+                        'group {}'.format(group_id)
+            )
+        if not can_publish_election_groups(session, user):
+            return UnpublishElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to unpublish election groups'
+            )
         evalg.proc.election.unpublish_group(session, election_group)
-        return UnpublishElectionGroup(ok=True)
+        return UnpublishElectionGroupResponse(success=True)
+
+
+class AnnounceElectionGroupResponse(MutationResponse):
+    """Mutation response for the AnnounceElectionGroup mutation."""
+    pass
 
 
 class AnnounceElectionGroup(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)
 
-    ok = graphene.Boolean()
+    Output = AnnounceElectionGroupResponse
 
     def mutate(self, info, **args):
         session = get_session(info)
+        group_id = args.get('id')
         election_group = evalg.models.election.ElectionGroup.query.get(
-            args.get('id'))
+            group_id)
+        user = get_current_user(info)
+        if not election_group:
+            return AnnounceElectionGroupResponse(
+                success=False,
+                code='election-group-not-found',
+                message='Election group {} not found'.format(group_id)
+            )
+        if not user:
+            return AnnounceElectionGroupResponse(
+                success=False,
+                code='user-not-found',
+                message='Could not find current user'
+            )
+        if not can_manage_election_group(session, user, election_group):
+            return AnnounceElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to manage election group '
+                        'group {}'.format(group_id)
+            )
+        if not can_publish_election_groups(session, user):
+            return AnnounceElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to announce election groups'
+            )
         evalg.proc.election.announce_group(session, election_group)
-        return AnnounceElectionGroup(ok=True)
+        return AnnounceElectionGroupResponse(success=True)
+
+
+class UnannounceElectionGroupResponse(MutationResponse):
+    """Mutation response for the UnannounceElectionGroup mutation."""
+    pass
 
 
 class UnannounceElectionGroup(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)
 
-    ok = graphene.Boolean()
+    Output = UnannounceElectionGroupResponse
 
     def mutate(self, info, **args):
         session = get_session(info)
+        group_id = args.get('id')
         election_group = evalg.models.election.ElectionGroup.query.get(
-            args.get('id'))
+            group_id)
+        user = get_current_user(info)
+        if not election_group:
+            return UnannounceElectionGroupResponse(
+                success=False,
+                code='election-group-not-found',
+                message='Election group {} not found'.format(group_id)
+            )
+        if not user:
+            return UnannounceElectionGroupResponse(
+                success=False,
+                code='user-not-found',
+                message='Could not find current user'
+            )
+        if not can_manage_election_group(session, user, election_group):
+            return UnannounceElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to manage election group '
+                        'group {}'.format(group_id)
+            )
+        if not can_publish_election_groups(session, user):
+            return UnannounceElectionGroupResponse(
+                success=False,
+                code='permission-denied',
+                message='Not allowed to unannounce election groups'
+            )
         evalg.proc.election.unannounce_group(session, election_group)
-        return UnannounceElectionGroup(ok=True)
+        return UnannounceElectionGroupResponse(success=True)
 
 
 class SetElectionGroupKeyResponse(MutationResponse):
