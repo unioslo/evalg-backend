@@ -381,6 +381,7 @@ class UpdateBaseSettings(graphene.Mutation):
 
 
 class PublishElectionGroupResponse(MutationResponse):
+    """Mutation response for the PublishElectionGroup mutation."""
     pass
 
 
@@ -432,6 +433,7 @@ class PublishElectionGroup(graphene.Mutation):
 
 
 class UnpublishElectionGroupResponse(MutationResponse):
+    """Mutation response for the UnpublishElectionGroup mutation."""
     pass
 
 
@@ -472,13 +474,14 @@ class UnpublishElectionGroup(graphene.Mutation):
             return UnpublishElectionGroupResponse(
                 success=False,
                 code='permission-denied',
-                message='Not allowed to publish election groups'
+                message='Not allowed to unpublish election groups'
             )
         evalg.proc.election.unpublish_group(session, election_group)
         return UnpublishElectionGroupResponse(success=True)
 
 
 class AnnounceElectionGroupResponse(MutationResponse):
+    """Mutation response for the AnnounceElectionGroup mutation."""
     pass
 
 
@@ -517,13 +520,14 @@ class AnnounceElectionGroup(graphene.Mutation):
             return AnnounceElectionGroupResponse(
                 success=False,
                 code='permission-denied',
-                message='Not allowed to publish election groups'
+                message='Not allowed to announce election groups'
             )
         evalg.proc.election.announce_group(session, election_group)
         return AnnounceElectionGroupResponse(success=True)
 
 
 class UnannounceElectionGroupResponse(MutationResponse):
+    """Mutation response for the UnannounceElectionGroup mutation."""
     pass
 
 
@@ -562,7 +566,7 @@ class UnannounceElectionGroup(graphene.Mutation):
             return UnannounceElectionGroupResponse(
                 success=False,
                 code='permission-denied',
-                message='Not allowed to publish election groups'
+                message='Not allowed to unannounce election groups'
             )
         evalg.proc.election.unannounce_group(session, election_group)
         return UnannounceElectionGroupResponse(success=True)
