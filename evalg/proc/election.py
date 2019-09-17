@@ -100,6 +100,8 @@ def get_group_publication_blockers(group):
                 blockers.append('missing-start-or-end')
             if start_after_end(election):
                 blockers.append('start-must-be-before-end')
+    if len([x for x in group.elections if x.active]) == 0:
+        blockers.append('no-active-election')
     return blockers
 
 
