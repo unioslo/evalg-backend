@@ -10,6 +10,8 @@ import logging
 from flask import current_app, request
 from flask_feide_gk.utils import ContextAttribute
 from flask_feide_gk.mock.gatekeeper import MockGatekeeperData
+from urllib.error import HTTPError
+from sentry_sdk import capture_exception
 from sqlalchemy.exc import IntegrityError
 
 from evalg import db
@@ -78,8 +80,15 @@ class EvalgUser(object):
     def get_dp_extended_user_info(self):
         """Get the extended user info from the Dataporten API."""
         if self._get_dp_extended_user_info is None:
-            self._get_dp_extended_user_info = (
-                self.feide_api.get_extended_user_info())
+            try:
+                self._get_dp_extended_user_info = (
+                    self.feide_api.get_extended_user_info())
+            except HTTPError as e:
+                # The extended user info api is currently not working for UiO
+                # users. Capture the error so we do not brake the client.
+                # The exception is captured by sentry.
+                capture_exception(e)
+                return None
         return self._get_dp_extended_user_info
 
     def find_or_create_person(self):
