@@ -113,20 +113,7 @@ def shell_context():
     return context
 
 
-@click.command('recreate-tables',
-               short_help='Recreate tables with db.drop_all() and '
-               'db.create_all()')
-@flask.cli.with_appcontext
-def recreate_tables():
-    from evalg import db
-    print('Doing db.drop_all()')
-    db.drop_all()
-    print('Doing db.create_all()')
-    db.create_all()
-
-
 commands = tuple((
-    recreate_tables,
 ))
 
 
