@@ -573,17 +573,23 @@ class UnannounceElectionGroup(graphene.Mutation):
 
 
 class SetElectionGroupKeyResponse(MutationResponse):
+    """Mutation result class for the SetElectionGroupKey mutation."""
     pass
 
 
 class SetElectionGroupKey(graphene.Mutation):
+    """Set election key mutation."""
+
     class Arguments:
+        """Mutation arguments."""
+
         id = graphene.UUID(required=True)
         public_key = graphene.String(required=True)
 
     Output = SetElectionGroupKeyResponse
 
     def mutate(self, info, **args):
+        """The mutation function."""
         group_id = args['id']
         public_key = args['public_key']
         session = get_session(info)
@@ -619,6 +625,13 @@ class SetElectionGroupKey(graphene.Mutation):
                         code='cannot-change-key-if-votes-exist',
                         message=('The public key cannot be changed if '
                                  'a vote has been cast'))
+
+        if not evalg.proc.election.is_valid_public_key(public_key):
+            return SetElectionGroupKeyResponse(
+                success=False,
+                code='invalid-key',
+                message='The public key given is not a valid key')
+
         group.public_key = public_key
         session.add(group)
         session.commit()

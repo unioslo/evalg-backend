@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-This module implements election and election group maintenance.
-"""
-import aniso8601
+"""This module implements election and election group maintenance."""
 import datetime
 import functools
+
+import aniso8601
+import nacl.encoding
+import nacl.exceptions
+import nacl.public
 
 from flask import current_app
 from sqlalchemy.sql import and_
@@ -19,6 +21,7 @@ from evalg.utils import utcnow
 
 
 def get_latest_election_group_count(session, group_id):
+    """Get the latest count for an election group."""
     latest_count = session.query(ElectionGroupCount).filter(
         and_(ElectionGroupCount.group_id == group_id)).order_by(
         ElectionGroupCount.initiated_at.desc()).first()
@@ -59,6 +62,7 @@ def get_group_announcement_blockers(group):
 
 
 def set_counting_method(session, election):
+    """Set the counting method for an election."""
     if election.election_group.template_name in ('uio_principal',
                                                  'uio_dean',
                                                  'uio_department_leader'):
@@ -104,22 +108,36 @@ def get_group_publication_blockers(group):
 
 
 def missing_start_or_end(election):
+    """Check if an election is missing a start or end."""
     return not election.start or not election.end
 
 
 def start_after_end(election):
+    """Check if the election start time is after the end time."""
     if missing_start_or_end(election):
         return False
     return election.start > election.end
 
 
-default_start_time = datetime.time(7, 0)
-default_end_time = datetime.time(11, 0)
-default_duration = datetime.timedelta(days=7)
+def is_valid_public_key(key):
+    """Validate a public key."""
+    try:
+        nacl.public.PublicKey(key, encoder=nacl.encoding.Base64Encoder)
+    except (nacl.exceptions.TypeError,
+            nacl.exceptions.ValueError,
+            TypeError,
+            ValueError):
+        return False
+    return True
+
+
+DEFAULT_START_TIME = datetime.time(7, 0)
+DEFAULT_END_TIME = datetime.time(11, 0)
+DEFAULT_DURATION = datetime.timedelta(days=7)
 
 
 def make_group_from_template(session, template_name, ou, principals=()):
-    """Create election with elections from template"""
+    """Create election with elections from template."""
     current_app.logger.info('Make election group %s for %s',
                             template_name,
                             ou)
@@ -148,12 +166,12 @@ def make_group_from_template(session, template_name, ou, principals=()):
     def default_start():
         return datetime.datetime.combine(
             now.date(),
-            default_start_time).replace(tzinfo=datetime.timezone.utc)
+            DEFAULT_START_TIME).replace(tzinfo=datetime.timezone.utc)
 
     def default_end():
         return datetime.datetime.combine(
-            (now + default_duration).date(),
-            default_end_time).replace(tzinfo=datetime.timezone.utc)
+            (now + DEFAULT_DURATION).date(),
+            DEFAULT_END_TIME).replace(tzinfo=datetime.timezone.utc)
 
     def mandate_period_start(e):
         start = e['mandate_period'].get('start', '--01-01')
@@ -176,7 +194,7 @@ def make_group_from_template(session, template_name, ou, principals=()):
         duration = aniso8601.parse_duration(length)
         return start + duration
 
-    grp_name = dict()
+    grp_name = {}
     for lang in name.keys():
         grp_name[lang] = name[lang].format(ou.name[lang])
 
@@ -209,7 +227,7 @@ def make_group_from_template(session, template_name, ou, principals=()):
                             meta=metadata,
                             active=group_type == 'single_election', )
         if candidate_type(e) == 'party_list':
-            election.lists = list()
+            election.lists = []
         else:
             election.lists = [make_candidate_list(name)]
         election.pollbooks = list(map(make_pollbook, e['voter_groups']))
