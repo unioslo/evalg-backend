@@ -1,3 +1,4 @@
+"""Test election group related graphql queries and mutation."""
 import pytest
 
 from evalg.models.election import ElectionGroup
@@ -8,7 +9,7 @@ from evalg.graphql import get_context
 
 @pytest.mark.parametrize(
     'template_name, expected_election_nr, election_type',
-    [('uio_principal', 1, 'single_election'), 
+    [('uio_principal', 1, 'single_election'),
      ('uio_dean', 1, 'single_election'),
      ('uio_department_leader', 1, 'single_election'),
      ('uio_university_board', 4, 'multiple_elections'),
@@ -17,8 +18,13 @@ from evalg.graphql import get_context
      ('uio_student_parliament', 1, 'single_election')]
 )
 def test_create_election_group_mutation(
-        template_name, expected_election_nr, election_type,
-        client, make_ou, logged_in_user):
+        template_name,
+        expected_election_nr,
+        election_type,
+        client,
+        make_ou,
+        logged_in_user):
+    """Test the CreateNewElectionGroup mutation."""
     ou = make_ou(name='Test enhet')
     variables = {
         'ouId': str(ou.id),
@@ -78,15 +84,26 @@ def test_create_election_group_mutation(
 
 @pytest.mark.parametrize(
     'key, success',
-    [('bO1pw6/Bslji0XvXveSuVbe4vp93K1DcpqYgIxRhYAs=', True),
-     # TODO, these tests does not pass,
-     # ('', False),
-     # ('æøå', False)
-     ]
+    [
+        # Valid base64 key
+        ('bO1pw6/Bslji0XvXveSuVbe4vp93K1DcpqYgIxRhYAs=', True),
+        # Base64 key with none ascii character
+        ('bO1pw6/Bslji0XvXveæuVbe4vp93K1DcpqYgIxRhYAs=', False),
+        # Base64 key missing one character
+        ('bO1pw6/BsljiXvXveSuVbe4vp93K1DcpqYgIxRhYAs=', False),
+        # Empty string
+        ('', False),
+        # None base64 string
+        ('æøå', False),
+    ]
 )
 def test_set_election_group_key_mutation(
-        key, success, db_session, client, make_election_group_from_template,
+        key,
+        success,
+        client,
+        make_election_group_from_template,
         logged_in_user):
+    """Test the SetElectionGroupKey mutation."""
 
     election_group = make_election_group_from_template(
         'set_key_test', 'uio_dean', logged_in_user)
@@ -112,7 +129,5 @@ def test_set_election_group_key_mutation(
     response = execution['data']['setElectionGroupKey']
 
     assert response['success'] == success
-
     election_group_db = ElectionGroup.query.get(election_group.id)
-
     assert (election_group_db.public_key == key) == success
