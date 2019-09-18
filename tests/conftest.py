@@ -222,7 +222,12 @@ def make_election(db_session, election_group_foo):
             'group_id': election_group.id,
             'start': datetime.datetime.now(datetime.timezone.utc),
             'end': datetime.datetime.now(
-                datetime.timezone.utc) + datetime.timedelta(days=1)
+                datetime.timezone.utc) + datetime.timedelta(days=1),
+            'meta': {
+                'counting_rules': {
+                    'method': None,
+                },
+            },
         }
         election = evalg.database.query.get_or_create(
             db_session, Election, **data)

@@ -1,6 +1,6 @@
 from evalg.models.candidate import Candidate
 from evalg.models.election_list import ElectionList
-from evalg.models.election import ElectionGroup
+from evalg.models.election import ElectionGroup, Election
 from evalg.graphql import get_context
 
 
@@ -92,10 +92,18 @@ def test_publish_election_group(
         client,
         logged_in_user,
         make_election_group,
+        make_election,
         make_person_publisher):
+
     election_group = make_election_group('Test publish EG', admin=True)
     election_group.unpublish()
     election_group.unannounce()
+
+    election = make_election('test_publish_election',
+                             election_group=election_group)
+
+    election.active = True
+
     db_session.flush()
     assert not election_group.published
 
@@ -163,10 +171,9 @@ def test_query_elections(election_foo, client):
     execution = client.execute(query, context=context)
     assert not execution.get('errors')
     response = execution['data']['elections']
-    assert len(response) == 1
-    assert str(election_foo.id) == response[0]['id']
-    assert election_foo.name == response[0]['name']
-    assert election_foo.description == response[0]['description']
+
+    elections_db = Election.query.all()
+    assert len(response) == len(elections_db)
 
 
 def test_query_election_by_id(election_foo, client):
