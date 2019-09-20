@@ -164,7 +164,7 @@ PERMISSIONS = {
         'votes': 'can_manage_voter',
         'reason': 'can_manage_voter',
         'verified_status': 'can_manage_voter',
-        'person': 'can_manage_voter,'
+        'person': 'can_manage_voter',
     },
     'Vote': {
         'voter_id': 'can_view_vote',
@@ -194,7 +194,7 @@ PERMISSIONS = {
 # Feide entitlement to group mappings.
 #
 FEIDE_ENTITLEMENT_MAPPING = { 
-    'publisher': [],  
+    'publisher': [],
     'global_admin': [], 
 }
 
