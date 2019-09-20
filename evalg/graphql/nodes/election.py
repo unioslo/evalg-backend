@@ -48,7 +48,7 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
         return convert_json(self.meta)
 
     is_ongoing = graphene.Boolean()
-    pollbooks = graphene.List(pollbook.PollBook)
+    pollbooks = graphene.List(pollbook.Pollbook)
     vote_count = graphene.Field(lambda: ElectionVoteCounts)
 
     @permission_controller

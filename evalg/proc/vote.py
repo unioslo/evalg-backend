@@ -7,13 +7,12 @@ from sqlalchemy.sql import and_, select, func
 
 import evalg.database.query
 from evalg.models.ballot import Envelope
-from evalg.models.pollbook import PollBook
-from evalg.models.election import ElectionGroup, Election
+from evalg.models.pollbook import Pollbook
 from evalg.models.voter import Voter, VERIFIED_STATUS_MAP
 from evalg.models.votes import Vote
 from evalg.models.candidate import Candidate
 from evalg.models.election_list import ElectionList
-from evalg.models.person import PersonExternalId, Person
+from evalg.models.person import PersonExternalId
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 
 logger = logging.getLogger(__name__)
@@ -22,12 +21,13 @@ logger = logging.getLogger(__name__)
 class ElectionVotePolicy(object):
     """Helper class used to create and store ballots correctly."""
 
-    def __init__(self, session):
+    def __init__(self, session, voter_id):
         self.session = session
         config = current_app.config
         self._envelope_type = config.get('ENVELOPE_TYPE')
         self._backend_private_key = config.get('BACKEND_PRIVATE_KEY')
         self._envelope_padded_len = config.get('ENVELOPE_PADDED_LEN')
+        self.voter = self.get_voter(voter_id)
 
     def get_voter(self, voter_id):
         try:
@@ -36,11 +36,11 @@ class ElectionVotePolicy(object):
                                                 id=voter_id)
         except evalg.database.query.TooFewError:
             logger.error('Voter %r does not exist', voter_id)
-            return
+            return None
         return voter
 
-    def verify_election_is_ongoing(self, voter):
-        if not voter.pollbook.election.is_ongoing:
+    def verify_election_is_ongoing(self):
+        if not self.voter.pollbook.election.is_ongoing:
             logger.error('Can not vote, election is closed')
             return False
         return True
@@ -64,12 +64,13 @@ class ElectionVotePolicy(object):
                 return False
         return True
 
-    def verify_ballot_content(self, ballot_data, election_id):
+    def verify_ballot_content(self, ballot_data):
         ranked_candidate_ids = ballot_data['rankedCandidateIds']
         if ranked_candidate_ids and ballot_data['isBlankVote']:
             logger.error('A blank vote can not contain preferred candidates')
             return False
-        if not self.verify_candidates_exist(ranked_candidate_ids, election_id):
+        if not self.verify_candidates_exist(ranked_candidate_ids,
+                                            self.voter.pollbook.election_id):
             logger.error('Selected candidate(s) does not exist (%r)',
                          ranked_candidate_ids)
             return False
@@ -84,16 +85,6 @@ class ElectionVotePolicy(object):
         """
         return self._envelope_type
 
-    @property
-    def ballot_type(self):
-        """
-        Ballot type.
-
-        Is this in use?
-        TODO: Implement, get this from the election group maybe?
-        """
-        return 'test_ballot'
-
     def make_ballot(self, ballot_data, election_public_key):
         """Create a envelope object with containing the serialized ballot."""
         # Future work: create serializer factory.
@@ -104,24 +95,24 @@ class ElectionVotePolicy(object):
         )
         ballot = Envelope(
             envelope_type=self.envelope_type,
-            ballot_type=self.ballot_type,
             ballot_data=serializer.serialize(ballot_data)
         )
         return ballot
 
-    def make_vote(self, voter, envelope):
+    def make_vote(self, envelope):
         """Create a Vote object mapping a envelope to a voter."""
         vote = evalg.database.query.get_or_create(
-            self.session, Vote, voter_id=voter.id)
+            self.session, Vote, voter_id=self.voter.id)
         vote.ballot_id = envelope.id
         return vote
 
-    def add_vote(self, voter, ballot_data):
+    def add_vote(self, ballot_data):
         """Add a vote to a given election."""
         logger.info("Adding vote in election/pollbook %r/%r",
-                    voter.pollbook.election, voter.pollbook)
+                    self.voter.pollbook.election, self.voter.pollbook)
 
-        election_public_key = voter.pollbook.election.election_group.public_key
+        election_public_key = (
+            self.voter.pollbook.election.election_group.public_key)
         if not election_public_key:
             raise Exception('Election key is missing.')
 
@@ -130,7 +121,7 @@ class ElectionVotePolicy(object):
         self.session.flush()
         logger.info("Stored ballot %r", envelope)
 
-        vote = self.make_vote(voter, envelope)
+        vote = self.make_vote(envelope)
         self.session.add(vote)
         self.session.flush()
         logger.info("Stored vote %r", vote)
@@ -145,8 +136,8 @@ def get_election_vote_counts(session, election):
     """
     voters_subq = select([Voter.id]).where(
         Voter.pollbook_id.in_(
-            select([PollBook.id]).where(
-                PollBook.election_id == election.id)))
+            select([Pollbook.id]).where(
+                Pollbook.election_id == election.id)))
     query = session.query(
         Voter.self_added,
         Voter.reviewed,
@@ -182,7 +173,7 @@ def get_votes_for_person(session, person):
     ).join(
         Voter
     ).join(
-        PollBook
+        Pollbook
     ).join(
         PersonExternalId,
         and_(
@@ -191,160 +182,6 @@ def get_votes_for_person(session, person):
     ).filter(
         PersonExternalId.person_id == person.id
     ).order_by(
-        PollBook.priority
+        Pollbook.priority
     )
     return vote_query
-
-
-def get_person_for_voter(session, voter):
-    query = session.query(
-        Person
-    ).join(
-        PersonExternalId,
-        and_(
-            Person.id == PersonExternalId.person_id,
-        )
-    ).join(
-        Voter,
-        and_(
-            Voter.id_type == PersonExternalId.id_type,
-            Voter.id_value == PersonExternalId.id_value
-        )
-    ).filter(
-        Voter.id == voter.id
-    ).first()
-
-    return query
-
-
-def get_voters_in_election_group(session, election_group_id, self_added=None,
-                                 reviewed=None, verified=None,
-                                 has_voted=None):
-    query = session.query(
-        Voter
-    ).join(
-        PollBook,
-        and_(
-            Voter.pollbook_id == PollBook.id
-        )
-    ).join(
-        Election,
-        and_(
-            PollBook.election_id == Election.id
-        )
-    ).join(
-        ElectionGroup,
-        and_(
-            Election.group_id == election_group_id
-        )
-    )
-    if self_added is not None:
-        query = query.filter(Voter.self_added == self_added)
-    if reviewed is not None:
-        query = query.filter(Voter.reviewed == reviewed)
-    if verified is not None:
-        query = query.filter(Voter.verified == verified)
-    if has_voted is not None:
-        query = query.join(
-            Vote,
-            and_(
-                Voter.id == Vote.voter_id
-            )
-        ).group_by(
-            Voter.id
-        )
-        if has_voted:
-            query = query.having(func.count(Vote.ballot_id) > 0)
-        else:
-            query = query.having(func.count(Vote.ballot_id) == 0)
-    return query
-
-
-def get_voters_by_self_added(session, pollbook_id, self_added):
-    query = session.query(
-        Voter
-    ).filter(
-        Voter.self_added == self_added,
-        Voter.pollbook_id == pollbook_id
-    )
-    return query
-
-
-def get_verified_voters_count(session, pollbook_id):
-    return session.query(
-        func.count(Voter.id)
-    ).filter(
-        Voter.pollbook_id == pollbook_id,
-        Voter.verified,
-    ).scalar()
-
-
-def get_verified_voters_with_votes_count(session, pollbook_id):
-    return session.query(
-        func.count(Voter.id)
-    ).filter(
-        Voter.pollbook_id == pollbook_id,
-        Voter.verified,
-        Voter.votes
-    ).scalar()
-
-
-def get_persons_with_multiple_verified_voters(session, election_group_id):
-    """Gets persons who have more than one verified voter
-
-    :param election_group_id: the election group to look for voters in
-    :return: a query object where each row consists of a person and one of the
-        person's voters.
-    """
-    s_election_group_voters = get_voters_in_election_group(
-        session,
-        election_group_id,
-        verified=True,
-        has_voted=True
-    ).subquery()
-
-    s_election_group_voter_ids = session.query(
-        s_election_group_voters.c.id
-    ).subquery()
-
-    s_voting_persons = session.query(
-        PersonExternalId.person_id,
-        func.count(Voter.id).label('voter_count')
-    ).join(
-        Voter,
-        and_(
-            Voter.id_type == PersonExternalId.id_type,
-            Voter.id_value == PersonExternalId.id_value,
-        )
-    ).filter(
-        Voter.id.in_(s_election_group_voter_ids)
-    ).group_by(
-        PersonExternalId.person_id
-    ).subquery()
-
-    s_persons_with_multiple_votes = session.query(
-        s_voting_persons.c.person_id
-    ).filter(
-        s_voting_persons.c.voter_count > 1
-    ).subquery()
-
-    query = session.query(Person, Voter).join(
-        PersonExternalId,
-        and_(
-            Person.id == PersonExternalId.person_id
-        )
-    ).join(
-        Voter,
-        and_(
-            Voter.id_type == PersonExternalId.id_type,
-            Voter.id_value == PersonExternalId.id_value,
-        )
-    ).filter(
-        PersonExternalId.person_id.in_(s_persons_with_multiple_votes)
-    ).filter(
-        Voter.id.in_(s_election_group_voter_ids)
-    ).order_by(
-        PersonExternalId.person_id
-    )
-
-    return query

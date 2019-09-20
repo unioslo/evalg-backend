@@ -41,7 +41,6 @@ class ElectionResult(ModelBase):
 
     """ election group count that the result belongs to """
 
-    # TODO: maybe change this to a file column
     election_protocol = deferred(db.Column(evalg.database.types.MutableJson))
 
     ballots = deferred(db.Column(evalg.database.types.NestedMutableJson))

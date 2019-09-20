@@ -7,6 +7,7 @@ import graphene_sqlalchemy
 
 import evalg.proc.authz
 import evalg.proc.person
+import evalg.proc.pollbook
 import evalg.proc.vote
 import evalg.models.person
 import evalg.authentication.user
@@ -69,7 +70,7 @@ def resolve_get_person_for_voter(_, info, **args):
         session,
         evalg.models.voter.Voter,
         id=voter_id)
-    return evalg.proc.vote.get_person_for_voter(session, voter)
+    return evalg.proc.pollbook.get_person_for_voter(session, voter)
 
 
 list_persons_query = graphene.List(

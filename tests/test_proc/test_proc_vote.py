@@ -8,7 +8,7 @@ from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 def test_election_vote_policy(
         config,
         pollbook_voter_foo,
-        election_vote_policy_foo,
+        make_election_vote_policy,
         election_pref_vote,
         election_keys_foo):
     """
@@ -16,11 +16,11 @@ def test_election_vote_policy(
 
     Tests a normal vote, with at valid vote, valid election etc.
     """
-    assert election_vote_policy_foo.envelope_type == config.ENVELOPE_TYPE
-    vote = election_vote_policy_foo.add_vote(pollbook_voter_foo,
-                                             election_pref_vote.copy())
+    election_vote_policy = make_election_vote_policy(pollbook_voter_foo.id)
+    assert election_vote_policy.envelope_type == config.ENVELOPE_TYPE
+    vote = election_vote_policy.add_vote(election_pref_vote.copy())
     assert vote
-    assert election_vote_policy_foo.get_voter(vote.voter_id)
+    assert election_vote_policy.get_voter(vote.voter_id)
 
     # get and check vote
     vote_after = Vote.query.get(vote.voter_id)

@@ -95,7 +95,7 @@ class ElectionGroup(AbstractElection):
     # Deleted if set
     deleted_at = db.Column(evalg.database.types.UtcDateTime)
 
-    # Name of the temlate used to create the election group
+    # Name of the template used to create the election group
     template_name = db.Column(db.UnicodeText)
 
     # Internal use
@@ -161,11 +161,6 @@ class ElectionGroup(AbstractElection):
             return statuses.pop()
         return 'multipleStatuses'
 
-    # @status.expression
-    # def status(cls):
-    #     # TODO: make expression
-    #     return ''
-
 
 class Election(AbstractElection):
     """ Election. """
@@ -200,7 +195,7 @@ class Election(AbstractElection):
 
     lists = db.relationship('ElectionList')
 
-    pollbooks = db.relationship('PollBook')
+    pollbooks = db.relationship('Pollbook')
 
     # Whether election is active.
     # We usually create more elections than needed to make templates consistent.

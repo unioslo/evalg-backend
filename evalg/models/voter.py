@@ -64,11 +64,6 @@ class Voter(ModelBase):
         primary_key=True,
         default=uuid.uuid4)
 
-    tag = sqlalchemy.schema.Column(
-        sqlalchemy.types.UnicodeText,
-        doc='TODO: what is this used for?',
-    )
-
     id_type = sqlalchemy.schema.Column(
         sqlalchemy.types.UnicodeText,
         doc='person identifier type',
@@ -87,7 +82,7 @@ class Voter(ModelBase):
         nullable=False)
 
     pollbook = db.relationship(
-        'PollBook',
+        'Pollbook',
         back_populates='voters')
     
     self_added = db.Column(
@@ -111,6 +106,15 @@ class Voter(ModelBase):
         sqlalchemy.types.UnicodeText,
         doc='reason why this voter should be included in the pollbook',
         nullable=True)
+
+    def undo_review(self):
+        if self.verified_status in (VerifiedStatus.SELF_ADDED_VERIFIED,
+                                    VerifiedStatus.SELF_ADDED_REJECTED):
+            self.reviewed = False
+            self.verified = False
+        elif self.verified_status is VerifiedStatus.ADMIN_ADDED_REJECTED:
+            self.reviewed = False
+            self.verified = True
 
     @hybrid_property
     def verified_status(self):

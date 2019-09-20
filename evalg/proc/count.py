@@ -15,7 +15,7 @@ from evalg.models.votes import Vote
 from evalg.models.election_result import ElectionResult
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.voter import Voter
-from evalg.proc.vote import get_verified_voters_count
+from evalg.proc.pollbook import get_verified_voters_count
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 from evalg.counting.count import Counter
 

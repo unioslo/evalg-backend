@@ -22,12 +22,7 @@ from evalg.database.types import UuidType
 from .base import ModelBase
 
 
-# TODO:
-# Either the module and references to poll books should be named poll_book(s),
-# or the class should be named Pollbook.
-
-
-class PollBook(ModelBase):
+class Pollbook(ModelBase):
 
     __versioned__ = {}
     __tablename__ = 'pollbook_meta'

@@ -14,7 +14,7 @@ from flask import current_app
 from sqlalchemy.sql import and_
 
 from evalg.models.election import ElectionGroup, Election
-from evalg.models.pollbook import PollBook
+from evalg.models.pollbook import Pollbook
 from evalg.models.election_list import ElectionList
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.utils import utcnow
@@ -145,11 +145,6 @@ def make_group_from_template(session, template_name, ou, principals=()):
                             ou)
     election_templates = current_app.config.get('ELECTION_GROUP_TEMPLATES')
 
-    # if current_app.config['AUTH_ENABLED'] and not \
-    #        check_perms(principals, 'create-election', ou=ou):
-    #    current_app.logger.info('Testing %s', principals)
-    #    raise PermissionDenied()
-
     template = election_templates[template_name]
     name = template['name']
     group_type = template['settings']['group_type']
@@ -212,7 +207,7 @@ def make_group_from_template(session, template_name, ou, principals=()):
         return cand_list
 
     def make_pollbook(kw):
-        return PollBook(**kw)
+        return Pollbook(**kw)
 
     def make_election(e):
         if group_type == 'single_election':

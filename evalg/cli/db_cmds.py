@@ -91,7 +91,7 @@ def shell_context():
         'Person': models.person.Person,
         'PersonExternalId': models.person.PersonExternalId,
         'pretty': lambda *a, **kw: print(pretty_format(*a, **kw)),
-        'PollBook': models.pollbook.PollBook,
+        'Pollbook': models.pollbook.Pollbook,
         'Principal': models.authorization.Principal,
         'PersonPrincipal': models.authorization.PersonPrincipal,
         'GroupPrincipal': models.authorization.GroupPrincipal,

@@ -17,6 +17,9 @@ class Person(ModelBase):
 
     __versioned__ = {}
 
+    # Prioritized order of external ids to use when eg creating a voter object
+    PREFERRED_IDS = ('feide_id', 'nin')
+
     id = db.Column(
         evalg.database.types.UuidType,
         primary_key=True,
@@ -60,12 +63,13 @@ class Person(ModelBase):
             Returns the most preferred ``PersonExternalId`` object, or ``None``
             if the person does not have any of the given id types.
         """
+        preferred_ids = preference or self.PREFERRED_IDS
+
         for obj in sorted(
                 (obj for obj in self.identifiers
-                 if obj.id_type in preference),
-                key=lambda o: preference.index(o.id_type)):
+                 if obj.id_type in preferred_ids),
+                key=lambda o: preferred_ids.index(o.id_type)):
             return obj
-        # TODO: Or raise LookupError?
         return None
 
 

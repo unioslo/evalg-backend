@@ -4,21 +4,9 @@ Collection of database query utils.
 import logging
 
 from sqlalchemy.sql import and_
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 logger = logging.getLogger(__name__)
-
-
-class TooManyError(LookupError):
-    # TODO:
-    # - Is there an appropriate exception for this in sqlalchemy we could use?
-    # - Is there a way to write queries that could deal with this?
-    # - If not, we may want to move this to evalg.database, together with
-    #   helper methods that deals with queries where this is useful behaviour.
-    pass
-
-
-class TooFewError(LookupError):
-    pass
 
 
 def lookup(session, model, **attrs):
@@ -42,11 +30,12 @@ def lookup(session, model, **attrs):
         logger.debug('found %r object %r', model, obj)
         return obj
     elif num == 0:
-        raise TooFewError("No results for %r with condition %r" %
-                          (model, filter_cond))
+        raise NoResultFound("No results for %r with condition %r" %
+                            (model, filter_cond))
     else:
-        raise TooManyError("Multiple results (%d) for %r with condition %r" %
-                           (num, model, filter_cond))
+        raise MultipleResultsFound(
+            "Multiple results (%d) for %r with condition %r" % (
+                num, model, filter_cond))
 
 
 def lookup_or_none(session, model, **attrs):
@@ -61,7 +50,7 @@ def lookup_or_none(session, model, **attrs):
     """
     try:
         return lookup(session, model, **attrs)
-    except TooFewError:
+    except NoResultFound:
         return None
     except Exception:
         # reraise any other exception
@@ -105,5 +94,6 @@ def get_or_create(session, model, **attrs):
         logger.debug('found existing %r object %r', model, obj)
         return obj
     else:
-        raise TooManyError("Multiple results (%d) for %r with condition %r" %
-                           (num, model, filter_cond))
+        raise MultipleResultsFound(
+            "Multiple results (%d) for %r with condition %r" % (
+                num, model, filter_cond))

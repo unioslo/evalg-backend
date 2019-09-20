@@ -154,7 +154,6 @@ PERMISSIONS = {
         'identifiers': 'can_view_person',
     },
     'Voter': {
-        'tag': 'can_manage_voter',
         'id_type': 'can_manage_voter',
         'id_value': 'can_manage_voter',
         'pollbook_id': 'can_manage_voter',
@@ -165,7 +164,7 @@ PERMISSIONS = {
         'votes': 'can_manage_voter',
         'reason': 'can_manage_voter',
         'verified_status': 'can_manage_voter',
-        'person': 'can_manage_voter,'
+        'person': 'can_manage_voter',
     },
     'Vote': {
         'voter_id': 'can_view_vote',
@@ -173,7 +172,7 @@ PERMISSIONS = {
         'voter': 'can_view_vote',
         'record': 'can_view_vote',
     },
-    'PollBook': {
+    'Pollbook': {
         'name': 'allow',
         'weight': 'can_manage_pollbook',
         'priority': 'can_manage_pollbook',
@@ -195,7 +194,7 @@ PERMISSIONS = {
 # Feide entitlement to group mappings.
 #
 FEIDE_ENTITLEMENT_MAPPING = { 
-    'publisher': [],  
+    'publisher': [],
     'global_admin': [], 
 }
 

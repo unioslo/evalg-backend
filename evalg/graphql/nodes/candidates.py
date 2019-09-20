@@ -18,21 +18,6 @@ from evalg.graphql.nodes.utils.base import get_current_user, get_session
 #
 # Query
 #
-
-# TODO:
-#   We need to rename ElectionList in our models to something more
-#   representative. CandidateList, or Electables, or somethign like that.
-
-# TODO:
-#   We should use an explicit db session passed through the `info.context`
-#   object, rather than relying on the builtin `Model.query`.
-#   E.g. Model.get_query(info) -> info.context.session.query(Model)
-
-# TODO:
-#   All Queries and Mutations should be implemented using functionality from
-#   evalg.candidates in order to show or mutate candidate lists or candidates.
-
-
 @permission_controller.control_object_type
 class ElectionList(graphene_sqlalchemy.SQLAlchemyObjectType):
     """
@@ -44,11 +29,14 @@ class ElectionList(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 
 def resolve_candidate_lists_by_fields(_, info, **args):
-    return ElectionList.get_query(info).all()
+    session = get_session(info)
+    return session.query(evalg.models.election_list.ElectionList).all()
 
 
 def resolve_candidate_list_by_id(_, info, **args):
-    return ElectionList.get_query(info).get(args['id'])
+    session = get_session(info)
+    return session.query(evalg.models.election_list.ElectionList).get(
+        args['id'])
 
 
 list_candidate_lists_query = graphene.List(
@@ -79,11 +67,13 @@ class Candidate(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 
 def resolve_candidates_by_fields(_, info):
-    return Candidate.get_query(info).all()
+    session = get_session(info)
+    return session.query(evalg.models.candidate.Candidate).all()
 
 
 def resolve_candidate_by_id(self, info, **args):
-    return Candidate.get_query(info).get(args['id'])
+    session = get_session(info)
+    return session.query(evalg.models.candidate.Candidate).get(args['id'])
 
 
 list_candidates_query = graphene.List(
