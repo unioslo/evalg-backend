@@ -4,8 +4,6 @@ Commands for interacting with the evalg database.
 This module extend the existing flask cli with custom commands for interacting
 with the evalg database.
 """
-import click
-import flask.cli
 from flask import current_app, g
 
 
@@ -84,10 +82,13 @@ def shell_context():
         'Candidate': models.candidate.Candidate,
         'Election': models.election.Election,
         'ElectionGroup': models.election.ElectionGroup,
+        'ElectionGroupKeyBackup': (
+            models.privkeys_backup.ElectionGroupKeyBackup),
         'ElectionList': models.election_list.ElectionList,
         'ElectionGroupRole': models.authorization.ElectionGroupRole,
         'Envelope': models.ballot.Envelope,
         'Group': models.group.Group,
+        'MasterKey': models.privkeys_backup.MasterKey,
         'Person': models.person.Person,
         'PersonExternalId': models.person.PersonExternalId,
         'pretty': lambda *a, **kw: print(pretty_format(*a, **kw)),

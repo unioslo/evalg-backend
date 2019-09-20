@@ -1,13 +1,11 @@
-"""
-Mutations for the evalg GraphQL API.
-"""
+"""Mutations for the evalg GraphQL API."""
 import graphene
 
 from . import nodes
 
 
 class ElectionMutations(graphene.ObjectType):
-
+    """Mutations container class"""
     # ElectionGroup
     create_new_election_group = \
         nodes.election_group.CreateNewElectionGroup.Field()
@@ -72,3 +70,7 @@ class ElectionMutations(graphene.ObjectType):
 
     # Votes
     vote = nodes.votes.AddVote.Field()
+
+    # ElectionGroupKeysBackups
+    add_election_group_key_backup = (
+        nodes.privkeys_backup.AddElectionGroupKeyBackup.Field())
