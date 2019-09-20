@@ -9,6 +9,8 @@ import evalg
 
 from evalg.models.group import Group, GroupMembership
 
+from sqlalchemy_continuum import version_class
+
 
 def search_groups(session, filter_string):
     """ Look for groups that match a filter-string on one of
@@ -63,3 +65,11 @@ def get_user_groups(session, person):
     memberships = session.query(GroupMembership).filter(
         GroupMembership.person_id == person.id).all()
     return [get_group_by_id(session, x.group_id) for x in memberships]
+
+
+def get_election_key_meta(session, election_group_id):
+    ElectionGroupVersion = version_class(evalg.models.election.ElectionGroup)
+    return session.query(ElectionGroupVersion).filter(
+        ElectionGroupVersion.id == election_group_id,
+        ElectionGroupVersion.public_key_mod).order_by(
+        ElectionGroupVersion.transaction_id.desc()).limit(1).all()

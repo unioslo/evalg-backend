@@ -8,8 +8,11 @@ This module
 import logging
 from flask_allows import Requirement as OriginalRequirement
 
-from evalg.proc.authz import get_principals_for_person
+from evalg.proc.authz import (get_principals_for_person,
+                              get_person_roles_matching)
 from evalg.proc.pollbook import get_voters_for_person
+from evalg.proc.group import get_election_key_meta
+
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +54,26 @@ class IsPerson(Requirement):
 
     def fulfill(self, user):
         return user.person.id == self.person.id
+
+
+class HasPersonCreatedMyElectionsKey(Requirement):
+    def __init__(self, session, person):
+        self.person = person
+        self.session = session
+
+    def fulfill(self, user):
+        user_roles = get_person_roles_matching(
+            self.session,
+            user.person,
+            target_type='election-group-role',
+            name='admin'
+        )
+        for user_role in user_roles:
+            key_meta = get_election_key_meta(self.session, user_role.group_id)
+            generated_by = key_meta[0].transaction.user
+            if generated_by.id == self.person.id:
+                return True
+        return False
 
 
 class IsVoter(Requirement):
