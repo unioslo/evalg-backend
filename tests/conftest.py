@@ -1,4 +1,5 @@
 import datetime
+import string
 import random
 
 import pytest
@@ -139,6 +140,11 @@ def make_ou(db_session):
 
 
 @pytest.fixture
+def ou_foo(make_ou):
+    return make_ou('foo')
+
+
+@pytest.fixture
 def make_election_group(db_session, election_keys_foo, make_person_principal,
                         logged_in_user, make_role):
     """Election group fixture."""
@@ -180,23 +186,24 @@ def make_election_group(db_session, election_keys_foo, make_person_principal,
 @pytest.fixture
 def make_election_group_from_template(db_session, make_ou):
     def make_election_group_from_template(ou_name, template_name,
-                                          current_user):
+                                          owner=None):
 
         ou = make_ou(name=ou_name)
 
         election_group = evalg.proc.election.make_group_from_template(
             db_session, template_name, ou)
-        current_user_principal = evalg.proc.authz.get_or_create_principal(
-            db_session,
-            principal_type='person',
-            person_id=current_user.person.id)
-        evalg.proc.authz.add_election_group_role(
-            session=db_session,
-            election_group=election_group,
-            principal=current_user_principal,
-            role_name='admin')
-        db_session.commit()
 
+        if owner:
+            current_user_principal = evalg.proc.authz.get_or_create_principal(
+                db_session,
+                principal_type='person',
+                person_id=owner.person.id)
+            evalg.proc.authz.add_election_group_role(
+                session=db_session,
+                election_group=election_group,
+                principal=current_user_principal,
+                role_name='admin')
+        db_session.commit()
         return election_group
 
     return make_election_group_from_template
@@ -214,7 +221,7 @@ def election_group_foo(make_election_group):
 
 @pytest.fixture
 def make_election(db_session, election_group_foo):
-    def make_election(name, election_group=None):
+    def make_election(name, election_group=None, active=False):
         if not election_group:
             election_group = election_group_foo
         data = {
@@ -230,6 +237,7 @@ def make_election(db_session, election_group_foo):
             'start': datetime.datetime.now(datetime.timezone.utc),
             'end': datetime.datetime.now(
                 datetime.timezone.utc) + datetime.timedelta(days=1),
+            'active': active,
             'meta': {
                 'counting_rules': {
                     'method': None,
@@ -878,3 +886,45 @@ def make_master_key(db_session):
         return (privkey, master_key)
 
     return make_master_key_w
+
+
+@pytest.fixture
+def election_generator(db_session,
+                       election_keys_foo,
+                       make_ou):
+
+    def election_generator(name, **kwargs):
+
+        name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
+        name = '{}-{}'.format(name, name_rand)
+
+        template_name = kwargs.get('template_name', 'uio_dean')
+        owner = kwargs.get('owner', None)
+
+        with_key = kwargs.get('with_key', False)
+
+        ou = make_ou(name=name)
+
+        election_group = evalg.proc.election.make_group_from_template(
+            db_session, template_name, ou)
+
+        if owner:
+            current_user_principal = evalg.proc.authz.get_or_create_principal(
+                db_session,
+                principal_type='person',
+                person_id=owner.person.id)
+            evalg.proc.authz.add_election_group_role(
+                session=db_session,
+                election_group=election_group,
+                principal=current_user_principal,
+                role_name='admin')
+
+        if with_key:
+            election_group.public_key = election_keys_foo['public']
+            db_session.add(election_group)
+            db_session.flush()
+
+        db_session.commit()
+        return election_group
+
+    return election_generator
