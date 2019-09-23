@@ -18,6 +18,7 @@ import evalg.models.ou
 import evalg.models.person
 import evalg.proc.authz
 import evalg.proc.election
+import evalg.proc.group
 import evalg.proc.pollbook
 import evalg.proc.vote
 import evalg.proc.count
@@ -218,13 +219,8 @@ def resolve_election_key_meta(_, info, **args):
     if not can_manage_election_group(session, user, el_grp):
         return None
 
-    ElectionGroupVersion = version_class(evalg.models.election.ElectionGroup)
-
-    key_meta = session.query(ElectionGroupVersion).filter(
-        ElectionGroupVersion.id == election_group_id,
-        ElectionGroupVersion.public_key_mod).order_by(
-        ElectionGroupVersion.transaction_id.desc()).limit(1).all()
-
+    key_meta = evalg.proc.group.get_election_key_meta(session,
+                                                      election_group_id)
     if key_meta and len(key_meta) > 0:
         generated_at = key_meta[0].transaction.issued_at
         generated_by = key_meta[0].transaction.user

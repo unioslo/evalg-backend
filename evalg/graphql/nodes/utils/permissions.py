@@ -18,9 +18,9 @@ from evalg.graphql.nodes.utils.base import (get_session,
                                             get_current_user)
 from evalg.authorization.permissions import (IsElectionGroupAdmin,
                                              IsPerson,
+                                             HasPersonCreatedMyElectionsKey,
                                              IsPublisher,
                                              IsVoter)
-
 
 all_permissions = Name2Callable()
 logger = logging.getLogger(__name__)
@@ -106,6 +106,9 @@ def can_view_person(session, user, person, **args):
                                      voter.pollbook.election.group_id),
                 identity=user):
             return True
+    if Permission(HasPersonCreatedMyElectionsKey(session, person),
+                  identity=user):
+        return True
     return False
 
 
@@ -121,12 +124,12 @@ def can_manage_voter(session, user, voter, **args):
 
 
 @all_permissions
-def can_vote(session, user, voter):
+def can_vote(session, user, voter, **args):
     return Permission(IsVoter(session, voter), identity=user)
 
 
 @all_permissions
-def can_view_vote(session, user, vote):
+def can_view_vote(session, user, vote, **args):
     return Permission(IsVoter(session, vote.voter), identity=user)
 
 
@@ -147,7 +150,8 @@ def can_access_field(source, info, **args):
         return False
     field_name = camel_to_snake_case(info.field_name)
     permission = permissions.get(field_name)
-    if all_permissions.get(permission, deny)(session, user, source, **args):
+    if all_permissions.get(permission, deny)(session, user, source,
+                                             path=info.path, **args):
         return True
     return False
 
@@ -157,6 +161,7 @@ class PermissionController(object):
     Class for adding permission control to ObjectTypes and Fields, and keep
     track of which Fields have been controlled.
     """
+
     def __init__(self):
         self.fields_cache = []
         self.controlled_fields = {}
@@ -173,6 +178,7 @@ class PermissionController(object):
             if can_access_field(source, info, **args):
                 return resolver(source, info, **args)
             return None
+
         return wrapper
 
     def control_object_type(self, object_type):
