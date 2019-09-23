@@ -70,6 +70,8 @@ class HasPersonCreatedMyElectionsKey(Requirement):
         )
         for user_role in user_roles:
             key_meta = get_election_key_meta(self.session, user_role.group_id)
+            if not key_meta:
+                return False
             generated_by = key_meta[0].transaction.user
             if generated_by.id == self.person.id:
                 return True
