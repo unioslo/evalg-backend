@@ -1,301 +1,144 @@
 """Tests for the census file parsers."""
 
 import io
+import pytest
 
 from werkzeug.test import EnvironBuilder
 
 import evalg.file_parser.parser as cparser
 
+IDS = {
+    'uid': ['pederaas', 'martekir', 'larsh', 'hansta'],
+    'uid_fs': ['FS.PERSON.BRUKERNAVN',
+               'pederaas',
+               'martekir',
+               'larsh',
+               'hansta'],
+    'nin': ['01028512332', '11235612345', '10100312345'],
+    # nin with leading zero removed
+    'nin_10': ['1028512332', '11235612345', '10100312345'],
+    # Invalid norwegian nin
+    'nin_error': ['028512332', '11235612345', '10100312345'],
+    'feide_ids': ['pederaas@uio.no',
+                  'martekir@uio.no',
+                  'larsh@uio.no',
+                  'hansta@uio.no'],
+    'mix_1': ['pederaas', '11235612345', '10100312345'],
+    'mix_2': ['pederaas@uio.no', '11235612345', '10100312345'],
+    'mix_3': ['pederaas@uio.no', 'martekir', 'larsh'],
+    'uid_non_posix': ['pederaas',
+                      'martekir some string',
+                      'larsh',
+                      '334',
+                      '334%$#',
+                      'example@example.org'],
+    'student_parliament': [
+        "FS.PERSON.BRUKERNAVN||','||FS.STUDIEPROGRAM.FAKNR_STUDIEANSV",
+        'pederaas, 15',
+        'martekir, 12',
+        'larsh, 12',
+        'hansta, 15'],
+    'student_parliament_missing': [
+        "FS.PERSON.BRUKERNAVN||','||FS.STUDIEPROGRAM.FAKNR_STUDIEANSV",
+        'pederaas, 15',
+        'martekir, 12',
+        'larsh',
+        'hansta,'],
+}
 
-def test_plain_text_usernames():
+
+def create_builder(ids, crlf=False, file_type='txt'):
+    """Create EnvironBuilder to simulate files."""
+    if crlf:
+        line_break = '\r\n'
+    else:
+        line_break = '\n'
+    return EnvironBuilder(method='POST', data={
+        'file': (io.BytesIO(line_break.join(ids).encode('utf-8')),
+                 'pollbook.{}'.format(file_type))})
+
+
+@pytest.mark.parametrize(
+    "builder,expected_results,expected_id_type,expected_parser",
+    [
+        (create_builder(IDS['uid']),
+         ['{0}@uio.no'.format(x) for x in IDS['uid']],
+         'feide_id',
+         cparser.PlainTextParser),
+        (create_builder(IDS['uid'], crlf=True),
+         ['{0}@uio.no'.format(x) for x in IDS['uid']],
+         'feide_id',
+         cparser.PlainTextParser),
+        (create_builder(IDS['nin']),
+         IDS['nin'],
+         'nin',
+         cparser.PlainTextParser),
+        # Check padding
+        (create_builder(IDS['nin_10']),
+         IDS['nin'],
+         'nin',
+         cparser.PlainTextParser),
+        # Nin with errors
+        (create_builder(IDS['nin_error']), None, None, None),
+        (create_builder(IDS['feide_ids']),
+         IDS['feide_ids'],
+         'feide_id',
+         cparser.PlainTextParser),
+        # Invalid file type
+        (create_builder(IDS['uid'], file_type='zip'), None, None, None),
+        (create_builder(IDS['mix_1']), None, None, None),
+        (create_builder(IDS['mix_2']), None, None, None),
+        (create_builder(IDS['mix_3']), None, None, None),
+        (create_builder(IDS['uid_non_posix']), None, None, None),
+        (create_builder(IDS['uid'], file_type='csv'),
+         IDS['feide_ids'],
+         'feide_id',
+         cparser.CsvParser),
+        # CSV file without headers
+        (create_builder(IDS['uid'], crlf=True, file_type='csv'),
+         IDS['feide_ids'],
+         'feide_id',
+         cparser.CsvParser),
+        # CVS file with FS headers
+        (create_builder(IDS['uid_fs'], file_type='csv'),
+         IDS['feide_ids'],
+         'feide_id',
+         cparser.CsvParser),
+        # FS csv file with header as a txt file
+        (create_builder(IDS['uid_fs'], file_type='txt'),
+         IDS['feide_ids'],
+         'feide_id',
+         cparser.PlainTextParser),
+        # Student parliament file
+        (create_builder(IDS['student_parliament'], file_type='csv'),
+         IDS['feide_ids'],
+         'feide_id',
+         cparser.CsvParser),
+        # Student parliament file with missing fields
+        (create_builder(IDS['student_parliament_missing'], file_type='csv'),
+         IDS['feide_ids'],
+         'feide_id',
+         cparser.CsvParser),
+        # Student parliament csv file as a txt file.
+        (create_builder(IDS['student_parliament'], file_type='txt'),
+         IDS['feide_ids'],
+         'feide_id',
+         cparser.PlainTextParser),
+        ]
+)
+def test_plain_text_parser(builder,
+                           expected_results,
+                           expected_id_type,
+                           expected_parser):
     """Plain text file, one username per line."""
-    usernames = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames)
-    assert sorted(result) == sorted(usernames)
-
-
-def test_plain_text_crlf_usernames():
-    """Plain text file, one username per line."""
-    usernames = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\r\n'.join(usernames).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames)
-    assert sorted(result) == sorted(usernames)
-
-
-def test_plain_text_fnrs():
-    """Plain text file, one fnr per line."""
-    fnrs = ['01028512332', '11235612345', '10100312345']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(fnrs).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'nin'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(fnrs)
-    assert sorted(result) == sorted(fnrs)
-
-
-def test_plain_text_fnrs_padding():
-    """
-    Plain text file, one fnr per line.
-
-    Test leftpadding with zero if len(fnr) == 10
-    """
-    fnrs = ['1028512332', '11235612345', '10100312345']
-    fnrs_res = ['01028512332', '11235612345', '10100312345']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(fnrs).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'nin'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(fnrs_res)
-    assert sorted(result) == sorted(fnrs_res)
-
-
-def test_plain_text_fnrs_to_short():
-    """
-    Plain text file, one fnr per line.
-
-    Parser should fail if there are fnr with len(fnr) > 10
-    """
-    fnrs = ['028512332', '11235612345', '10100312345']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(fnrs).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is None
-
-
-def test_plain_text_only_feide_ids():
-    """Plain text file, one feide id per line."""
-    feide_ids = ['pederaas@uio.no', 'martekir@uio.no',
-                 'larsh@uio.no', 'hansta@uio.no']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(feide_ids).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'feide_id'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(feide_ids)
-    assert sorted(result) == sorted(feide_ids)
-
-
-def test_plain_text_id_missmatch():
-    """
-    Plain text file, on id per line.
-
-    Parser should fail if there are more then one id type in the file.
-    """
-    fnr_username = ['pederaas', '11235612345', '10100312345']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(fnr_username).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-    assert parser is None
-
-    fnr_feide = ['pederaas@uio.no', '11235612345', '10100312345']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(fnr_feide).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-    assert parser is None
-
-    feide_username = ['pederaas@uio.no', 'martekir', 'larsh']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(feide_username).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-    assert parser is None
-
-
-def test_plain_text_non_posix_usernames():
-    """
-    Plain text file, one fnr per line.
-
-    Parser should fail there are space in a username
-    """
-    usernames = ['pederaas', 'martekir some string', 'larsh', '334', '334%$#', 'example@example.org']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is None
-
-
-def test_csv_fs_usernames_no_header():
-    """Csv file, one username per line."""
-    usernames = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
-                 'usernames.csv')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.CsvParser)
-    assert not parser.has_fs_header
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames)
-    assert sorted(result) == sorted(usernames)
-
-
-def test_csv_crlf_fs_usernames_no_header():
-    """Csv file, one username per line."""
-    usernames = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\r\n'.join(usernames).encode('utf-8')),
-                 'usernames.csv')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.CsvParser)
-    assert not parser.has_fs_header
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames)
-    assert sorted(result) == sorted(usernames)
-
-
-def test_csv_fs_usernames_with_header():
-    """Csv file with header, one username per line."""
-    usernames = ['FS.PERSON.BRUKERNAVN',
-                 'pederaas', 'martekir', 'larsh', 'hansta']
-    usernames_res = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
-                 'usernames.csv')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.CsvParser)
-    assert parser.has_fs_header
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames_res)
-    assert sorted(result) == sorted(usernames_res)
-
-
-def test_csv_fs_usernames_with_header_as_text():
-    """If the simple FS csv is save as a txt."""
-    usernames = ['FS.PERSON.BRUKERNAVN',
-                 'pederaas', 'martekir', 'larsh', 'hansta']
-    usernames_res = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.has_fs_header
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames_res)
-    assert sorted(result) == sorted(usernames_res)
-
-
-def test_csv_fs_student_parlament_file():
-    """
-    Csv file for the student parlament election.
-
-    With header, two columns. username, faculty nr
-    """
-    usernames = ["FS.PERSON.BRUKERNAVN||','||FS.STUDIEPROGRAM.FAKNR_STUDIEANSV",
-                 'pederaas, 15',
-                 'martekir, 12',
-                 'larsh, 12',
-                 'hansta, 15']
-    usernames_res = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
-                 'usernames.csv')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.CsvParser)
-    assert parser.has_fs_header
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames_res)
-    assert sorted(result) == sorted(usernames_res)
-
-
-def test_csv_fs_student_parlament_file_missing_field():
-    """
-    Csv file for the student parlament election.
-
-    With header, two columns. username, faculty nr
-    """
-    usernames = ["FS.PERSON.BRUKERNAVN||','||FS.STUDIEPROGRAM.FAKNR_STUDIEANSV",
-                 'pederaas, 15',
-                 'martekir, 12',
-                 'larsh',
-                 'hansta,']
-    usernames_res = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
-                 'usernames.csv')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.CsvParser)
-    assert parser.has_fs_header
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames_res)
-    assert sorted(result) == sorted(usernames_res)
-
-
-def test_csv_fs_student_parlament_file_as_txt():
-    """
-    Csv for the student parlament election, uploaded as a txt file.
-
-    With header, two columns. username, faculty nr
-    """
-    usernames = ["FS.PERSON.BRUKERNAVN||','||FS.STUDIEPROGRAM.FAKNR_STUDIEANSV",
-                 'pederaas, 15',
-                 'martekir, 12',
-                 'larsh, 12',
-                 'hansta, 15']
-    usernames_res = ['pederaas', 'martekir', 'larsh', 'hansta']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(usernames).encode('utf-8')),
-                 'usernames.txt')})
-    parser = cparser.CensusFileParser.factory(builder.files['file'])
-
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.has_fs_header
-    assert parser.id_type == 'uid'
-    result = [x for x in parser.parse()]
-    assert len(result) == len(usernames_res)
-    assert sorted(result) == sorted(usernames_res)
+    if expected_results:
+        parser = cparser.CensusFileParser.factory(builder.files['file'])
+        assert parser is not None
+        assert isinstance(parser, expected_parser)
+        assert parser.id_type == expected_id_type
+        result = list(parser.parse())
+        assert len(result) == len(expected_results)
+        assert sorted(result) == sorted(expected_results)
+    else:
+        with pytest.raises(ValueError):
+            cparser.CensusFileParser.factory(builder.files['file'])

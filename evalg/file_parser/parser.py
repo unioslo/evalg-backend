@@ -1,3 +1,4 @@
+"""Pollbook file parser."""
 import abc
 import csv
 import io
@@ -5,22 +6,60 @@ import re
 
 
 class CensusFileParser(metaclass=abc.ABCMeta):
+    """Abstract parser class."""
+
+    FEIDE_POSTFIX = 'uio.no'
+
     def __init__(self, census_file):
         self.census_file = census_file
+        self._id_type = None
+        self._convert_to_feide = False
+        self.fields = None
 
-    @abc.abstractmethod
     def parse(self):
-        """Parse the current file and create a generator"""
+        """Parse the current file and create a generator."""
+        if not self.id_type:
+            return None
 
-    @property
-    @abc.abstractmethod
-    def id_type(self):
-        """Get the id type returned by the generator"""
+        if self.id_type == 'nin':
+            for fnr in self.fields:
+                fnr = self.check_and_rjust_fnr(fnr)
+                if fnr:
+                    yield fnr
+                else:
+                    continue
+        elif self.id_type == 'feide_id':
+            for field in self.fields:
+                if self._convert_to_feide:
+                    yield "{}@{}".format(field, self.FEIDE_POSTFIX)
+                else:
+                    yield field
+        else:
+            return None
 
     @classmethod
     @abc.abstractmethod
     def get_mime_type(cls):
         """Get the mimetype supported by the parser."""
+
+    @property
+    def id_type(self):
+        """Get the id type returned by the generator."""
+        return self._id_type
+
+    @id_type.setter
+    def id_type(self, id_type):
+        """
+        Set the id type.
+
+        UIDs are converted to feide_ids.
+        """
+        if id_type == 'uid':
+            # Covert uids to feide
+            self._convert_to_feide = True
+            self._id_type = 'feide_id'
+        else:
+            self._id_type = id_type
 
     @classmethod
     def find_identifier_type(cls, ids):
@@ -29,36 +68,32 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 
         All of the identifiers needs to be of the same type.
         """
-
         if not ids:
-            return None
-
+            raise ValueError('No ids given')
         try:
             [int(x) for x in ids]
         except ValueError:
             pass
         else:
-            if len(set([len(x) for x in ids]) - set([10, 11])) == 0:
+            if len({s for s in [len(x) for x in ids]} -
+                   {s for s in [10, 11]}) == 0:
                 return 'nin'
-            else:
-                # File contains invalid fnrs
-                return None
+            raise ValueError('File contains invalid NINs')
 
         if all(['@' in x for x in ids]):
             if all([cls.is_posix_uid(x.split('@')[0]) for x in ids]):
                 return 'feide_id'
-            else:
-                return None
+
+            raise ValueError('File contains invalid Feide IDs')
 
         if any(['@' in x for x in ids]):
             # Probably a feide id or email mixed in with usernames
-            return None
+            raise ValueError('Invalid ids, mix of feide and other ids')
 
         if all([cls.is_posix_uid(x) for x in ids]):
             return 'uid'
 
-        # No id type found
-        return None
+        raise ValueError('No supported id type found in file')
 
     @classmethod
     def check_and_rjust_fnr(cls, fnr):
@@ -84,25 +119,25 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 
     @classmethod
     def is_posix_uid(cls, uid):
+        """Test if uid is a valid posix uid."""
         valid_posix_uid = '^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\\$)$'
         res = re.search(valid_posix_uid, uid)
-        if res:
-            return True
-        else:
-            return False
+        return bool(res)
 
     @classmethod
     def is_fs_header(cls, header):
+        """Check if a string matches a FS header."""
         if header.startswith('FS.PERSON.BRUKERNAVN'):
             return True
 
     @classmethod
     def get_supported_mime_types(cls):
+        """Get the mime types of all implemented subclasses."""
         return [x.get_mime_type() for x in CensusFileParser.__subclasses__()]
 
     @classmethod
     def factory(cls, census_file):
-        """Returns the correct file parser if supported."""
+        """Return the correct file parser if supported."""
         supported_mime_types = {
             x.get_mime_type(): x for x in CensusFileParser.__subclasses__()
         }
@@ -113,12 +148,18 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 
             if parser.id_type is None:
                 # No supported id type in file
-                return None
+                raise ValueError(
+                    'Content in file not valid for file type {}'.format(
+                        census_file.mimetype
+                    ))
             return parser
-        return None
+        raise ValueError('No parser for filetype {}'.format(
+            census_file.mimetype))
 
 
 class PlainTextParser(CensusFileParser):
+    """A parser for plain text file files."""
+
     def __init__(self, census_file):
         super().__init__(census_file)
         content = self.census_file.read().decode('utf-8')
@@ -132,35 +173,16 @@ class PlainTextParser(CensusFileParser):
             self.has_fs_header = True
         else:
             self.has_fs_header = False
-
-        self._id_type = self.find_identifier_type(self.fields)
+        self.id_type = self.find_identifier_type(self.fields)
 
     @classmethod
     def get_mime_type(cls):
+        """File mime type."""
         return 'text/plain'
-
-    @property
-    def id_type(self):
-        return self._id_type
-
-    def parse(self):
-        if not self.id_type:
-            return None
-        elif self.id_type == 'nin':
-            for fnr in self.fields:
-                fnr = self.check_and_rjust_fnr(fnr)
-                if fnr:
-                    yield fnr
-                else:
-                    continue
-        elif self.id_type == 'feide_id' or self.id_type == 'uid':
-            for x in self.fields:
-                yield x
-        else:
-            return None
 
 
 class CsvParser(CensusFileParser):
+    """A parser for CSV files."""
 
     def __init__(self, census_file):
         super().__init__(census_file)
@@ -173,29 +195,9 @@ class CsvParser(CensusFileParser):
             csvfile.seek(0)
 
         self.fields = [x[0] for x in csv.reader(csvfile) if x and x[0]]
-        self._id_type = self.find_identifier_type(self.fields)
+        self.id_type = self.find_identifier_type(self.fields)
 
     @classmethod
     def get_mime_type(cls):
+        """File mime type."""
         return 'text/csv'
-
-    @property
-    def id_type(self):
-        return self._id_type
-
-    def parse(self):
-
-        if not self._id_type:
-            return None
-        elif self.id_type == 'nin':
-            for fnr in self.fields:
-                fnr = self.check_and_rjust_fnr(fnr)
-                if fnr:
-                    yield fnr
-                else:
-                    continue
-        elif self.id_type == 'uid' or self.id_type == 'feide_id':
-            for x in self.fields:
-                yield x
-        else:
-            return None
