@@ -1,6 +1,10 @@
 import datetime
-import pytest
 import random
+
+import pytest
+
+import nacl.encoding
+import nacl.public
 
 import evalg.database.query
 
@@ -16,6 +20,7 @@ from evalg.models.election_list import ElectionList
 from evalg.models.election_result import ElectionResult
 from evalg.models.group import Group
 from evalg.models.group import GroupMembership
+from evalg.models.privkeys_backup import MasterKey
 from evalg.models.ou import OrganizationalUnit
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import Pollbook
@@ -110,6 +115,7 @@ def make_election_vote_policy(db_session):
         return ElectionVotePolicy(db_session, voter_id)
     return election_vote_policy
 
+
 @pytest.fixture
 def make_ou(db_session):
 
@@ -203,7 +209,7 @@ def election_group_baz(make_election_group):
 
 @pytest.fixture
 def election_group_foo(make_election_group):
-    return make_election_group('Election group foo fixture',  admin=True)
+    return make_election_group('Election group foo fixture', admin=True)
 
 
 @pytest.fixture
@@ -401,7 +407,7 @@ def make_person(db_session):
             {
                 'id_type': 'nin',
                 'id_value': nin or ''.join([str(random.randint(0, 9)) for _ in
-                                     range(0, 10)]),
+                                            range(0, 10)]),
             },
         ]
         person = evalg.database.query.get_or_create(db_session, Person, **data)
@@ -834,7 +840,7 @@ def make_full_election(make_election_group, make_election, make_pollbook,
             for pollbook in pollbooks[str(election.id)]:
                 p = [make_person('{0} test person {1}'.format(
                     pollbook.name, x), '{0}-{1}@example.org'.format(
-                    name, x)) for x in range(0, voters_per_pollbook)]
+                        name, x)) for x in range(0, voters_per_pollbook)]
                 persons_all.extend(p)
                 v = [make_pollbook_voter(x, pollbook) for x in p]
 
@@ -855,3 +861,20 @@ def make_full_election(make_election_group, make_election, make_pollbook,
         }
 
     return make_full_election
+
+
+@pytest.fixture
+def make_master_key(db_session):
+    """Master key fixture"""
+
+    def make_master_key_w():
+        """the wrapped make_master_key function"""
+        privkey = nacl.public.PrivateKey.generate()
+        pubkey = privkey.public_key.encode(nacl.encoding.Base64Encoder)
+        master_key = MasterKey(description='Master key for testing',
+                               public_key=pubkey.decode())
+        db_session.add(master_key)
+        db_session.commit()
+        return (privkey, master_key)
+
+    return make_master_key_w

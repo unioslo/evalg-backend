@@ -166,6 +166,12 @@ PERMISSIONS = {
         'verified_status': 'can_manage_voter',
         'person': 'can_manage_voter',
     },
+    'MasterKey': {
+        'active': 'allow',
+        'created_at': 'allow',
+        'description': 'allow',
+        'public_key': 'allow',
+    },
     'Vote': {
         'voter_id': 'can_view_vote',
         'ballot_id': 'can_view_vote',
@@ -193,9 +199,9 @@ PERMISSIONS = {
 #
 # Feide entitlement to group mappings.
 #
-FEIDE_ENTITLEMENT_MAPPING = { 
+FEIDE_ENTITLEMENT_MAPPING = {
     'publisher': [],
-    'global_admin': [], 
+    'global_admin': [],
 }
 
 #

@@ -11,6 +11,7 @@ from . import election_group
 from . import group
 from . import person
 from . import pollbook
+from . import privkeys_backup
 from . import roles
 from . import votes
 
@@ -21,6 +22,7 @@ __all__ = [
     'group',
     'person',
     'pollbook',
+    'privkeys_backup',
     'roles',
     'votes',
 ]
