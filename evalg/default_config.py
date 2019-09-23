@@ -123,6 +123,7 @@ PERMISSIONS = {
         'election_group_count': 'can_access_election_result',
         'election_protocol': 'can_access_election_result',
         'ballots': 'can_access_election_result',
+        'ballots_with_metadata': 'can_access_election_result',
         'result': 'can_access_election_result',
         'pollbook_stats': 'can_access_election_result',
         'election_protocol_text': 'can_access_election_result',
