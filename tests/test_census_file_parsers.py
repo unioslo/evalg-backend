@@ -124,7 +124,7 @@ def create_builder(ids, crlf=False, file_type='txt'):
          IDS['feide_ids'],
          'feide_id',
          cparser.PlainTextParser),
-        ]
+    ]
 )
 def test_plain_text_parser(builder,
                            expected_results,
@@ -133,12 +133,17 @@ def test_plain_text_parser(builder,
     """Plain text file, one username per line."""
     if expected_results:
         parser = cparser.CensusFileParser.factory(builder.files['file'])
-        assert parser is not None
-        assert isinstance(parser, expected_parser)
-        assert parser.id_type == expected_id_type
+        assert parser is not None, ("Parser factory did not return a parser "
+                                    "as expected.")
+        assert isinstance(parser, expected_parser), (
+            "Parser factory did not return the expected parser")
+        assert parser.id_type == expected_id_type, (
+            "The parsers have a different id type then expected")
         result = list(parser.parse())
-        assert len(result) == len(expected_results)
-        assert sorted(result) == sorted(expected_results)
+        assert len(result) == len(expected_results), (
+            "The parser did not return the expected number of ids")
+        assert sorted(result) == sorted(expected_results), (
+            "The parser did not return the expected ids")
     else:
         with pytest.raises(ValueError):
             cparser.CensusFileParser.factory(builder.files['file'])
