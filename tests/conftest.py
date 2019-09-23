@@ -141,11 +141,11 @@ def make_ou(db_session):
 @pytest.fixture
 def make_election_group(db_session, election_keys_foo, make_person_principal,
                         logged_in_user, make_role):
-    """
-    Election group fixture.
-    """
+    """Election group fixture."""
 
-    def make_election_group(name, announced_at=None, published_at=None,
+    def make_election_group(name,
+                            announced_at=None,
+                            published_at=None,
                             admin=False):
         data = {
             'name': {
