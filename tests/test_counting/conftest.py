@@ -142,7 +142,7 @@ def make_full_election(
         make_election_group,
         make_election,
         make_pollbook,
-        make_person,
+        person_generator,
         make_pollbook_voter,
         make_pollbook_vote):
     """make_full_election fixture"""
@@ -176,7 +176,7 @@ def make_full_election(
                 election=election) for x in range(0, pollboks_per_election)])
 
             for pollbook in pollbooks[str(election.id)]:
-                p = [make_person('{0} test person {1}'.format(
+                p = [person_generator('{0} test person {1}'.format(
                     pollbook.name, x), '{0}-{1}@example.org'.format(
                         name, x)) for x in range(0, voters_per_pollbook)]
                 persons_all.extend(p)

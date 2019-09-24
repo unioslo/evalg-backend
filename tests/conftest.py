@@ -397,8 +397,8 @@ def pollbook_foo(db_session, make_pollbook):
 
 
 @pytest.fixture
-def make_person(db_session):
-    def make_person(display_name, email, nin=None):
+def person_generator(db_session):
+    def person_generator(display_name, email, nin=None):
         data = {
             'email': email,
             'display_name': display_name,
@@ -427,11 +427,11 @@ def make_person(db_session):
         db_session.flush()
         return person
 
-    return make_person
+    return person_generator
 
 
 @pytest.fixture
-def persons(db_session, make_person):
+def persons(db_session, person_generator):
     """
     Returns all persons in the test database.
 
@@ -440,8 +440,8 @@ def persons(db_session, make_person):
     persons = Person.query.all()
     if len(persons) <= 1:
         persons = [
-            make_person('Foo Foo', 'foo@example.org', nin='12128812345'),
-            make_person('Bar Bar', 'bar@example.org')
+            person_generator('Foo Foo', 'foo@example.org', nin='12128812345'),
+            person_generator('Bar Bar', 'bar@example.org')
         ]
 
     return {str(x.id): x for x in persons}
@@ -824,8 +824,12 @@ def vote_bar(db_session, pollbook_voter_bar, envelope_bar):
 
 
 @pytest.fixture
-def make_full_election(make_election_group, make_election, make_pollbook,
-                       make_person, make_pollbook_voter, make_pollbook_vote):
+def make_full_election(make_election_group,
+                       make_election,
+                       make_pollbook,
+                       person_generator,
+                       make_pollbook_voter,
+                       make_pollbook_vote):
     def make_full_election(name, nr_of_elections=2, pollboks_per_election=1,
                            voters_per_pollbook=1):
         election_group = make_election_group('Test election group', admin=True)
@@ -846,7 +850,7 @@ def make_full_election(make_election_group, make_election, make_pollbook,
                 election=election) for x in range(0, pollboks_per_election)])
 
             for pollbook in pollbooks[str(election.id)]:
-                p = [make_person('{0} test person {1}'.format(
+                p = [person_generator('{0} test person {1}'.format(
                     pollbook.name, x), '{0}-{1}@example.org'.format(
                         name, x)) for x in range(0, voters_per_pollbook)]
                 persons_all.extend(p)
@@ -901,7 +905,8 @@ def election_generator(db_session,
         template_name = kwargs.get('template_name', 'uio_dean')
         owner = kwargs.get('owner', None)
 
-        with_key = kwargs.get('with_key', False)
+        with_key = kwargs.get('with_key', True)
+        with_candidates = kwargs.get('with_candidates', True)
 
         ou = make_ou(name=name)
 
@@ -923,6 +928,37 @@ def election_generator(db_session,
             election_group.public_key = election_keys_foo['public']
             db_session.add(election_group)
             db_session.flush()
+
+        if with_candidates:
+
+            candidate_type = election_group.meta['candidate_type']
+
+            for election in election_group.elections:
+                candidate_name = 'candidate-{0}'.format(name_rand)
+                candidate_list = election.lists[0]
+
+                if candidate_type == 'single':
+                    meta = {'gender': 'female'}
+                    candidate = evalg.models.candidate.Candidate(
+                        name=candidate_name,
+                        meta=meta,
+                        list_id=candidate_list.id,
+                        information_url='www.uio.no')
+                    db_session.add(candidate)
+
+                elif candidate_type == 'single_team':
+                    meta = {'co_candidates': [{'name': 'test'}]}
+                    candidate = evalg.models.candidate.Candidate(
+                        name=candidate_name,
+                        meta=meta,
+                        list_id=candidate_list.id,
+                        information_url='www.uio.no')
+                    db_session.add(candidate)
+
+                elif candidate_type == 'party_list':
+                    raise NotImplementedError
+                else:
+                    raise NotImplementedError
 
         db_session.commit()
         return election_group

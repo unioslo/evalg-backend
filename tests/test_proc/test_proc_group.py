@@ -51,10 +51,10 @@ def test_is_member_of_group(
     assert not is_member_of_group(db_session, group, persons[1])
 
 
-def test_add_person_to_group(db_session, make_group, make_person):
+def test_add_person_to_group(db_session, make_group, person_generator):
     """Test add_person_to_group"""
     group = make_group('test_add_person_to_group')
-    person = make_person('test_add_person_to_group', 'add@group.no')
+    person = person_generator('test_add_person_to_group', 'add@group.no')
     membership = add_person_to_group(db_session, group, person)
     assert membership
     membership_db = GroupMembership.query.get(membership.id)
@@ -67,9 +67,9 @@ def test_remove_person_from_group(
         db_session,
         make_group,
         make_group_membership,
-        make_person):
+        person_generator):
     """Test remove_person_from_group"""
-    person = make_person('remove_person_from_group', 'remove@group.no')
+    person = person_generator('remove_person_from_group', 'remove@group.no')
     group = make_group('remove_person_from_group_test')
     membership = make_group_membership(group, person)
     assert membership
@@ -82,12 +82,12 @@ def test_get_user_groups(
         db_session,
         make_group,
         make_group_membership,
-        make_person):
+        person_generator):
     """Test get_user_groups."""
-    person_a = make_person('test_get_user_groups_a',
-                           'test_get_user_groups@foo.no')
-    person_b = make_person('test_get_user_groups_b',
-                           'test_get_user_groups@bar.no')
+    person_a = person_generator('test_get_user_groups_a',
+                                'test_get_user_groups@foo.no')
+    person_b = person_generator('test_get_user_groups_b',
+                                'test_get_user_groups@bar.no')
     groups = [make_group('test_get_user_groups_a'),
               make_group('test_get_user_groups_b')]
     memberships = [make_group_membership(x, person_a) for x in groups]
