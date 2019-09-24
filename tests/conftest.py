@@ -398,9 +398,19 @@ def pollbook_foo(db_session, make_pollbook):
 
 @pytest.fixture
 def person_generator(db_session):
-    def person_generator(display_name,
-                         email,
+    def person_generator(display_name=None,
+                         email=None,
                          ids=None):
+
+        if not display_name:
+            rand_gn = ''.join(random.choices(string.ascii_lowercase, k=8))
+            rand_cn = ''.join(random.choices(string.ascii_lowercase, k=8))
+            display_name = '{} {}'.format(rand_gn, rand_cn)
+
+        if not email:
+            rand_local = ''.join(random.choices(string.ascii_lowercase, k=8))
+            email = '{}@example.org'.format(rand_local)
+
         if not ids:
             ids = {}
 
