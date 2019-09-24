@@ -398,24 +398,29 @@ def pollbook_foo(db_session, make_pollbook):
 
 @pytest.fixture
 def person_generator(db_session):
-    def person_generator(display_name, email, nin=None):
+    def person_generator(display_name,
+                         email,
+                         ids=None):
+        if not ids:
+            ids = {}
+
         data = {
-            'email': email,
             'display_name': display_name,
+            'email': email,
         }
         identifiers = [
             {
                 'id_type': 'feide_id',
-                'id_value': email,
+                'id_value': ids.get('feide_id', email),
             },
             {
                 'id_type': 'uid',
-                'id_value': email.split('@')[0],
+                'id_value': ids.get('uid', email.split('@')[0]),
             },
             {
                 'id_type': 'nin',
-                'id_value': nin or ''.join([str(random.randint(0, 9)) for _ in
-                                            range(0, 10)]),
+                'id_value': ids.get('nin', ''.join(
+                    [str(random.randint(0, 9)) for _ in range(0, 10)])),
             },
         ]
         person = evalg.database.query.get_or_create(db_session, Person, **data)
@@ -440,7 +445,9 @@ def persons(db_session, person_generator):
     persons = Person.query.all()
     if len(persons) <= 1:
         persons = [
-            person_generator('Foo Foo', 'foo@example.org', nin='12128812345'),
+            person_generator('Foo Foo',
+                             'foo@example.org',
+                             ids={'nin': '12128812345'}),
             person_generator('Bar Bar', 'bar@example.org')
         ]
 
