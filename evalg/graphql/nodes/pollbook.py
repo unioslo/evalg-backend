@@ -357,6 +357,7 @@ class AddVoterByPersonId(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
+        user = get_current_user(info)
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
         person_id = kwargs['person_id']
         pollbook_id = kwargs['pollbook_id']
@@ -366,6 +367,11 @@ class AddVoterByPersonId(graphene.Mutation):
 
         pollbook = session.query(evalg.models.pollbook.Pollbook).get(
             pollbook_id)
+
+        if (not can_manage_pollbook(session, user, pollbook)
+                and user.person.id != person_id):
+            # Only allow users to add themselves to a pollbook they do not own
+            return None
 
         voter = policy.add_voter(
             pollbook,
