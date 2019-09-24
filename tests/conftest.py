@@ -404,6 +404,17 @@ def person_generator(db_session):
         if not ids:
             ids = {}
 
+        rand_slug = ''.join(random.choices(string.ascii_lowercase, k=10))
+        if 'uid' not in ids:
+            ids['uid'] = rand_slug
+
+        if 'feide_id' not in ids:
+            ids['feide_id'] = '{}@uio.no'.format(rand_slug)
+
+        if 'nin' not in ids:
+            ids['nin'] = ''.join([
+                str(random.randint(0, 9)) for _ in range(0, 10)])
+
         data = {
             'display_name': display_name,
             'email': email,
@@ -411,16 +422,15 @@ def person_generator(db_session):
         identifiers = [
             {
                 'id_type': 'feide_id',
-                'id_value': ids.get('feide_id', email),
+                'id_value': ids['feide_id'],
             },
             {
                 'id_type': 'uid',
-                'id_value': ids.get('uid', email.split('@')[0]),
+                'id_value': ids['uid'],
             },
             {
                 'id_type': 'nin',
-                'id_value': ids.get('nin', ''.join(
-                    [str(random.randint(0, 9)) for _ in range(0, 10)])),
+                'id_value': ids['nin'],
             },
         ]
         person = evalg.database.query.get_or_create(db_session, Person, **data)
@@ -447,7 +457,8 @@ def persons(db_session, person_generator):
         persons = [
             person_generator('Foo Foo',
                              'foo@example.org',
-                             ids={'nin': '12128812345'}),
+                             ids={'nin': '12128812345',
+                                  'feide_id': 'foo@example.org'}),
             person_generator('Bar Bar', 'bar@example.org')
         ]
 
