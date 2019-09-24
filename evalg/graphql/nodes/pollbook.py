@@ -186,9 +186,9 @@ find_voters_query = graphene.List(
 
 class UpdateVoterPollbook(graphene.Mutation):
     """
-    ???
-    Add a pre-existing voter to another pollbook?
-    Is this even possible?
+    Add a pre-existing voter to another pollbook.
+
+    The pollbook needs to be in the same election group as the source.
     """
     class Arguments:
         id = graphene.UUID(required=True)
@@ -197,13 +197,26 @@ class UpdateVoterPollbook(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        # TODO:
-        #   What even is this mutation?
         session = get_session(info)
         user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
-        if not can_vote(session, user, voter):
+
+        if not can_manage_voter(session, user, voter):
             return UpdateVoterPollbook(ok=False)
+
+        pollbook = session.query(evalg.models.pollbook.Pollbook).get(
+            kwargs.get('pollbook_id'))
+
+        if not can_manage_pollbook(session, user, pollbook):
+            return UpdateVoterPollbook(ok=False)
+
+        election_group_from = voter.pollbook.election.election_group.id
+        election_group_to = pollbook.election.election_group.id
+
+        if election_group_from != election_group_to:
+            # Do not move voters between election_groups
+            return UpdateVoterPollbook(ok=False)
+
         voter.pollbook_id = kwargs.get('pollbook_id')
         session.add(voter)
         session.commit()
