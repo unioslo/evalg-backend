@@ -456,7 +456,10 @@ class UploadCensusFile(graphene.Mutation):
                 message='No pollbook with id {!r}'.format(pollbook_id))
 
         if not can_manage_pollbook(session, user, pollbook):
-            return UploadCensusFile(ok=False)
+            return UploadCensusFileResponse(
+                success=False,
+                code='permission-denied',
+                message='No access to pollbook id {!r}'.format(pollbook_id))
 
         logger.info('Updating %r from %r', pollbook, census_file)
         parser = CensusFileParser.factory(census_file)
