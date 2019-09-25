@@ -563,6 +563,29 @@ def make_role(db_session):
 
 
 @pytest.fixture
+def grant_for_person_generator(db_session):
+    def grant_for_person_generator(person, election_group):
+        pass
+        feide_id = next(i for i in person.identifiers if i.id_type ==
+                        'feide_id')
+
+        principal = evalg.proc.authz.get_or_create_principal(
+            session=db_session,
+            principal_type='person_identifier',
+            id_type=feide_id.id_type,
+            id_value=feide_id.id_value)
+        grant = evalg.proc.authz.add_election_group_role(
+            session=db_session,
+            election_group=election_group,
+            principal=principal,
+            role_name='admin')
+        db_session.commit()
+        return grant
+
+    return grant_for_person_generator
+
+
+@pytest.fixture
 def global_roles(db_session, make_group, make_group_principal):
     """Create the global roles and groups."""
     publisher_group = make_group('publisher')
@@ -936,8 +959,13 @@ def election_generator(db_session,
         with_key = kwargs.get('with_key', True)
         with_candidates = kwargs.get('with_candidates', True)
 
-        ou = make_ou(name=name)
+        ready_for_voting = kwargs.get('ready_for_voting', False)
 
+        if ready_for_voting:
+            with_key = True
+            with_candidates = True
+
+        ou = make_ou(name=name)
         election_group = evalg.proc.election.make_group_from_template(
             db_session, template_name, ou)
 
@@ -952,15 +980,24 @@ def election_generator(db_session,
                 principal=current_user_principal,
                 role_name='admin')
 
+        if ready_for_voting:
+            for election in election_group.elections:
+                election.start = datetime.datetime.now(datetime.timezone.utc)
+                election.end = (datetime.datetime.now(datetime.timezone.utc)
+                                + datetime.timedelta(days=1))
+                election.active = True
+                db_session.add(election)
+            election_group.publish()
+            election_group.announce()
+            db_session.flush()
+
         if with_key:
             election_group.public_key = election_keys_foo['public']
             db_session.add(election_group)
             db_session.flush()
 
         if with_candidates:
-
             candidate_type = election_group.meta['candidate_type']
-
             for election in election_group.elections:
                 candidate_name = 'candidate-{0}'.format(name_rand)
                 candidate_list = election.lists[0]
@@ -992,3 +1029,53 @@ def election_generator(db_session,
         return election_group
 
     return election_generator
+
+
+@pytest.fixture
+def ballot_data_generator():
+    """Generates ballot data. TODO: add support for other types of ballots."""
+    def ballot_data_generator(vote_type='prefElectVote',
+                              blank_vote=False,
+                              candidates=None):
+        if blank_vote and (not candidates or len(candidates) != 0):
+            raise ValueError('Ballot can\'t be both blank and have '
+                             'candidates.')
+
+        if not candidates or len(candidates) == 0:
+            blank_vote = True
+            candidates = []
+
+        ballot_data = {
+            'voteType': vote_type,
+            'isBlankVote': blank_vote,
+            'rankedCandidateIds': [str(x.id) for x in candidates]
+        }
+        return ballot_data
+
+    return ballot_data_generator
+
+
+@pytest.fixture
+def vote_generator(db_session,
+                   ballot_data_generator,
+                   pollbook_voter_foo,
+                   make_election_vote_policy):
+
+    def vote_generator(election, voter, ballot_data=None):
+
+        if not ballot_data:
+            # TODO, create data from election type
+            candidates = election.candidates
+            blank_vote = False
+            if not candidates or len(candidates) == 0:
+                candidates = []
+                blank_vote = True
+
+            ballot_data = ballot_data_generator(blank_vote=blank_vote,
+                                                candidates=candidates)
+
+        election_vote_policy = ElectionVotePolicy(db_session, voter.id)
+        return election_vote_policy.add_vote(ballot_data)
+
+    return vote_generator
+
