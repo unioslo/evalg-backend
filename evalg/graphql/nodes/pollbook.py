@@ -236,7 +236,7 @@ class UpdateVoterReason(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
-        user = get_current_user
+        user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not can_vote(session, user, voter):
             return UpdateVoterReason(ok=False)
@@ -411,6 +411,8 @@ class DeleteVoter(graphene.Mutation):
         user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not can_manage_pollbook(session, user, voter.pollbook):
+            return DeleteVoter(ok=False)
+        if voter.self_added:
             return DeleteVoter(ok=False)
         if voter.votes:
             return DeleteVoter(ok=False)
