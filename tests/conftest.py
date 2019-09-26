@@ -881,6 +881,7 @@ def make_full_election(make_election_group,
                        person_generator,
                        make_pollbook_voter,
                        make_pollbook_vote):
+    """Create full elections."""
     def make_full_election(name, nr_of_elections=2, pollboks_per_election=1,
                            voters_per_pollbook=1):
         election_group = make_election_group('Test election group', admin=True)
@@ -912,7 +913,6 @@ def make_full_election(make_election_group,
 
         # TODO create more votes.
         votes = [make_pollbook_vote(pollbook_voter=voters_all[0])]
-
         return {
             'election_group': election_group,
             'elections': elections,
@@ -922,34 +922,29 @@ def make_full_election(make_election_group,
             'voters_all': voters_all,
             'votes': votes,
         }
-
     return make_full_election
 
 
 @pytest.fixture
 def make_master_key(db_session):
-    """Master key fixture"""
-
-    def make_master_key_w():
-        """the wrapped make_master_key function"""
+    """Master key fixture."""
+    def make_master_key():
         privkey = nacl.public.PrivateKey.generate()
         pubkey = privkey.public_key.encode(nacl.encoding.Base64Encoder)
         master_key = MasterKey(description='Master key for testing',
                                public_key=pubkey.decode())
         db_session.add(master_key)
         db_session.commit()
-        return (privkey, master_key)
-
-    return make_master_key_w
+        return privkey, master_key
+    return make_master_key
 
 
 @pytest.fixture
 def election_generator(db_session,
                        election_keys_foo,
                        make_ou):
-
+    """Generate different types of elections."""
     def election_generator(name, **kwargs):
-
         name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
         name = '{}-{}'.format(name, name_rand)
 
@@ -960,10 +955,18 @@ def election_generator(db_session,
         with_candidates = kwargs.get('with_candidates', True)
 
         ready_for_voting = kwargs.get('ready_for_voting', False)
+        countable = kwargs.get('countable', False)
 
-        if ready_for_voting:
+        published = kwargs.get('published', False)
+
+        if ready_for_voting and countable:
+            raise ValueError('Election group can\'t votable'
+                             ' and countable at the same time')
+
+        if ready_for_voting or countable:
             with_key = True
             with_candidates = True
+            published = True
 
         ou = make_ou(name=name)
         election_group = evalg.proc.election.make_group_from_template(
@@ -979,17 +982,6 @@ def election_generator(db_session,
                 election_group=election_group,
                 principal=current_user_principal,
                 role_name='admin')
-
-        if ready_for_voting:
-            for election in election_group.elections:
-                election.start = datetime.datetime.now(datetime.timezone.utc)
-                election.end = (datetime.datetime.now(datetime.timezone.utc)
-                                + datetime.timedelta(days=1))
-                election.active = True
-                db_session.add(election)
-            election_group.publish()
-            election_group.announce()
-            db_session.flush()
 
         if with_key:
             election_group.public_key = election_keys_foo['public']
@@ -1025,6 +1017,35 @@ def election_generator(db_session,
                 else:
                     raise NotImplementedError
 
+        if published:
+            election_group.announced_at = (datetime.datetime.now(
+                datetime.timezone.utc) - datetime.timedelta(days=3))
+            election_group.published_at = (datetime.datetime.now(
+                datetime.timezone.utc) - datetime.timedelta(days=3))
+            # election_group.publish()
+            # election_group.announce()
+            db_session.add(election_group)
+            db_session.flush()
+
+        if ready_for_voting:
+            for election in election_group.elections:
+                election.start = datetime.datetime.now(datetime.timezone.utc)
+                election.end = (datetime.datetime.now(datetime.timezone.utc)
+                                + datetime.timedelta(days=1))
+                election.active = True
+                db_session.add(election)
+            db_session.flush()
+
+        if countable:
+            for election in election_group.elections:
+                election.start = (datetime.datetime.now(
+                    datetime.timezone.utc) - datetime.timedelta(days=4))
+                election.end = (datetime.datetime.now(datetime.timezone.utc)
+                                - datetime.timedelta(days=1))
+                election.active = True
+                db_session.add(election)
+            db_session.flush()
+
         db_session.commit()
         return election_group
 
@@ -1033,7 +1054,7 @@ def election_generator(db_session,
 
 @pytest.fixture
 def ballot_data_generator():
-    """Generates ballot data. TODO: add support for other types of ballots."""
+    """Generate ballot data. TODO: add support for other types of ballots."""
     def ballot_data_generator(vote_type='prefElectVote',
                               blank_vote=False,
                               candidates=None):
@@ -1060,7 +1081,7 @@ def vote_generator(db_session,
                    ballot_data_generator,
                    pollbook_voter_foo,
                    make_election_vote_policy):
-
+    """Generate votes."""
     def vote_generator(election, voter, ballot_data=None):
 
         if not ballot_data:
@@ -1078,4 +1099,3 @@ def vote_generator(db_session,
         return election_vote_policy.add_vote(ballot_data)
 
     return vote_generator
-
