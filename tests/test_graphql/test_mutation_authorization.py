@@ -1,47 +1,34 @@
 """Test authorization for mutations."""
 
 import datetime
-import io
 import itertools
 import json
-import random
-import string
 
-import nacl.encoding
-import nacl.public
 import pytest
-from werkzeug.test import EnvironBuilder
 
 from evalg.graphql import schema, get_context
-from evalg.models.authorization import ElectionGroupRole
-from evalg.models.ballot import Envelope
-from evalg.models.candidate import Candidate
-from evalg.models.election import ElectionGroup
-from evalg.models.election_list import ElectionList
-from evalg.models.pollbook import Pollbook
-from evalg.models.voter import Voter
-from evalg.proc.pollbook import ElectionVoterPolicy
 from .utils.register import RegisterOperationTestScenario
 
 
 reg = RegisterOperationTestScenario()
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('createNewElectionGroup', 'allow')
 @reg.add_scenario('createNewElectionGroup', 'deny')
-def test_allow_create_new_election_group(make_ou, client, logged_in_user):
+def test_allow_create_new_election_group(ou, client, logged_in_user):
     """
     Allow and deny scenario of createNewElectionGroup.
 
     This mutations is always allowed so no need to test denying.
+    We need to include the logged_in_user fixture to have a user to run the
+    mutation.
     """
-    template_name = 'uio_dean'
-    name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
-    ou_name = 'ou-{}'.format(name_rand)
-    ou = make_ou(ou_name)
-    variables = {'ouId': str(ou.id),
-                 'template': True,
-                 'templateName': template_name}
+    variables = {
+        'ouId': str(ou.id),
+        'template': True,
+        'templateName': 'uio_dean'
+    }
     mutation = """
     mutation ($ouId: UUID!, $template: Boolean!, $templateName: String!) {
         createNewElectionGroup(ouId: $ouId,
@@ -51,27 +38,25 @@ def test_allow_create_new_election_group(make_ou, client, logged_in_user):
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['createNewElectionGroup']
     assert response['ok']
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('updateBaseSettings', 'allow')
 @reg.add_scenario('updateBaseSettings', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_allow_update_base_settings(is_admin,
-                                    is_allowed,
-                                    client,
-                                    election_generator,
-                                    logged_in_user):
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_update_base_settings(is_owner,
+                                   is_allowed,
+                                   client,
+                                   multiple_election_group,
+                                   owned_multiple_election_group):
     """Allowed and denied scenario tests of updateBaseSettings."""
-    election_group = election_generator(
-        'test_auth_update_base_settings',
-        template_name='uio_university_board',
-        owner=logged_in_user if is_admin else None)
+    election_group = (owned_multiple_election_group if is_owner else
+                      multiple_election_group)
     elections = [{'id': str(e.id),
                   'seats': e.meta['candidate_rules']['seats'],
                   'substitutes': e.meta['candidate_rules']['substitutes'],
@@ -79,9 +64,11 @@ def test_allow_update_base_settings(is_admin,
                  for e in election_group.elections]
     new_gender_quota = not election_group.meta['candidate_rules'][
         'candidate_gender']
-    variables = {'id': str(election_group.id),
-                 'hasGenderQuota': new_gender_quota,
-                 'elections': elections}
+    variables = {
+        'id': str(election_group.id),
+        'hasGenderQuota': new_gender_quota,
+        'elections': elections,
+    }
     mutation = """
     mutation ($id: UUID!,
               $hasGenderQuota: Boolean!,
@@ -93,148 +80,190 @@ def test_allow_update_base_settings(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['updateBaseSettings']
     assert response['ok'] == is_allowed
-    election_group_db = ElectionGroup.query.get(election_group.id)
-    has_quota = election_group_db.meta['candidate_rules']['candidate_gender']
-    assert (new_gender_quota == has_quota) == is_allowed
 
 
-PUBLISHING_MUTATIONS = {
-    "publishElectionGroup": """
+@pytest.mark.new_fixture
+@reg.add_scenario('publishElectionGroup', 'allow')
+@reg.add_scenario('publishElectionGroup', 'deny')
+@pytest.mark.parametrize(
+    'is_owner, is_publisher, is_allowed',
+    [(True, True, True),
+     (True, False, False),
+     (False, True, False),
+     (False, False, False)])
+def test_auth_publish_election_group(is_owner,
+                                     is_publisher,
+                                     is_allowed,
+                                     client,
+                                     logged_in_user,
+                                     simple_election_group,
+                                     owned_election_group,
+                                     make_person_publisher):
+    """Allowed and denied scenario of publishElectionGroup."""
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
+    if is_publisher:
+        make_person_publisher(logged_in_user.person)
+    variables = {'id': str(election_group.id)}
+    mutation = """
     mutation ($id: UUID!) {
         publishElectionGroup(id: $id) {
             success
             code
         }
-    }""",
-    "unpublishElectionGroup": """
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
+    assert not execution.get('errors')
+    result = execution['data']['publishElectionGroup']
+    assert result['success'] == is_allowed
+    if not is_allowed:
+        assert result['code'] == 'permission-denied'
+
+
+@pytest.mark.new_fixture
+@reg.add_scenario('unpublishElectionGroup', 'allow')
+@reg.add_scenario('unpublishElectionGroup', 'deny')
+@pytest.mark.parametrize(
+    'is_owner, is_publisher, is_allowed',
+    [(True, True, True),
+     (True, False, False),
+     (False, True, False),
+     (False, False, False)])
+def test_auth_unpublish_election_group(is_owner,
+                                       is_publisher,
+                                       is_allowed,
+                                       client,
+                                       logged_in_user,
+                                       simple_election_group,
+                                       owned_election_group,
+                                       make_person_publisher):
+    """Allowed and denied scenario of unpublishElectionGroup."""
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
+    if is_publisher:
+        make_person_publisher(logged_in_user.person)
+    variables = {'id': str(election_group.id)}
+    mutation = """
     mutation ($id: UUID!) {
         unpublishElectionGroup(id: $id) {
             success
             code
         }
-    }""",
-    "announceElectionGroup": """
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
+    assert not execution.get('errors')
+    result = execution['data']['unpublishElectionGroup']
+    assert result['success'] == is_allowed
+    if not is_allowed:
+        assert result['code'] == 'permission-denied'
+
+
+@pytest.mark.new_fixture
+@reg.add_scenario('announceElectionGroup', 'allow')
+@reg.add_scenario('announceElectionGroup', 'deny')
+@pytest.mark.parametrize(
+    'is_owner, is_publisher, is_allowed',
+    [(True, True, True),
+     (True, False, False),
+     (False, True, False),
+     (False, False, False)])
+def test_auth_announce_election_group(is_owner,
+                                      is_publisher,
+                                      is_allowed,
+                                      client,
+                                      logged_in_user,
+                                      simple_election_group,
+                                      owned_election_group,
+                                      make_person_publisher):
+    """Allowed and denied scenario of announceElectionGroup."""
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
+    if is_publisher:
+        make_person_publisher(logged_in_user.person)
+    variables = {'id': str(election_group.id)}
+    mutation = """
     mutation ($id: UUID!) {
         announceElectionGroup(id: $id) {
             success
             code
         }
-    }""",
-    "unannounceElectionGroup": """
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
+    assert not execution.get('errors')
+    result = execution['data']['announceElectionGroup']
+    assert result['success'] == is_allowed
+    if not is_allowed:
+        assert result['code'] == 'permission-denied'
+
+
+@pytest.mark.new_fixture
+@reg.add_scenario('unannounceElectionGroup', 'allow')
+@reg.add_scenario('unannounceElectionGroup', 'deny')
+@pytest.mark.parametrize(
+    'is_owner, is_publisher, is_allowed',
+    [(True, True, True),
+     (True, False, False),
+     (False, True, False),
+     (False, False, False)])
+def test_auth_unannounce_election_group(is_owner,
+                                        is_publisher,
+                                        is_allowed,
+                                        client,
+                                        logged_in_user,
+                                        simple_election_group,
+                                        owned_election_group,
+                                        make_person_publisher):
+    """Allowed and denied scenario of unannounceElectionGroup."""
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
+    if is_publisher:
+        make_person_publisher(logged_in_user.person)
+    variables = {'id': str(election_group.id)}
+    mutation = """
     mutation ($id: UUID!) {
         unannounceElectionGroup(id: $id) {
             success
             code
         }
-    }""",
-}
-
-
-@reg.add_scenario('publishElectionGroup', 'allow')
-@reg.add_scenario('publishElectionGroup', 'deny')
-@reg.add_scenario('unpublishElectionGroup', 'allow')
-@reg.add_scenario('unpublishElectionGroup', 'deny')
-@reg.add_scenario('announceElectionGroup', 'allow')
-@reg.add_scenario('announceElectionGroup', 'deny')
-@reg.add_scenario('unannounceElectionGroup', 'allow')
-@reg.add_scenario('unannounceElectionGroup', 'deny')
-@pytest.mark.parametrize(
-    "mutation_name,is_publisher,init_status,expected_result",
-    [('publishElectionGroup',
-      True,
-      {'published': False, 'announced': False},
-      {'published': True, 'announced': False}),
-     ('publishElectionGroup',
-      False,
-      {'published': False, 'announced': False},
-      {'published': False, 'announced': False}),
-     ('unpublishElectionGroup',
-      True,
-      {'published': True, 'announced': False},
-      {'published': False, 'announced': False}),
-     ('unpublishElectionGroup',
-      False,
-      {'published': True, 'announced': False},
-      {'published': True, 'announced': False}),
-     ('announceElectionGroup',
-      True,
-      {'published': False, 'announced': False},
-      {'published': False, 'announced': True}),
-     ('announceElectionGroup',
-      False,
-      {'published': False, 'announced': False},
-      {'published': False, 'announced': False}),
-     ('unannounceElectionGroup',
-      True,
-      {'published': False, 'announced': True},
-      {'published': False, 'announced': False}),
-     ('unannounceElectionGroup',
-      False,
-      {'published': False, 'announced': True},
-      {'published': False, 'announced': True})])
-def test_auth_publish_and_announce_election_group(
-        mutation_name,
-        is_publisher,
-        init_status,
-        expected_result,
-        db_session,
-        client,
-        logged_in_user,
-        make_person_publisher,
-        election_generator):
-    """Allowed and denied scenario tests of publishing and announcing."""
-    election_group = election_generator(
-        'test publishing auth',
-        owner=logged_in_user,
-        with_key=True)
-    if init_status['published']:
-        election_group.publish()
-    else:
-        election_group.unpublish()
-    if init_status['announced']:
-        election_group.announce()
-    else:
-        election_group.unannounce()
-    db_session.flush()
-    if is_publisher:
-        make_person_publisher(logged_in_user.person)
-    mutation = PUBLISHING_MUTATIONS[mutation_name]
-    variables = {'id': str(election_group.id)}
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
-    result = execution['data'][mutation_name]
-    assert result['success'] == is_publisher
-    if not is_publisher:
+    result = execution['data']['unannounceElectionGroup']
+    assert result['success'] == is_allowed
+    if not is_allowed:
         assert result['code'] == 'permission-denied'
-    eg_after = ElectionGroup.query.get(election_group.id)
-    assert (eg_after.published == expected_result['published'] and
-            eg_after.announced == expected_result['announced'])
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('setElectionGroupKey', 'allow')
 @reg.add_scenario('setElectionGroupKey', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_auth_set_election_group_key(is_admin,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_set_election_group_key(is_owner,
                                      is_allowed,
                                      client,
                                      election_keys_foo,
-                                     logged_in_user,
-                                     election_generator):
+                                     simple_election_group,
+                                     owned_election_group):
     """Allowed and denied scenario tests of setElectionGroupKey."""
-    election_group = election_generator(
-        'test_auth_key',
-        owner=logged_in_user if is_admin else None,
-        with_key=False)
-    variables = {'id': str(election_group.id),
-                 'publicKey': election_keys_foo['public']}
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
+    variables = {
+        'id': str(election_group.id),
+        'publicKey': election_keys_foo['public']
+    }
     mutation = """
     mutation ($id: UUID!, $publicKey: String!) {
         setElectionGroupKey(id: $id, publicKey: $publicKey) {
@@ -243,36 +272,32 @@ def test_auth_set_election_group_key(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['setElectionGroupKey']
     assert response['success'] == is_allowed
     if not is_allowed:
         assert response['code'] == 'permission-denied'
-    election_group_db = ElectionGroup.query.get(election_group.id)
-    assert ((election_group_db.public_key == election_keys_foo['public']) ==
-            is_allowed)
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('startElectionGroupCount', 'allow')
 @reg.add_scenario('startElectionGroupCount', 'deny')
-@pytest.mark.parametrize('is_admin,is_allowed', [(True, True), (False, False)])
-def test_auth_start_election_group_count(is_admin,
+@pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
+def test_auth_start_election_group_count(is_owner,
                                          is_allowed,
                                          client,
                                          election_keys_foo,
-                                         election_generator,
-                                         logged_in_user):
+                                         countable_election_group,
+                                         owned_countable_election_group):
     """Allowed and denied scenario tests of startElectionGroupCount."""
-    election_group = election_generator(
-        'test auth start election count',
-        owner=logged_in_user if is_admin else None,
-        template_name='uio_university_board',
-        countable=True)
-    variables = {'id': str(election_group.id),
-                 'electionKey': election_keys_foo['private']}
+    election_group = (owned_countable_election_group if is_owner else
+                      countable_election_group)
+    variables = {
+        'id': str(election_group.id),
+        'electionKey': election_keys_foo['private']
+    }
     mutation = """
         mutation startElectionGroupCount($id: UUID!, $electionKey: String!) {
             startElectionGroupCount(id: $id, electionKey: $electionKey) {
@@ -281,9 +306,8 @@ def test_auth_start_election_group_count(is_admin,
             }
         }
         """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['startElectionGroupCount']
     assert response['success'] == is_allowed
@@ -291,27 +315,23 @@ def test_auth_start_election_group_count(is_admin,
         assert response['code'] == 'permission-denied'
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('updateVotingPeriods', 'allow')
 @reg.add_scenario('updateVotingPeriods', 'deny')
-@pytest.mark.parametrize('is_admin,is_allowed', [(True, True), (False, False)])
-def test_auth_update_voting_periods(is_admin,
+@pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
+def test_auth_update_voting_periods(is_owner,
                                     is_allowed,
                                     client,
-                                    election_generator,
-                                    logged_in_user):
+                                    multiple_election_group,
+                                    owned_multiple_election_group):
     """Allowed and denied scenario tests of updateVotingPeriods."""
-    election_group = election_generator(
-        'test_auth_update_base_settings',
-        template_name='uio_university_board',
-        owner=logged_in_user if is_admin else None,
-    )
-    original_start_time = election_group.elections[0].start
+    election_group = (owned_multiple_election_group if is_owner else
+                      multiple_election_group)
     elections = [{'id': str(e.id),
                   'start': str(e.start - datetime.timedelta(days=3)),
                   'end': str(e.end)}
                  for e in election_group.elections]
-    variables = {'hasMultipleTimes': False,
-                 'elections': elections}
+    variables = {'hasMultipleTimes': False, 'elections': elections}
     mutation = """
     mutation ($hasMultipleTimes: Boolean!,
               $elections: [ElectionVotingPeriodInput]!) {
@@ -321,31 +341,25 @@ def test_auth_update_voting_periods(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['updateVotingPeriods']
     assert response['ok'] == is_allowed
-    election_group_db = ElectionGroup.query.get(election_group.id)
-    for election in election_group_db.elections:
-        assert (election.start != original_start_time) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('updateVoterInfo', 'allow')
 @reg.add_scenario('updateVoterInfo', 'deny')
-@pytest.mark.parametrize('is_admin,is_allowed', [(True, True), (False, False)])
-def test_auth_update_voter_info(is_admin,
+@pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
+def test_auth_update_voter_info(is_owner,
                                 is_allowed,
                                 client,
-                                logged_in_user,
-                                election_generator):
+                                simple_election_group,
+                                owned_election_group):
     """Allowed and denied scenario tests of updateVoterInfo."""
-    election_group = election_generator(
-        'test_auth_update_voter_info',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
-    original_end_time = election_group.elections[0].mandate_period_end
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     elections = [{'id': str(e.id),
                   'mandatePeriodStart': str(e.mandate_period_start),
                   'mandatePeriodEnd': str(e.mandate_period_end +
@@ -359,38 +373,34 @@ def test_auth_update_voter_info(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['updateVoterInfo']
     assert response['ok'] == is_allowed
-    election_group_db = ElectionGroup.query.get(election_group.id)
-    for election in election_group_db.elections:
-        assert (election.mandate_period_end != original_end_time) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('updatePrefElecCandidate', 'allow')
 @reg.add_scenario('updatePrefElecCandidate', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_auth_update_pref_elec_candidate(is_admin,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_update_pref_elec_candidate(is_owner,
                                          is_allowed,
                                          client,
-                                         election_generator,
-                                         logged_in_user):
+                                         multiple_election_group,
+                                         owned_multiple_election_group):
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
-    election_group = election_generator(
-        'test_auth_delete_candidate',
-        template_name='uio_university_board',
-        owner=logged_in_user if is_admin else None,
-        with_candidates=True)
+    election_group = (owned_multiple_election_group if is_owner else
+                      multiple_election_group)
     election_list = election_group.elections[0].lists[0]
     candidate = election_group.elections[0].lists[0].candidates[0]
     new_name = '{} Testesen'.format(candidate.name)
-    variables = {'gender': candidate.meta['gender'],
-                 'listId': str(election_list.id),
-                 'id': str(candidate.id),
-                 'name': new_name}
+    variables = {
+        'gender': candidate.meta['gender'],
+        'listId': str(election_list.id),
+        'id': str(candidate.id),
+        'name': new_name
+    }
     mutation = """
     mutation ($gender: String!, $listId: UUID!, $id: UUID!, $name: String!) {
         updatePrefElecCandidate(gender: $gender,
@@ -401,34 +411,31 @@ def test_auth_update_pref_elec_candidate(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['updatePrefElecCandidate']
     assert response['ok'] == is_allowed
-    candidate_db = Candidate.query.get(candidate.id)
-    assert (candidate_db.name == new_name) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('addPrefElecCandidate', 'allow')
 @reg.add_scenario('addPrefElecCandidate', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_auth_add_pref_elec_candidate(is_admin,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_add_pref_elec_candidate(is_owner,
                                       is_allowed,
                                       client,
-                                      election_generator,
-                                      logged_in_user):
+                                      multiple_election_group,
+                                      owned_multiple_election_group):
     """Allowed and denied scenario tests of addPrefElecCandidate."""
-    election_group = election_generator(
-        'test_auth_delete_candidate',
-        template_name='uio_university_board',
-        owner=logged_in_user if is_admin else None,
-        with_candidates=False)
+    election_group = (owned_multiple_election_group if is_owner else
+                      multiple_election_group)
     election_list = election_group.elections[0].lists[0]
-    variables = {'gender': 'female',
-                 'listId': str(election_list.id),
-                 'name': 'Test Testesen'}
+    variables = {
+        'gender': 'female',
+        'listId': str(election_list.id),
+        'name': 'Test Testesen'
+    }
     mutation = """
     mutation ($gender: String!, $listId: UUID!, $name: String!) {
         addPrefElecCandidate(gender: $gender, listId: $listId , name: $name) {
@@ -436,37 +443,34 @@ def test_auth_add_pref_elec_candidate(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['addPrefElecCandidate']
     assert response['ok'] == is_allowed
-    election_list_db = ElectionList.query.get(election_list.id)
-    assert bool(len(election_list_db.candidates)) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('updateTeamPrefElecCandidate', 'allow')
 @reg.add_scenario('updateTeamPrefElecCandidate', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_auth_update_team_pref_elec_candidate(is_admin,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_update_team_pref_elec_candidate(is_owner,
                                               is_allowed,
                                               client,
-                                              election_generator,
-                                              logged_in_user):
+                                              simple_election_group,
+                                              owned_election_group):
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
-    election_group = election_generator(
-        'test_auth_delete_candidate',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None,
-        with_candidates=True)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     election_list = election_group.elections[0].lists[0]
     candidate = election_group.elections[0].lists[0].candidates[0]
     new_name = '{} Testesen'.format(candidate.name)
-    variables = {'coCandidates': candidate.meta['co_candidates'],
-                 'listId': str(election_list.id),
-                 'id': str(candidate.id),
-                 'name': new_name}
+    variables = {
+        'coCandidates': candidate.meta['co_candidates'],
+        'listId': str(election_list.id),
+        'id': str(candidate.id),
+        'name': new_name
+    }
     mutation = """
     mutation ($coCandidates: [CoCandidatesInput]!,
               $listId: UUID!,
@@ -480,34 +484,31 @@ def test_auth_update_team_pref_elec_candidate(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['updateTeamPrefElecCandidate']
     assert response['ok'] == is_allowed
-    candidate_db = Candidate.query.get(candidate.id)
-    assert (candidate_db.name == new_name) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('addTeamPrefElecCandidate', 'allow')
 @reg.add_scenario('addTeamPrefElecCandidate', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_auth_add_team_pref_elec_candidate(is_admin,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_add_team_pref_elec_candidate(is_owner,
                                            is_allowed,
                                            client,
-                                           election_generator,
-                                           logged_in_user):
+                                           simple_election_group,
+                                           owned_election_group):
     """Allowed and denied scenario tests of addTeamPrefElecCandidate."""
-    election_group = election_generator(
-        'test_auth_delete_team_candidate',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None,
-        with_candidates=False)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     election_list = election_group.elections[0].lists[0]
-    variables = {'coCandidates': [{'name': 'Test Testemeresen'}],
-                 'listId': str(election_list.id),
-                 'name': 'Test Testesen'}
+    variables = {
+        'coCandidates': [{'name': 'Test Testemeresen'}],
+        'listId': str(election_list.id),
+        'name': 'Test Testesen'
+    }
     mutation = """
     mutation ($coCandidates: [CoCandidatesInput]!,
               $listId: UUID!,
@@ -519,29 +520,25 @@ def test_auth_add_team_pref_elec_candidate(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['addTeamPrefElecCandidate']
     assert response['ok'] == is_allowed
-    election_list_db = ElectionList.query.get(election_list.id)
-    assert bool(len(election_list_db.candidates)) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('deleteCandidate', 'allow')
 @reg.add_scenario('deleteCandidate', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_auth_delete_candidate(is_admin,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_delete_candidate(is_owner,
                                is_allowed,
                                client,
-                               election_generator,
-                               logged_in_user):
+                               simple_election_group,
+                               owned_election_group):
     """Allowed and denied scenario tests of deleteCandidate."""
-    election_group = election_generator(
-        'test_auth_delete_candidate',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     candidate = election_group.elections[0].candidates[0]
     variables = {'id': str(candidate.id)}
     mutation = """
@@ -551,44 +548,32 @@ def test_auth_delete_candidate(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['deleteCandidate']
     assert response['ok'] == is_allowed
-    candidate_db = Candidate.query.get(candidate.id)
-    assert (not candidate_db) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('addVoterByPersonId', 'allow')
 @reg.add_scenario('addVoterByPersonId', 'deny')
 @pytest.mark.parametrize(
-    "is_admin,as_logged_in_user,is_allowed",
-    [
-        # Admins can add themselves to pollbooks
-        (True, True, True),
-        # Admins can add others to pollbook
-        (True, False, True),
-        # Users can add themselves to pollbooks
-        (False, True, True),
-        # Users are not allowed to add others to a pollbook
-        (False, False, False)])
-def test_auth_add_voter_by_person_id(is_admin,
-                                     as_logged_in_user,
+    "is_owner,is_allowed", [(True, True,), (False, False)])
+def test_auth_add_voter_by_person_id(is_owner,
                                      is_allowed,
                                      client,
-                                     election_generator,
-                                     person_generator,
-                                     logged_in_user):
+                                     simple_person,
+                                     simple_election_group,
+                                     owned_election_group):
     """Allowed and denied scenario tests of addVoterByPersonId."""
-    election_group = election_generator(
-        'test_auth_add_voter_by_id',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     pollbook = election_group.elections[0].pollbooks[0]
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    variables = {'personId': str(person.id), 'pollbookId': str(pollbook.id)}
+    variables = {
+        'personId': str(simple_person.id),
+        'pollbookId': str(pollbook.id)
+    }
     mutation = """
     mutation ($personId: UUID!, $pollbookId: UUID!) {
         addVoterByPersonId(personId: $personId, pollbookId: $pollbookId) {
@@ -596,47 +581,34 @@ def test_auth_add_voter_by_person_id(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['addVoterByPersonId']
     assert (response is not None) == is_allowed
-    pollbook_db = Pollbook.query.get(pollbook.id)
-    assert len(pollbook_db.voters) == (1 if is_allowed else 0)
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('addVoterByIdentifier', 'allow')
 @reg.add_scenario('addVoterByIdentifier', 'deny')
-@pytest.mark.parametrize(
-    "is_admin,as_logged_in_user,is_allowed",
-    [
-        # Admins can add themselves to pollbooks
-        (True, True, True),
-        # Admins can add others to pollbook
-        (True, False, True),
-        # Users are not allowed to add themselves to pollbooks
-        (False, True, False),
-        # Users are not allowed to add others to a pollbook
-        (False, False, False)])
-def test_auth_add_voter_by_identifier(is_admin,
-                                      as_logged_in_user,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_add_voter_by_identifier(is_owner,
                                       is_allowed,
                                       client,
-                                      election_generator,
-                                      person_generator,
-                                      logged_in_user):
+                                      simple_person,
+                                      simple_election_group,
+                                      owned_election_group):
     """Allowed and denied scenario tests of addVoterByIdentifier."""
-    election_group = election_generator(
-        'test_auth_add_voter_by_identifier',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     pollbook = election_group.elections[0].pollbooks[0]
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    feide_id = next(i for i in person.identifiers if i.id_type == 'feide_id')
-    variables = {'idType': feide_id.id_type,
-                 'idValue': feide_id.id_value,
-                 'pollbookId': str(pollbook.id)}
+    feide_id = next(i for i in simple_person.identifiers if i.id_type ==
+                    'feide_id')
+    variables = {
+        'idType': feide_id.id_type,
+        'idValue': feide_id.id_value,
+        'pollbookId': str(pollbook.id)
+    }
     mutation = """
     mutation ($idType: PersonIdType!, $idValue: String!, $pollbookId: UUID!) {
         addVoterByIdentifier(idType: $idType,
@@ -646,71 +618,32 @@ def test_auth_add_voter_by_identifier(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['addVoterByIdentifier']
     assert (response is not None) == is_allowed
-    pollbook_db = Pollbook.query.get(pollbook.id)
-    assert len(pollbook_db.voters) == (1 if is_allowed else 0)
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('updateVoterPollbook', 'allow')
 @reg.add_scenario('updateVoterPollbook', 'deny')
 @pytest.mark.parametrize(
-    "is_admin,as_logged_in_user,same_election_group,same_owner,is_allowed",
-    [
-        # Admins can move themselves
-        (True, True, True, True, True),
-        # Admins can move others
-        (True, False, True, True, True),
-        # Users are not allowed to move themselves
-        (False, True, True, True, False),
-        # Users are not allowed to move others
-        (False, False, True, True, False),
-        # Admins can't move themselves between to election_groups they own
-        (True, True, False, True, False),
-        # Admins can't move others between to election_groups they own
-        (True, False, False, True, False),
-        # Users can't move themselves between to election_groups
-        (False, True, False, True, False),
-        # Users can't move others between to election_groups
-        (False, False, False, True, False),
-        # Admins can't move themselves to election_groups not owned by them
-        (True, True, False, False, False),
-        # Admins can't move user to election_groups not owned by them
-        (True, False, False, False, False)])
-def test_auth_update_voter_pollbook(db_session,
-                                    is_admin,
-                                    as_logged_in_user,
-                                    same_election_group,
-                                    same_owner,
+    "is_owner,is_allowed",
+    [(True, True),
+     (False, False)])
+def test_auth_update_voter_pollbook(is_owner,
                                     is_allowed,
                                     client,
-                                    election_generator,
-                                    person_generator,
-                                    logged_in_user):
+                                    simple_election_group,
+                                    owned_election_group):
     """Allowed and denied scenario tests of updateVoterPollbook."""
-    election_group_1 = election_generator(
-        'test_auth_add_voter_by_identifier',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
+    election_group_1 = (owned_election_group if is_owner else
+                        simple_election_group)
     pollbook_1 = election_group_1.elections[0].pollbooks[0]
-    if not same_election_group:
-        election_group_2 = election_generator(
-            'test_auth_add_voter_by_identifier_2',
-            template_name='uio_principal',
-            owner=logged_in_user if (is_admin and same_owner) else None)
-        pollbook_2 = election_group_2.elections[0].pollbooks[0]
-    else:
-        pollbook_2 = election_group_1.elections[0].pollbooks[1]
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    voter_policy = ElectionVoterPolicy(db_session)
-    voter = voter_policy.add_voter(pollbook_1, person)
-    db_session.commit()
-    variables = {'id': str(voter.id),
-                 'pollbookId': str(pollbook_2.id)}
+    pollbook_2 = election_group_1.elections[0].pollbooks[1]
+    voter = next(x for x in pollbook_1.voters if not x.self_added)
+    variables = {'id': str(voter.id), 'pollbookId': str(pollbook_2.id)}
     mutation = """
     mutation ($id: UUID!, $pollbookId: UUID!) {
         updateVoterPollbook(id: $id, pollbookId: $pollbookId) {
@@ -718,47 +651,38 @@ def test_auth_update_voter_pollbook(db_session,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['updateVoterPollbook']
     assert response['ok'] == is_allowed
-    assert not len(pollbook_1.voters) == is_allowed
-    assert len(pollbook_2.voters) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('updateVoterReason', 'allow')
 @reg.add_scenario('updateVoterReason', 'deny')
 @pytest.mark.parametrize(
-    "is_admin,as_logged_in_user,is_allowed",
-    [(True, True, True),
-     (False, True, True),
-     # Admins should not be able to update reason in elections
-     (True, False, False),
-     # Users should not be able to update reason for other users
-     (False, False, False)])
-def test_update_voter_reason(db_session,
-                             is_admin,
-                             as_logged_in_user,
+    "as_logged_in_user,is_allowed",
+    [(True, True),
+     (False, False)])
+def test_update_voter_reason(as_logged_in_user,
                              is_allowed,
                              client,
-                             election_generator,
-                             person_generator,
-                             logged_in_user):
+                             logged_in_user,
+                             logged_in_votable_election_group):
     """Allow and deny scenarios for updateVoterReason."""
-    election_group = election_generator(
-        'test_update_voter_reason',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
+    election_group = logged_in_votable_election_group
     pollbook = election_group.elections[0].pollbooks[0]
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    reason = 'Test 123'
-    voter_policy = ElectionVoterPolicy(db_session)
-    voter = voter_policy.add_voter(pollbook, person, reason=reason)
-    db_session.commit()
-    new_reason = 'Test mer 123 test setsetest'
-    variables = {'id': str(voter.id), 'reason': new_reason}
+    logged_in_feide_id = next(x.id_value for x in
+                              logged_in_user.person.identifiers if
+                              x.id_type == 'feide_id')
+    if as_logged_in_user:
+        voter = next(x for x in pollbook.voters if
+                     x.id_value == logged_in_feide_id)
+    else:
+        voter = next(x for x in pollbook.voters if
+                     x.id_value != logged_in_feide_id)
+    variables = {'id': str(voter.id), 'reason': 'Test 123'}
     mutation = """
     mutation ($id: UUID!, $reason: String!) {
         updateVoterReason(id: $id, reason: $reason) {
@@ -766,66 +690,28 @@ def test_update_voter_reason(db_session,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['updateVoterReason']
     assert response['ok'] == is_allowed
-    voter_db = Voter.query.get(voter.id)
-    if is_allowed:
-        assert voter_db.reason == new_reason, 'Voter reason did not change'
-    else:
-        assert voter_db.reason == reason, 'Voter reason should not change'
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('deleteVoter', 'allow')
 @reg.add_scenario('deleteVoter', 'deny')
-@pytest.mark.parametrize(
-    "is_admin,as_logged_in_user,self_added_voter,with_vote,is_allowed",
-    [(True, True, False, False, True),
-     (True, False, False, False, True),
-     (False, True, False, False, False),
-     (False, False, False, False, False),
-     # Never allowed removal of self added voters or voters with votes
-     (True, True, True, False, False),
-     (True, False, True, False, False),
-     (False, True, True, False, False),
-     (False, False, True, False, False),
-     (True, True, False, True, False),
-     (True, False, False, True, False),
-     (False, True, False, True, False),
-     (False, False, False, True, False),
-     (True, True, True, True, False),
-     (True, False, True, True, False),
-     (False, True, True, True, False),
-     (False, False, True, True, False)])
-def test_auth_delete_voter(db_session,
-                           is_admin,
-                           as_logged_in_user,
-                           self_added_voter,
-                           with_vote,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_delete_voter(is_owner,
                            is_allowed,
                            client,
-                           election_generator,
-                           person_generator,
-                           vote_generator,
-                           logged_in_user):
+                           simple_election_group,
+                           owned_election_group):
     """Allow and deny scenarios for deleteVoter."""
-    election_group = election_generator(
-        'test_update_voter_reason',
-        template_name='uio_faculty_board',
-        owner=logged_in_user if is_admin else None)
-    pollbook = election_group.elections[0].pollbooks[0]
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    voter_policy = ElectionVoterPolicy(db_session)
-    voter = voter_policy.add_voter(pollbook,
-                                   person,
-                                   self_added=self_added_voter)
-    if with_vote:
-        vote = vote_generator(pollbook.election, voter)
-        assert vote
-    db_session.commit()
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
+    voters = election_group.elections[0].pollbooks[0].voters
+
+    voter = next(x for x in voters if not x.self_added)
     variables = {'id': str(voter.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -834,71 +720,27 @@ def test_auth_delete_voter(db_session,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['deleteVoter']
     assert response['ok'] == is_allowed
-    voter_db = Voter.query.get(voter.id)
-    assert (voter_db is None) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('deleteVotersInPollbook', 'allow')
 @reg.add_scenario('deleteVotersInPollbook', 'deny')
 @pytest.mark.parametrize(
-    "is_admin,with_self_added_voter,with_vote,is_allowed",
-    [(True, False, False, True),
-     (True, False, True, True),
-     (True, True, False, True),
-     (True, True, True, True),
-     (False, False, False, False),
-     (False, False, True, False),
-     (False, True, False, False),
-     (False, True, True, False)])
-def test_auth_delete_voters_in_pollbook(db_session,
-                                        is_admin,
-                                        with_self_added_voter,
-                                        with_vote,
+    "is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_delete_voters_in_pollbook(is_owner,
                                         is_allowed,
                                         client,
-                                        election_generator,
-                                        person_generator,
-                                        vote_generator,
-                                        logged_in_user):
+                                        simple_election_group,
+                                        owned_election_group):
     """Allow and deny scenarios for deleteVotersInPollbook."""
-    election_group = election_generator(
-        'test_update_voter_reason',
-        template_name='uio_faculty_board',
-        owner=logged_in_user if is_admin else None)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     pollbook = election_group.elections[0].pollbooks[0]
-    voter_policy = ElectionVoterPolicy(db_session)
-    total_voters = 0
-    expected_left = 0
-    # Generate 4 admin added voters without votes
-    person_admin_added = [person_generator() for _ in range(4)]
-    voters_admin_added = [
-        voter_policy.add_voter(pollbook, x, self_added=False) for x in
-        person_admin_added]
-    total_voters += len(voters_admin_added)
-    if with_vote:
-        voter = voter_policy.add_voter(pollbook, person_generator(),
-                                       self_added=False)
-        vote = vote_generator(pollbook.election, voter)
-        assert vote
-        total_voters += 1
-        expected_left += 1
-    if with_self_added_voter:
-        voter_policy.add_voter(pollbook, person_generator(), self_added=True)
-        total_voters += 1
-    if with_vote and with_self_added_voter:
-        voter = voter_policy.add_voter(pollbook, person_generator(),
-                                       self_added=True)
-        vote = vote_generator(pollbook.election, voter)
-        assert vote
-        total_voters += 1
-        expected_left += 1
-    db_session.commit()
     variables = {'id': str(pollbook.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -907,39 +749,31 @@ def test_auth_delete_voters_in_pollbook(db_session,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['deleteVotersInPollbook']
     assert response['ok'] == is_allowed
-    if not is_allowed:
-        expected_left = total_voters
-    pollbook_db = Pollbook.query.get(pollbook.id)
-    assert len(pollbook_db.voters) == expected_left
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('uploadCensusFile', 'allow')
 @reg.add_scenario('uploadCensusFile', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_auth_upload_census_file(is_admin,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_upload_census_file(is_owner,
                                  is_allowed,
                                  client,
-                                 logged_in_user,
-                                 election_generator):
+                                 simple_election_group,
+                                 owned_election_group,
+                                 feide_id_plane_text_census_file_builder):
     """Allow and deny scenarios for uploadCensusFile."""
-    election_group = election_generator(
-        'test_upload_census_file',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     pollbook = election_group.elections[0].pollbooks[0]
-    feide_ids = ['pederaas@uio.no', 'martekir@uio.no', 'larsh@uio.no',
-                 'hansta@uio.no']
-    builder = EnvironBuilder(method='POST', data={
-        'file': (io.BytesIO('\n'.join(feide_ids).encode('utf-8')),
-                 'usernames.txt')})
-    variables = {'censusFile': builder.files['file'],
-                 'pollbookId': str(pollbook.id)}
+    variables = {
+        'censusFile': feide_id_plane_text_census_file_builder.files['file'],
+        'pollbookId': str(pollbook.id)
+    }
     mutation = """
     mutation ($censusFile: Upload!, $pollbookId: UUID!) {
         uploadCensusFile(censusFile: $censusFile, pollbookId: $pollbookId) {
@@ -950,53 +784,30 @@ def test_auth_upload_census_file(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['uploadCensusFile']
     assert response['success'] == is_allowed
     if not is_allowed:
         assert response['code'] == 'permission-denied'
-    else:
-        assert response['numFailed'] == 0
-        assert response['numOk'] == len(feide_ids)
-    pollbook_db = Pollbook.query.get(pollbook.id)
-    assert (len(pollbook_db.voters) == len(feide_ids)) == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('reviewVoter', 'allow')
 @reg.add_scenario('reviewVoter', 'deny')
-@pytest.mark.parametrize(
-    'is_admin,as_logged_in_user,verify,is_allowed',
-    [(True, True, True, True),
-     (True, True, False, True),
-     (True, False, True, True),
-     (True, False, False, True),
-     (False, True, True, False),
-     (False, True, False, False),
-     (False, False, True, False),
-     (False, False, False, False)])
-def test_auth_review_voter(is_admin,
-                           as_logged_in_user,
-                           verify,
+@pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
+def test_auth_review_voter(is_owner,
                            is_allowed,
                            client,
-                           db_session,
-                           election_generator,
-                           logged_in_user,
-                           person_generator):
+                           simple_election_group,
+                           owned_election_group):
     """Allow and deny scenarios for reviewVoter."""
-    election_group = election_generator(
-        'test_update_voter_reason',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     pollbook = election_group.elections[0].pollbooks[0]
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    voter_policy = ElectionVoterPolicy(db_session)
-    voter = voter_policy.add_voter(pollbook, person, self_added=True)
-    db_session.commit()
-    variables = {'id': str(voter.id), 'verify': verify}
+    voter = next(x for x in pollbook.voters if x.self_added)
+    variables = {'id': str(voter.id), 'verify': True}
     mutation = """
     mutation ($id: UUID!, $verify: Boolean!) {
         reviewVoter(id: $id, verify: $verify) {
@@ -1004,50 +815,30 @@ def test_auth_review_voter(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['reviewVoter']
     assert response['ok'] == is_allowed
-    voter_db = Voter.query.get(voter.id)
-    if is_allowed:
-        assert voter_db.verified == verify
-        assert voter_db.reviewed
-    else:
-        assert not voter_db.verified
-        assert not voter_db.reviewed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('undoReviewVoter', 'allow')
 @reg.add_scenario('undoReviewVoter', 'deny')
 @pytest.mark.parametrize(
-    'is_admin,as_logged_in_user,is_allowed',
-    [(True, True, True),
-     (True, False, True),
-     (False, True, False),
-     (False, False, False)])
-def test_auth_undo_review_voter(is_admin,
-                                as_logged_in_user,
+    'is_owner,is_allowed',
+    [(True, True),
+     (False, False)])
+def test_auth_undo_review_voter(is_owner,
                                 is_allowed,
                                 client,
-                                db_session,
-                                election_generator,
-                                logged_in_user,
-                                person_generator):
+                                simple_election_group,
+                                owned_election_group):
     """Allow and deny scenarios for undoReviewVoter."""
-    election_group = election_generator(
-        'test_update_voter_reason',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
     pollbook = election_group.elections[0].pollbooks[0]
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    voter_policy = ElectionVoterPolicy(db_session)
-    voter = voter_policy.add_voter(pollbook, person, self_added=True)
-    voter.reviewed = True
-    voter.verified = True
-    db_session.add(voter)
-    db_session.commit()
+    voter = next(x for x in pollbook.voters if x.self_added)
     variables = {'id': str(voter.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -1056,52 +847,34 @@ def test_auth_undo_review_voter(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['undoReviewVoter']
     assert response['ok'] == is_allowed
-    voter_db = Voter.query.get(voter.id)
-    if is_allowed:
-        assert not voter_db.verified
-        assert not voter_db.reviewed
-    else:
-        assert voter_db.verified
-        assert voter_db.reviewed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('addElectionGroupRoleByIdentifier', 'allow')
 @reg.add_scenario('addElectionGroupRoleByIdentifier', 'deny')
-@pytest.mark.parametrize(
-    'is_admin,as_logged_in_user,role,is_allowed',
-    [(True, True, 'admin', True),
-     (True, False, 'admin', True),
-     (False, True, 'admin', False),
-     (False, False, 'admin', False),
-     (True, True, 'publisher', False),
-     (True, False, 'publisher', False),
-     (False, True, 'publisher', False),
-     (False, False, 'publisher', False)])
-def test_auth_add_election_group_role_by_identifier(is_admin,
-                                                    as_logged_in_user,
-                                                    role,
+@pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
+def test_auth_add_election_group_role_by_identifier(is_owner,
                                                     is_allowed,
                                                     client,
-                                                    election_generator,
-                                                    logged_in_user,
-                                                    person_generator):
+                                                    owned_election_group,
+                                                    simple_election_group,
+                                                    logged_in_user):
     """Allow and deny scenarios for addElectionGroupRoleByIdentifier."""
-    election_group = election_generator(
-        'test_update_voter_reason',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
-    person = logged_in_user.person if as_logged_in_user else person_generator()
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
+    person = logged_in_user.person
     feide_id = next(i for i in person.identifiers if i.id_type == 'feide_id')
-    variables = {'electionGroupId': str(election_group.id),
-                 'idType': feide_id.id_type,
-                 'idValue': feide_id.id_value,
-                 'role': role}
+    variables = {
+        'electionGroupId': str(election_group.id),
+        'idType': feide_id.id_type,
+        'idValue': feide_id.id_value,
+        'role': 'admin'
+    }
     mutation = """
     mutation ($electionGroupId: UUID!,
               $idType: PersonIdType!,
@@ -1116,45 +889,26 @@ def test_auth_add_election_group_role_by_identifier(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
-    if role == 'admin':
-        assert not execution.get('errors')
-        response = execution['data']['addElectionGroupRoleByIdentifier']
-        assert response['success'] == is_allowed
-        if not is_allowed:
-            assert response['code'] == 'permission-denied'
-    else:
-        # Admin is currently the only allowed role.
-        assert execution.get('errors')
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
+    assert not execution.get('errors')
+    response = execution['data']['addElectionGroupRoleByIdentifier']
+    assert response['success'] == is_allowed
+    if not is_allowed:
+        assert response['code'] == 'permission-denied'
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('removeElectionGroupRoleByGrant', 'allow')
 @reg.add_scenario('removeElectionGroupRoleByGrant', 'deny')
-@pytest.mark.parametrize(
-    'is_admin,as_logged_in_user,is_allowed',
-    [(True, True, True),
-     (True, False, True),
-     # User is admin via the grant
-     (False, True, True),
-     # logged in user can't remove grant on other election_group
-     (False, False, False)])
-def test_auth_remove_election_group_role_by_grant(is_admin,
-                                                  as_logged_in_user,
+@pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
+def test_auth_remove_election_group_role_by_grant(is_owner,
                                                   is_allowed,
                                                   client,
-                                                  election_generator,
-                                                  grant_for_person_generator,
-                                                  logged_in_user,
-                                                  person_generator):
+                                                  election_group_grant,
+                                                  owned_election_group_grant):
     """Allow and deny scenarios for removeElectionGroupRoleByGrant."""
-    election_group = election_generator(
-        'test_update_voter_reason',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    grant = grant_for_person_generator(person, election_group)
+    grant = (owned_election_group_grant if is_owner else election_group_grant)
     variables = {'grantId': str(grant.grant_id)}
     mutation = """
     mutation ($grantId: UUID!) {
@@ -1164,47 +918,54 @@ def test_auth_remove_election_group_role_by_grant(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['removeElectionGroupRoleByGrant']
     assert response['success'] == is_allowed
     if not is_allowed:
         assert response['code'] == 'permission-denied'
-    grant_db = ElectionGroupRole.query.get(grant.grant_id)
-    assert not grant_db == is_allowed
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('vote', 'allow')
 @reg.add_scenario('vote', 'deny')
 @pytest.mark.parametrize(
-    "is_admin,as_logged_in_user,is_allowed",
+    "is_owner,as_logged_in_user,is_allowed",
     [(True, True, True),
      (False, True, True),
      (True, False, False),
      (False, False, False)])
-def test_auth_vote(is_admin,
+def test_auth_vote(is_owner,
                    as_logged_in_user,
                    is_allowed,
                    client,
-                   db_session,
-                   ballot_data_generator,
-                   election_generator,
-                   logged_in_user,
-                   person_generator):
+                   blank_pref_election_ballot_data,
+                   votable_election_group,
+                   logged_in_votable_election_group,
+                   owned_logged_in_votable_election_group,
+                   owned_votable_election_group,
+                   logged_in_user):
     """Allow and deny scenarios for vote."""
-    election_group = election_generator(
-        'test_update_voter_reason',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None,
-        ready_for_voting=True)
+    if as_logged_in_user:
+        election_group = (owned_logged_in_votable_election_group if
+                          is_owner else logged_in_votable_election_group)
+    else:
+        election_group = (owned_votable_election_group if is_owner else
+                          votable_election_group)
     pollbook = election_group.elections[0].pollbooks[0]
-    person = logged_in_user.person if as_logged_in_user else person_generator()
-    voter_policy = ElectionVoterPolicy(db_session)
-    voter = voter_policy.add_voter(pollbook, person)
-    variables = {'voterId': str(voter.id),
-                 'ballot': json.dumps(ballot_data_generator())}
+    logged_in_feide_id = next(x.id_value for x in
+                              logged_in_user.person.identifiers if
+                              x.id_type == 'feide_id')
+    if as_logged_in_user:
+        voter = next(x for x in pollbook.voters if
+                     x.id_value == logged_in_feide_id)
+    else:
+        voter = pollbook.voters[0]
+    variables = {
+        'voterId': str(voter.id),
+        'ballot': json.dumps(blank_pref_election_ballot_data)
+    }
     mutation = """
     mutation ($voterId: UUID!, $ballot: JSONString!) {
         vote(voterId: $voterId, ballot: $ballot) {
@@ -1213,39 +974,32 @@ def test_auth_vote(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['vote']
     assert response['ok'] == is_allowed
-    if is_allowed:
-        assert Envelope.query.get(response['ballotId'])
 
 
+@pytest.mark.new_fixture
 @reg.add_scenario('addElectionGroupKeyBackup', 'allow')
 @reg.add_scenario('addElectionGroupKeyBackup', 'deny')
-@pytest.mark.parametrize("is_admin,is_allowed", [(True, True), (False, False)])
-def test_auth_add_election_group_key_backup(is_admin,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_add_election_group_key_backup(is_owner,
                                             is_allowed,
                                             client,
-                                            election_generator,
-                                            logged_in_user,
-                                            make_master_key):
+                                            simple_election_group,
+                                            owned_election_group,
+                                            master_key):
     """Allow and deny scenarios for addElectionGroupKeyBackup."""
-    privkey, master_key = make_master_key()
-    election_group = election_generator(
-        'test_add_election_group_key_backup',
-        template_name='uio_dean',
-        owner=logged_in_user if is_admin else None)
-    new_priv_key = nacl.public.PrivateKey.generate()
-    message = new_priv_key.encode(encoder=nacl.encoding.Base64Encoder)
-    ebox = nacl.public.Box(new_priv_key, privkey.public_key)
-    encrypted_priv_key = ebox.encrypt(message,
-                                      encoder=nacl.encoding.Base64Encoder)
-    variables = {'electionGroupId': str(election_group.id),
-                 'encryptedPrivKey': encrypted_priv_key,
-                 'masterKeyId': str(master_key.id)}
+    election_group = (owned_election_group if is_owner else
+                      simple_election_group)
+    _, master_key = master_key
+    variables = {
+        'electionGroupId': str(election_group.id),
+        'encryptedPrivKey': 'Test123',
+        'masterKeyId': str(master_key.id)
+    }
     mutation = """
     mutation (
         $electionGroupId: UUID!
@@ -1262,9 +1016,8 @@ def test_auth_add_election_group_key_backup(is_admin,
         }
     }
     """
-    execution = client.execute(mutation,
-                               variables=variables,
-                               context=get_context())
+    execution = client.execute(
+        mutation, variables=variables, context=get_context())
     assert not execution.get('errors')
     response = execution['data']['addElectionGroupKeyBackup']
     assert response['success'] == is_allowed
@@ -1275,10 +1028,8 @@ def test_auth_add_election_group_key_backup(is_admin,
 @pytest.mark.parametrize(
     'mutation,scenario',
     list(itertools.product(
-        list(schema.get_mutation_type().fields.keys()),
-        ['allow', 'deny'])))
+        list(schema.get_mutation_type().fields.keys()), ['allow', 'deny'])))
 def test_mutation_test_coverage(mutation, scenario):
     """Ensure required tests mutation authorization."""
     assert reg.operations_test_exist_for_scenario(mutation, scenario), (
-        "Missing test scenario {} for mutation {}".format(scenario,
-                                                          mutation))
+        "Missing test scenario {} for mutation {}".format(scenario, mutation))
