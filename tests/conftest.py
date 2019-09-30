@@ -1311,10 +1311,9 @@ def new_election_group_generator(db_session,
         'meta': meta,
     }
 
-    # election_group = ElectionGroup(**data)
-    election_group = evalg.database.query.get_or_create(
-        db_session, ElectionGroup, **data)
+    election_group = ElectionGroup(**data)
     db_session.add(election_group)
+    db_session.flush()
 
     election_group.elections = new_elections_generator(
         db_session,
