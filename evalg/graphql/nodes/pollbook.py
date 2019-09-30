@@ -186,9 +186,9 @@ find_voters_query = graphene.List(
 
 class UpdateVoterPollbook(graphene.Mutation):
     """
-    ???
-    Add a pre-existing voter to another pollbook?
-    Is this even possible?
+    Add a pre-existing voter to another pollbook.
+
+    The pollbook needs to be in the same election group as the source.
     """
     class Arguments:
         id = graphene.UUID(required=True)
@@ -197,13 +197,26 @@ class UpdateVoterPollbook(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
-        # TODO:
-        #   What even is this mutation?
         session = get_session(info)
         user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
-        if not can_vote(session, user, voter):
+
+        if not can_manage_voter(session, user, voter):
             return UpdateVoterPollbook(ok=False)
+
+        pollbook = session.query(evalg.models.pollbook.Pollbook).get(
+            kwargs.get('pollbook_id'))
+
+        if not can_manage_pollbook(session, user, pollbook):
+            return UpdateVoterPollbook(ok=False)
+
+        election_group_from = voter.pollbook.election.election_group.id
+        election_group_to = pollbook.election.election_group.id
+
+        if election_group_from != election_group_to:
+            # Do not move voters between election_groups
+            return UpdateVoterPollbook(ok=False)
+
         voter.pollbook_id = kwargs.get('pollbook_id')
         session.add(voter)
         session.commit()
@@ -223,7 +236,7 @@ class UpdateVoterReason(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
-        user = get_current_user
+        user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not can_vote(session, user, voter):
             return UpdateVoterReason(ok=False)
@@ -357,6 +370,7 @@ class AddVoterByPersonId(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         session = get_session(info)
+        user = get_current_user(info)
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
         person_id = kwargs['person_id']
         pollbook_id = kwargs['pollbook_id']
@@ -366,6 +380,11 @@ class AddVoterByPersonId(graphene.Mutation):
 
         pollbook = session.query(evalg.models.pollbook.Pollbook).get(
             pollbook_id)
+
+        if (not can_manage_pollbook(session, user, pollbook)
+                and user.person.id != person_id):
+            # Only allow users to add themselves to a pollbook they do not own
+            return None
 
         voter = policy.add_voter(
             pollbook,
@@ -392,6 +411,8 @@ class DeleteVoter(graphene.Mutation):
         user = get_current_user(info)
         voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
         if not can_manage_pollbook(session, user, voter.pollbook):
+            return DeleteVoter(ok=False)
+        if voter.self_added:
             return DeleteVoter(ok=False)
         if voter.votes:
             return DeleteVoter(ok=False)
@@ -435,7 +456,10 @@ class UploadCensusFile(graphene.Mutation):
                 message='No pollbook with id {!r}'.format(pollbook_id))
 
         if not can_manage_pollbook(session, user, pollbook):
-            return UploadCensusFile(ok=False)
+            return UploadCensusFileResponse(
+                success=False,
+                code='permission-denied',
+                message='No access to pollbook id {!r}'.format(pollbook_id))
 
         logger.info('Updating %r from %r', pollbook, census_file)
         parser = CensusFileParser.factory(census_file)

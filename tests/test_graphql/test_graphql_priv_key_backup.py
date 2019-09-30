@@ -1,13 +1,14 @@
 """Tests queries and mutations for the private key backup functionality"""
 import nacl.encoding
+import nacl.public
 
 from evalg.graphql import get_context
 from evalg.models.privkeys_backup import ElectionGroupKeyBackup
 
 
-def test_query_master_keys(client, make_master_key):
+def test_query_master_keys(client, master_key):
     """Tests the master_keys query"""
-    privkey, master_key = make_master_key()
+    privkey, master_key = master_key
     query = """
     query masterKeys {
         masterKeys {
@@ -20,7 +21,6 @@ def test_query_master_keys(client, make_master_key):
     """
     execution = client.execute(
         query, variables={}, context=get_context())
-    assert master_key.public_key
     assert not execution.get('errors')
     assert len(execution['data']['masterKeys']) == 1
     master_key_data = execution['data']['masterKeys'][0]
@@ -35,14 +35,11 @@ def test_query_master_keys(client, make_master_key):
 
 def test_mutation_add_election_group_key_backup(client,
                                                 make_election_group,
-                                                make_master_key):
+                                                master_key):
     """Tests the add_election_group_key_backup mutation"""
-    privkey, master_key = make_master_key()
+    privkey, master_key = master_key
     election_group = make_election_group('add_election_group_key_backup test',
                                          admin=True)
-    assert privkey
-    assert master_key
-    assert election_group
     mutation = """
     mutation (
         $electionGroupId: UUID!
