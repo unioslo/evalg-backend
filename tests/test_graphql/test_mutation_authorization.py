@@ -39,7 +39,6 @@ def test_allow_create_new_election_group(ou, client, logged_in_user):
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['createNewElectionGroup']
     assert response['ok']
 
@@ -80,7 +79,6 @@ def test_auth_update_base_settings(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['updateBaseSettings']
     assert response['ok'] == is_allowed
 
@@ -117,7 +115,6 @@ def test_auth_publish_election_group(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     result = execution['data']['publishElectionGroup']
     assert result['success'] == is_allowed
     if not is_allowed:
@@ -156,7 +153,6 @@ def test_auth_unpublish_election_group(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     result = execution['data']['unpublishElectionGroup']
     assert result['success'] == is_allowed
     if not is_allowed:
@@ -195,7 +191,6 @@ def test_auth_announce_election_group(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     result = execution['data']['announceElectionGroup']
     assert result['success'] == is_allowed
     if not is_allowed:
@@ -234,7 +229,6 @@ def test_auth_unannounce_election_group(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     result = execution['data']['unannounceElectionGroup']
     assert result['success'] == is_allowed
     if not is_allowed:
@@ -267,7 +261,6 @@ def test_auth_set_election_group_key(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['setElectionGroupKey']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -300,7 +293,6 @@ def test_auth_start_election_group_count(is_owner,
         """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['startElectionGroupCount']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -334,7 +326,6 @@ def test_auth_update_voting_periods(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['updateVotingPeriods']
     assert response['ok'] == is_allowed
 
@@ -365,7 +356,6 @@ def test_auth_update_voter_info(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['updateVoterInfo']
     assert response['ok'] == is_allowed
 
@@ -402,7 +392,6 @@ def test_auth_update_pref_elec_candidate(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['updatePrefElecCandidate']
     assert response['ok'] == is_allowed
 
@@ -433,7 +422,6 @@ def test_auth_add_pref_elec_candidate(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['addPrefElecCandidate']
     assert response['ok'] == is_allowed
 
@@ -473,7 +461,6 @@ def test_auth_update_team_pref_elec_candidate(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['updateTeamPrefElecCandidate']
     assert response['ok'] == is_allowed
 
@@ -508,7 +495,6 @@ def test_auth_add_team_pref_elec_candidate(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['addTeamPrefElecCandidate']
     assert response['ok'] == is_allowed
 
@@ -535,7 +521,6 @@ def test_auth_delete_candidate(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['deleteCandidate']
     assert response['ok'] == is_allowed
 
@@ -567,7 +552,6 @@ def test_auth_add_voter_by_person_id(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['addVoterByPersonId']
     assert (response is not None) == is_allowed
 
@@ -603,7 +587,6 @@ def test_auth_add_voter_by_identifier(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['addVoterByIdentifier']
     assert (response is not None) == is_allowed
 
@@ -635,7 +618,6 @@ def test_auth_update_voter_pollbook(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['updateVoterPollbook']
     assert response['ok'] == is_allowed
 
@@ -673,7 +655,6 @@ def test_update_voter_reason(as_logged_in_user,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['updateVoterReason']
     assert response['ok'] == is_allowed
 
@@ -702,7 +683,6 @@ def test_auth_delete_voter(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['deleteVoter']
     assert response['ok'] == is_allowed
 
@@ -730,7 +710,6 @@ def test_auth_delete_voters_in_pollbook(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['deleteVotersInPollbook']
     assert response['ok'] == is_allowed
 
@@ -764,7 +743,6 @@ def test_auth_upload_census_file(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['uploadCensusFile']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -794,7 +772,6 @@ def test_auth_review_voter(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['reviewVoter']
     assert response['ok'] == is_allowed
 
@@ -825,7 +802,6 @@ def test_auth_undo_review_voter(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['undoReviewVoter']
     assert response['ok'] == is_allowed
 
@@ -866,7 +842,6 @@ def test_auth_add_election_group_role_by_identifier(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['addElectionGroupRoleByIdentifier']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -894,7 +869,6 @@ def test_auth_remove_election_group_role_by_grant(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['removeElectionGroupRoleByGrant']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -949,7 +923,6 @@ def test_auth_vote(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['vote']
     assert response['ok'] == is_allowed
 
@@ -990,7 +963,6 @@ def test_auth_add_election_group_key_backup(is_owner,
     """
     execution = client.execute(
         mutation, variables=variables, context=get_context())
-    assert not execution.get('errors')
     response = execution['data']['addElectionGroupKeyBackup']
     assert response['success'] == is_allowed
     if not is_allowed:
