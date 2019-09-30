@@ -13,7 +13,6 @@ from .utils.register import RegisterOperationTestScenario
 reg = RegisterOperationTestScenario()
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('createNewElectionGroup', 'allow')
 @reg.add_scenario('createNewElectionGroup', 'deny')
 def test_allow_create_new_election_group(ou, client, logged_in_user):
@@ -45,7 +44,6 @@ def test_allow_create_new_election_group(ou, client, logged_in_user):
     assert response['ok']
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('updateBaseSettings', 'allow')
 @reg.add_scenario('updateBaseSettings', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -87,7 +85,6 @@ def test_auth_update_base_settings(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('publishElectionGroup', 'allow')
 @reg.add_scenario('publishElectionGroup', 'deny')
 @pytest.mark.parametrize(
@@ -127,7 +124,6 @@ def test_auth_publish_election_group(is_owner,
         assert result['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('unpublishElectionGroup', 'allow')
 @reg.add_scenario('unpublishElectionGroup', 'deny')
 @pytest.mark.parametrize(
@@ -167,7 +163,6 @@ def test_auth_unpublish_election_group(is_owner,
         assert result['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('announceElectionGroup', 'allow')
 @reg.add_scenario('announceElectionGroup', 'deny')
 @pytest.mark.parametrize(
@@ -207,7 +202,6 @@ def test_auth_announce_election_group(is_owner,
         assert result['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('unannounceElectionGroup', 'allow')
 @reg.add_scenario('unannounceElectionGroup', 'deny')
 @pytest.mark.parametrize(
@@ -247,7 +241,6 @@ def test_auth_unannounce_election_group(is_owner,
         assert result['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('setElectionGroupKey', 'allow')
 @reg.add_scenario('setElectionGroupKey', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -281,7 +274,6 @@ def test_auth_set_election_group_key(is_owner,
         assert response['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('startElectionGroupCount', 'allow')
 @reg.add_scenario('startElectionGroupCount', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
@@ -315,7 +307,6 @@ def test_auth_start_election_group_count(is_owner,
         assert response['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('updateVotingPeriods', 'allow')
 @reg.add_scenario('updateVotingPeriods', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
@@ -348,7 +339,6 @@ def test_auth_update_voting_periods(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('updateVoterInfo', 'allow')
 @reg.add_scenario('updateVoterInfo', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
@@ -380,7 +370,6 @@ def test_auth_update_voter_info(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('updatePrefElecCandidate', 'allow')
 @reg.add_scenario('updatePrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -418,7 +407,6 @@ def test_auth_update_pref_elec_candidate(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('addPrefElecCandidate', 'allow')
 @reg.add_scenario('addPrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -450,7 +438,6 @@ def test_auth_add_pref_elec_candidate(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('updateTeamPrefElecCandidate', 'allow')
 @reg.add_scenario('updateTeamPrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -491,7 +478,6 @@ def test_auth_update_team_pref_elec_candidate(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('addTeamPrefElecCandidate', 'allow')
 @reg.add_scenario('addTeamPrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -527,7 +513,6 @@ def test_auth_add_team_pref_elec_candidate(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('deleteCandidate', 'allow')
 @reg.add_scenario('deleteCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -555,7 +540,6 @@ def test_auth_delete_candidate(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('addVoterByPersonId', 'allow')
 @reg.add_scenario('addVoterByPersonId', 'deny')
 @pytest.mark.parametrize(
@@ -588,7 +572,6 @@ def test_auth_add_voter_by_person_id(is_owner,
     assert (response is not None) == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('addVoterByIdentifier', 'allow')
 @reg.add_scenario('addVoterByIdentifier', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -625,7 +608,6 @@ def test_auth_add_voter_by_identifier(is_owner,
     assert (response is not None) == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('updateVoterPollbook', 'allow')
 @reg.add_scenario('updateVoterPollbook', 'deny')
 @pytest.mark.parametrize(
@@ -658,7 +640,6 @@ def test_auth_update_voter_pollbook(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('updateVoterReason', 'allow')
 @reg.add_scenario('updateVoterReason', 'deny')
 @pytest.mark.parametrize(
@@ -697,7 +678,6 @@ def test_update_voter_reason(as_logged_in_user,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('deleteVoter', 'allow')
 @reg.add_scenario('deleteVoter', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -727,7 +707,6 @@ def test_auth_delete_voter(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('deleteVotersInPollbook', 'allow')
 @reg.add_scenario('deleteVotersInPollbook', 'deny')
 @pytest.mark.parametrize(
@@ -756,7 +735,6 @@ def test_auth_delete_voters_in_pollbook(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('uploadCensusFile', 'allow')
 @reg.add_scenario('uploadCensusFile', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -793,7 +771,6 @@ def test_auth_upload_census_file(is_owner,
         assert response['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('reviewVoter', 'allow')
 @reg.add_scenario('reviewVoter', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
@@ -822,7 +799,6 @@ def test_auth_review_voter(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('undoReviewVoter', 'allow')
 @reg.add_scenario('undoReviewVoter', 'deny')
 @pytest.mark.parametrize(
@@ -854,7 +830,6 @@ def test_auth_undo_review_voter(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('addElectionGroupRoleByIdentifier', 'allow')
 @reg.add_scenario('addElectionGroupRoleByIdentifier', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
@@ -898,7 +873,6 @@ def test_auth_add_election_group_role_by_identifier(is_owner,
         assert response['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('removeElectionGroupRoleByGrant', 'allow')
 @reg.add_scenario('removeElectionGroupRoleByGrant', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
@@ -927,7 +901,6 @@ def test_auth_remove_election_group_role_by_grant(is_owner,
         assert response['code'] == 'permission-denied'
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('vote', 'allow')
 @reg.add_scenario('vote', 'deny')
 @pytest.mark.parametrize(
@@ -981,7 +954,6 @@ def test_auth_vote(is_owner,
     assert response['ok'] == is_allowed
 
 
-@pytest.mark.new_fixture
 @reg.add_scenario('addElectionGroupKeyBackup', 'allow')
 @reg.add_scenario('addElectionGroupKeyBackup', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
