@@ -603,7 +603,6 @@ def make_role(db_session):
 @pytest.fixture
 def grant_for_person_generator(db_session):
     def grant_for_person_generator(person, election_group):
-        pass
         feide_id = next(i for i in person.identifiers if i.id_type ==
                         'feide_id')
 
