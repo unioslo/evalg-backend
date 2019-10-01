@@ -8,13 +8,12 @@ import re
 class CensusFileParser(metaclass=abc.ABCMeta):
     """Abstract parser class."""
 
-    FEIDE_POSTFIX = 'uio.no'
-
-    def __init__(self, census_file):
+    def __init__(self, census_file, feide_postfix='uio.no'):
         self.census_file = census_file
         self._id_type = None
         self._convert_to_feide = False
         self.fields = None
+        self.feide_postfix = feide_postfix
 
     def parse(self):
         """Parse the current file and create a generator."""
@@ -31,7 +30,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
         elif self.id_type == 'feide_id':
             for field in self.fields:
                 if self._convert_to_feide:
-                    yield "{}@{}".format(field, self.FEIDE_POSTFIX)
+                    yield "{}@{}".format(field, self.feide_postfix)
                 else:
                     yield field
         else:
@@ -136,7 +135,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
         return [x.get_mime_type() for x in CensusFileParser.__subclasses__()]
 
     @classmethod
-    def factory(cls, census_file):
+    def factory(cls, census_file, feide_postfix='uio.no'):
         """Return the correct file parser if supported."""
         supported_mime_types = {
             x.get_mime_type(): x for x in CensusFileParser.__subclasses__()
@@ -144,7 +143,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 
         if census_file.mimetype in supported_mime_types:
             parser = supported_mime_types[census_file.mimetype](
-                census_file)
+                census_file, feide_postfix=feide_postfix)
 
             if parser.id_type is None:
                 # No supported id type in file
@@ -160,15 +159,15 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 class PlainTextParser(CensusFileParser):
     """A parser for plain text file files."""
 
-    def __init__(self, census_file):
-        super().__init__(census_file)
+    def __init__(self, census_file, feide_postfix):
+        super().__init__(census_file, feide_postfix)
         content = self.census_file.read().decode('utf-8')
         self.fields = content.splitlines()
 
         if len(self.fields) > 0 and self.is_fs_header(self.fields[0]):
             # File is a csv file erroneously save as .txt.
             self.census_file.seek(0)
-            parser = CsvParser(self.census_file)
+            parser = CsvParser(self.census_file, feide_postfix=feide_postfix)
             self.fields = [x for x in parser.parse()]
             self.has_fs_header = True
         else:
@@ -184,8 +183,8 @@ class PlainTextParser(CensusFileParser):
 class CsvParser(CensusFileParser):
     """A parser for CSV files."""
 
-    def __init__(self, census_file):
-        super().__init__(census_file)
+    def __init__(self, census_file, feide_postfix):
+        super().__init__(census_file,feide_postfix)
         csvfile = io.StringIO(self.census_file.stream.read().decode('utf-8'))
 
         first_line = csvfile.readline()
