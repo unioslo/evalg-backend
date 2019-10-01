@@ -174,9 +174,6 @@ def make_election_group(db_session, election_keys_foo, make_person_principal,
             'published_at': published_at,
             'public_key': election_keys_foo['public'],
         }
-
-#        election_group = evalg.database.query.get_or_create(
-#            db_session, ElectionGroup, **data)
         election_group = ElectionGroup(**data)
         db_session.add(election_group)
         db_session.flush()
