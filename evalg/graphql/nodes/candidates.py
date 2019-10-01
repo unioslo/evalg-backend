@@ -131,7 +131,9 @@ class UpdatePrefElecCandidate(graphene.Mutation):
         user = get_current_user(info)
         if not can_manage_election_list(session, user, **args):
             return UpdatePrefElecCandidate(ok=False)
-        candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
+
+        candidate = session.query(
+            evalg.models.candidate.Candidate).get(args.get('id'))
         candidate.name = args.get('name')
         candidate.meta['gender'] = args.get('gender')
         candidate.list_id = args.get('list_id')
@@ -185,7 +187,8 @@ class UpdateTeamPrefElecCandidate(graphene.Mutation):
         user = get_current_user(info)
         if not can_manage_election_list(session, user, **args):
             return UpdateTeamPrefElecCandidate(ok=False)
-        candidate = evalg.models.candidate.Candidate.query.get(args.get('id'))
+        candidate = session.query(
+            evalg.models.candidate.Candidate).get(args.get('id'))
         candidate.name = args.get('name')
         candidate.meta['co_candidates'] = args.get('co_candidates')
         candidate.list_id = args.get('list_id')

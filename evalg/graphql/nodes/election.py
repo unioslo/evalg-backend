@@ -169,6 +169,7 @@ class UpdateVotingPeriods(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, **args):
+
         session = get_session(info)
         user = get_current_user(info)
         elections = args.get('elections')
@@ -176,7 +177,9 @@ class UpdateVotingPeriods(graphene.Mutation):
             # TODO: Do we need this? Could we not just send a datetime input
             # for each election?
             for e in elections:
-                election = evalg.models.election.Election.query.get(e['id'])
+                election = session.query(
+                    evalg.models.election.Election).get(e['id'])
+
                 if not can_manage_election(session, user, election):
                     return UpdateVotingPeriods(ok=False)
                 election.start = elections[0].start
@@ -184,7 +187,8 @@ class UpdateVotingPeriods(graphene.Mutation):
                 session.add(election)
         else:
             for e in elections:
-                election = evalg.models.election.Election.query.get(e['id'])
+                election = session.query(
+                    evalg.models.election.Election).get(e['id'])
                 if not can_manage_election(session, user, election):
                     return UpdateVotingPeriods(ok=False)
                 election.start = e.start
@@ -219,7 +223,8 @@ class UpdateVoterInfo(graphene.Mutation):
         user = get_current_user(info)
         elections = args.get('elections')
         for e in elections:
-            election = evalg.models.election.Election.query.get(e['id'])
+            election = session.query(
+                evalg.models.election.Election).get(e['id'])
             if not can_manage_election(session, user, election):
                 return UpdateVotingPeriods(ok=False)
             election.mandate_period_start = e.mandate_period_start
