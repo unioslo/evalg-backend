@@ -45,7 +45,7 @@ def test_can_publish_election_allows(db_session,
                                      global_roles):
     """Test that we need the publisher role to publish."""
     publisher_group = global_roles['publisher']['group']
-    make_group_membership(publisher_group, logged_in_user.person)
+    make_group_membership(db_session, publisher_group, logged_in_user.person)
     assert permissions.can_publish_election_groups(
         session=db_session,
         user=logged_in_user

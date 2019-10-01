@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from evalg.graphql import schema, get_context
+from evalg.graphql import schema, get_test_context
 from .utils.register import RegisterOperationTestScenario
 
 
@@ -15,7 +15,10 @@ reg = RegisterOperationTestScenario()
 
 @reg.add_scenario('createNewElectionGroup', 'allow')
 @reg.add_scenario('createNewElectionGroup', 'deny')
-def test_allow_create_new_election_group(ou, client, logged_in_user):
+def test_allow_create_new_election_group(db_session,
+                                         ou,
+                                         client,
+                                         logged_in_user):
     """
     Allow and deny scenario of createNewElectionGroup.
 
@@ -38,7 +41,7 @@ def test_allow_create_new_election_group(ou, client, logged_in_user):
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['createNewElectionGroup']
     assert response['ok']
 
@@ -46,14 +49,17 @@ def test_allow_create_new_election_group(ou, client, logged_in_user):
 @reg.add_scenario('updateBaseSettings', 'allow')
 @reg.add_scenario('updateBaseSettings', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_update_base_settings(is_owner,
+def test_auth_update_base_settings(db_session,
+                                   is_owner,
                                    is_allowed,
                                    client,
+                                   logged_in_user,
                                    multiple_election_group,
                                    owned_multiple_election_group):
     """Allowed and denied scenario tests of updateBaseSettings."""
-    election_group = (owned_multiple_election_group if is_owner else
-                      multiple_election_group)
+    election_group = (owned_multiple_election_group(db_session,
+                                                    logged_in_user.person)
+                      if is_owner else multiple_election_group(db_session))
     elections = [{'id': str(e.id),
                   'seats': e.meta['candidate_rules']['seats'],
                   'substitutes': e.meta['candidate_rules']['substitutes'],
@@ -78,7 +84,7 @@ def test_auth_update_base_settings(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['updateBaseSettings']
     assert response['ok'] == is_allowed
 
@@ -91,7 +97,8 @@ def test_auth_update_base_settings(is_owner,
      (True, False, False),
      (False, True, False),
      (False, False, False)])
-def test_auth_publish_election_group(is_owner,
+def test_auth_publish_election_group(db_session,
+                                     is_owner,
                                      is_publisher,
                                      is_allowed,
                                      client,
@@ -100,10 +107,10 @@ def test_auth_publish_election_group(is_owner,
                                      owned_election_group,
                                      make_person_publisher):
     """Allowed and denied scenario of publishElectionGroup."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     if is_publisher:
-        make_person_publisher(logged_in_user.person)
+        make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -114,7 +121,7 @@ def test_auth_publish_election_group(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     result = execution['data']['publishElectionGroup']
     assert result['success'] == is_allowed
     if not is_allowed:
@@ -129,7 +136,8 @@ def test_auth_publish_election_group(is_owner,
      (True, False, False),
      (False, True, False),
      (False, False, False)])
-def test_auth_unpublish_election_group(is_owner,
+def test_auth_unpublish_election_group(db_session,
+                                       is_owner,
                                        is_publisher,
                                        is_allowed,
                                        client,
@@ -138,10 +146,10 @@ def test_auth_unpublish_election_group(is_owner,
                                        owned_election_group,
                                        make_person_publisher):
     """Allowed and denied scenario of unpublishElectionGroup."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     if is_publisher:
-        make_person_publisher(logged_in_user.person)
+        make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -152,7 +160,7 @@ def test_auth_unpublish_election_group(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     result = execution['data']['unpublishElectionGroup']
     assert result['success'] == is_allowed
     if not is_allowed:
@@ -167,7 +175,8 @@ def test_auth_unpublish_election_group(is_owner,
      (True, False, False),
      (False, True, False),
      (False, False, False)])
-def test_auth_announce_election_group(is_owner,
+def test_auth_announce_election_group(db_session,
+                                      is_owner,
                                       is_publisher,
                                       is_allowed,
                                       client,
@@ -176,10 +185,10 @@ def test_auth_announce_election_group(is_owner,
                                       owned_election_group,
                                       make_person_publisher):
     """Allowed and denied scenario of announceElectionGroup."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     if is_publisher:
-        make_person_publisher(logged_in_user.person)
+        make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -190,7 +199,7 @@ def test_auth_announce_election_group(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     result = execution['data']['announceElectionGroup']
     assert result['success'] == is_allowed
     if not is_allowed:
@@ -205,7 +214,8 @@ def test_auth_announce_election_group(is_owner,
      (True, False, False),
      (False, True, False),
      (False, False, False)])
-def test_auth_unannounce_election_group(is_owner,
+def test_auth_unannounce_election_group(db_session,
+                                        is_owner,
                                         is_publisher,
                                         is_allowed,
                                         client,
@@ -214,10 +224,10 @@ def test_auth_unannounce_election_group(is_owner,
                                         owned_election_group,
                                         make_person_publisher):
     """Allowed and denied scenario of unannounceElectionGroup."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     if is_publisher:
-        make_person_publisher(logged_in_user.person)
+        make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -228,7 +238,7 @@ def test_auth_unannounce_election_group(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     result = execution['data']['unannounceElectionGroup']
     assert result['success'] == is_allowed
     if not is_allowed:
@@ -238,15 +248,17 @@ def test_auth_unannounce_election_group(is_owner,
 @reg.add_scenario('setElectionGroupKey', 'allow')
 @reg.add_scenario('setElectionGroupKey', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_set_election_group_key(is_owner,
+def test_auth_set_election_group_key(db_session,
+                                     is_owner,
                                      is_allowed,
                                      client,
+                                     logged_in_user,
                                      election_keys_foo,
                                      simple_election_group,
                                      owned_election_group):
     """Allowed and denied scenario tests of setElectionGroupKey."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     variables = {
         'id': str(election_group.id),
         'publicKey': election_keys_foo['public']
@@ -260,7 +272,7 @@ def test_auth_set_election_group_key(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['setElectionGroupKey']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -270,15 +282,18 @@ def test_auth_set_election_group_key(is_owner,
 @reg.add_scenario('startElectionGroupCount', 'allow')
 @reg.add_scenario('startElectionGroupCount', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
-def test_auth_start_election_group_count(is_owner,
+def test_auth_start_election_group_count(db_session,
+                                         is_owner,
                                          is_allowed,
                                          client,
+                                         logged_in_user,
                                          election_keys_foo,
                                          countable_election_group,
                                          owned_countable_election_group):
     """Allowed and denied scenario tests of startElectionGroupCount."""
-    election_group = (owned_countable_election_group if is_owner else
-                      countable_election_group)
+    election_group = (owned_countable_election_group(db_session,
+                                                     logged_in_user.person)
+                      if is_owner else countable_election_group(db_session))
     variables = {
         'id': str(election_group.id),
         'electionKey': election_keys_foo['private']
@@ -292,7 +307,7 @@ def test_auth_start_election_group_count(is_owner,
         }
         """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['startElectionGroupCount']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -302,14 +317,17 @@ def test_auth_start_election_group_count(is_owner,
 @reg.add_scenario('updateVotingPeriods', 'allow')
 @reg.add_scenario('updateVotingPeriods', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
-def test_auth_update_voting_periods(is_owner,
+def test_auth_update_voting_periods(db_session,
+                                    is_owner,
                                     is_allowed,
                                     client,
+                                    logged_in_user,
                                     multiple_election_group,
                                     owned_multiple_election_group):
     """Allowed and denied scenario tests of updateVotingPeriods."""
-    election_group = (owned_multiple_election_group if is_owner else
-                      multiple_election_group)
+    election_group = (owned_multiple_election_group(
+        db_session, logged_in_user.person) if is_owner
+                      else multiple_election_group(db_session))
     elections = [{'id': str(e.id),
                   'start': str(e.start - datetime.timedelta(days=3)),
                   'end': str(e.end)}
@@ -325,7 +343,7 @@ def test_auth_update_voting_periods(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['updateVotingPeriods']
     assert response['ok'] == is_allowed
 
@@ -333,14 +351,16 @@ def test_auth_update_voting_periods(is_owner,
 @reg.add_scenario('updateVoterInfo', 'allow')
 @reg.add_scenario('updateVoterInfo', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
-def test_auth_update_voter_info(is_owner,
+def test_auth_update_voter_info(db_session,
+                                is_owner,
                                 is_allowed,
                                 client,
+                                logged_in_user,
                                 simple_election_group,
                                 owned_election_group):
     """Allowed and denied scenario tests of updateVoterInfo."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     elections = [{'id': str(e.id),
                   'mandatePeriodStart': str(e.mandate_period_start),
                   'mandatePeriodEnd': str(e.mandate_period_end +
@@ -355,7 +375,7 @@ def test_auth_update_voter_info(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['updateVoterInfo']
     assert response['ok'] == is_allowed
 
@@ -363,14 +383,17 @@ def test_auth_update_voter_info(is_owner,
 @reg.add_scenario('updatePrefElecCandidate', 'allow')
 @reg.add_scenario('updatePrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_update_pref_elec_candidate(is_owner,
+def test_auth_update_pref_elec_candidate(db_session,
+                                         is_owner,
                                          is_allowed,
                                          client,
+                                         logged_in_user,
                                          multiple_election_group,
                                          owned_multiple_election_group):
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
-    election_group = (owned_multiple_election_group if is_owner else
-                      multiple_election_group)
+    election_group = (owned_multiple_election_group(db_session,
+                                                    logged_in_user.person)
+                      if is_owner else multiple_election_group(db_session))
     election_list = election_group.elections[0].lists[0]
     candidate = election_group.elections[0].lists[0].candidates[0]
     new_name = '{} Testesen'.format(candidate.name)
@@ -391,7 +414,7 @@ def test_auth_update_pref_elec_candidate(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['updatePrefElecCandidate']
     assert response['ok'] == is_allowed
 
@@ -399,14 +422,17 @@ def test_auth_update_pref_elec_candidate(is_owner,
 @reg.add_scenario('addPrefElecCandidate', 'allow')
 @reg.add_scenario('addPrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_add_pref_elec_candidate(is_owner,
+def test_auth_add_pref_elec_candidate(db_session,
+                                      is_owner,
                                       is_allowed,
                                       client,
+                                      logged_in_user,
                                       multiple_election_group,
                                       owned_multiple_election_group):
     """Allowed and denied scenario tests of addPrefElecCandidate."""
-    election_group = (owned_multiple_election_group if is_owner else
-                      multiple_election_group)
+    election_group = (owned_multiple_election_group(db_session,
+                                                    logged_in_user.person)
+                      if is_owner else multiple_election_group(db_session))
     election_list = election_group.elections[0].lists[0]
     variables = {
         'gender': 'female',
@@ -421,7 +447,7 @@ def test_auth_add_pref_elec_candidate(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['addPrefElecCandidate']
     assert response['ok'] == is_allowed
 
@@ -429,14 +455,16 @@ def test_auth_add_pref_elec_candidate(is_owner,
 @reg.add_scenario('updateTeamPrefElecCandidate', 'allow')
 @reg.add_scenario('updateTeamPrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_update_team_pref_elec_candidate(is_owner,
+def test_auth_update_team_pref_elec_candidate(db_session,
+                                              is_owner,
                                               is_allowed,
                                               client,
+                                              logged_in_user,
                                               simple_election_group,
                                               owned_election_group):
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     election_list = election_group.elections[0].lists[0]
     candidate = election_group.elections[0].lists[0].candidates[0]
     new_name = '{} Testesen'.format(candidate.name)
@@ -460,7 +488,7 @@ def test_auth_update_team_pref_elec_candidate(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['updateTeamPrefElecCandidate']
     assert response['ok'] == is_allowed
 
@@ -468,14 +496,16 @@ def test_auth_update_team_pref_elec_candidate(is_owner,
 @reg.add_scenario('addTeamPrefElecCandidate', 'allow')
 @reg.add_scenario('addTeamPrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_add_team_pref_elec_candidate(is_owner,
+def test_auth_add_team_pref_elec_candidate(db_session,
+                                           is_owner,
                                            is_allowed,
                                            client,
+                                           logged_in_user,
                                            simple_election_group,
                                            owned_election_group):
     """Allowed and denied scenario tests of addTeamPrefElecCandidate."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     election_list = election_group.elections[0].lists[0]
     variables = {
         'coCandidates': [{'name': 'Test Testemeresen'}],
@@ -494,7 +524,7 @@ def test_auth_add_team_pref_elec_candidate(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['addTeamPrefElecCandidate']
     assert response['ok'] == is_allowed
 
@@ -502,14 +532,16 @@ def test_auth_add_team_pref_elec_candidate(is_owner,
 @reg.add_scenario('deleteCandidate', 'allow')
 @reg.add_scenario('deleteCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_delete_candidate(is_owner,
+def test_auth_delete_candidate(db_session,
+                               is_owner,
                                is_allowed,
                                client,
+                               logged_in_user,
                                simple_election_group,
                                owned_election_group):
     """Allowed and denied scenario tests of deleteCandidate."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     candidate = election_group.elections[0].candidates[0]
     variables = {'id': str(candidate.id)}
     mutation = """
@@ -520,7 +552,7 @@ def test_auth_delete_candidate(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['deleteCandidate']
     assert response['ok'] == is_allowed
 
@@ -529,18 +561,20 @@ def test_auth_delete_candidate(is_owner,
 @reg.add_scenario('addVoterByPersonId', 'deny')
 @pytest.mark.parametrize(
     "is_owner,is_allowed", [(True, True,), (False, False)])
-def test_auth_add_voter_by_person_id(is_owner,
+def test_auth_add_voter_by_person_id(db_session,
+                                     is_owner,
                                      is_allowed,
                                      client,
+                                     logged_in_user,
                                      simple_person,
                                      simple_election_group,
                                      owned_election_group):
     """Allowed and denied scenario tests of addVoterByPersonId."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
     variables = {
-        'personId': str(simple_person.id),
+        'personId': str(simple_person(db_session).id),
         'pollbookId': str(pollbook.id)
     }
     mutation = """
@@ -551,7 +585,7 @@ def test_auth_add_voter_by_person_id(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['addVoterByPersonId']
     assert (response is not None) == is_allowed
 
@@ -559,18 +593,20 @@ def test_auth_add_voter_by_person_id(is_owner,
 @reg.add_scenario('addVoterByIdentifier', 'allow')
 @reg.add_scenario('addVoterByIdentifier', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_add_voter_by_identifier(is_owner,
+def test_auth_add_voter_by_identifier(db_session,
+                                      is_owner,
                                       is_allowed,
                                       client,
+                                      logged_in_user,
                                       simple_person,
                                       simple_election_group,
                                       owned_election_group):
     """Allowed and denied scenario tests of addVoterByIdentifier."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
-    feide_id = next(i for i in simple_person.identifiers if i.id_type ==
-                    'feide_id')
+    feide_id = next(i for i in simple_person(db_session).identifiers if
+                    i.id_type == 'feide_id')
     variables = {
         'idType': feide_id.id_type,
         'idValue': feide_id.id_value,
@@ -586,27 +622,26 @@ def test_auth_add_voter_by_identifier(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['addVoterByIdentifier']
     assert (response is not None) == is_allowed
 
 
 @reg.add_scenario('updateVoterPollbook', 'allow')
 @reg.add_scenario('updateVoterPollbook', 'deny')
-@pytest.mark.parametrize(
-    "is_owner,is_allowed",
-    [(True, True),
-     (False, False)])
-def test_auth_update_voter_pollbook(is_owner,
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_update_voter_pollbook(db_session,
+                                    is_owner,
                                     is_allowed,
                                     client,
+                                    logged_in_user,
                                     simple_election_group,
                                     owned_election_group):
     """Allowed and denied scenario tests of updateVoterPollbook."""
-    election_group_1 = (owned_election_group if is_owner else
-                        simple_election_group)
-    pollbook_1 = election_group_1.elections[0].pollbooks[0]
-    pollbook_2 = election_group_1.elections[0].pollbooks[1]
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
+    pollbook_1 = election_group.elections[0].pollbooks[0]
+    pollbook_2 = election_group.elections[0].pollbooks[1]
     voter = next(x for x in pollbook_1.voters if not x.self_added)
     variables = {'id': str(voter.id), 'pollbookId': str(pollbook_2.id)}
     mutation = """
@@ -617,7 +652,7 @@ def test_auth_update_voter_pollbook(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['updateVoterPollbook']
     assert response['ok'] == is_allowed
 
@@ -625,16 +660,16 @@ def test_auth_update_voter_pollbook(is_owner,
 @reg.add_scenario('updateVoterReason', 'allow')
 @reg.add_scenario('updateVoterReason', 'deny')
 @pytest.mark.parametrize(
-    "as_logged_in_user,is_allowed",
-    [(True, True),
-     (False, False)])
-def test_update_voter_reason(as_logged_in_user,
+    "as_logged_in_user,is_allowed", [(True, True), (False, False)])
+def test_update_voter_reason(db_session,
+                             as_logged_in_user,
                              is_allowed,
                              client,
                              logged_in_user,
                              logged_in_votable_election_group):
     """Allow and deny scenarios for updateVoterReason."""
-    election_group = logged_in_votable_election_group
+    election_group = logged_in_votable_election_group(
+        db_session, logged_in_user.person)
     pollbook = election_group.elections[0].pollbooks[0]
     logged_in_feide_id = next(x.id_value for x in
                               logged_in_user.person.identifiers if
@@ -654,7 +689,7 @@ def test_update_voter_reason(as_logged_in_user,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['updateVoterReason']
     assert response['ok'] == is_allowed
 
@@ -662,14 +697,16 @@ def test_update_voter_reason(as_logged_in_user,
 @reg.add_scenario('deleteVoter', 'allow')
 @reg.add_scenario('deleteVoter', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_delete_voter(is_owner,
+def test_auth_delete_voter(db_session,
+                           is_owner,
                            is_allowed,
                            client,
+                           logged_in_user,
                            simple_election_group,
                            owned_election_group):
     """Allow and deny scenarios for deleteVoter."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     voters = election_group.elections[0].pollbooks[0].voters
 
     voter = next(x for x in voters if not x.self_added)
@@ -682,7 +719,7 @@ def test_auth_delete_voter(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['deleteVoter']
     assert response['ok'] == is_allowed
 
@@ -691,14 +728,16 @@ def test_auth_delete_voter(is_owner,
 @reg.add_scenario('deleteVotersInPollbook', 'deny')
 @pytest.mark.parametrize(
     "is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_delete_voters_in_pollbook(is_owner,
+def test_auth_delete_voters_in_pollbook(db_session,
+                                        is_owner,
                                         is_allowed,
                                         client,
+                                        logged_in_user,
                                         simple_election_group,
                                         owned_election_group):
     """Allow and deny scenarios for deleteVotersInPollbook."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
     variables = {'id': str(pollbook.id)}
     mutation = """
@@ -709,7 +748,7 @@ def test_auth_delete_voters_in_pollbook(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['deleteVotersInPollbook']
     assert response['ok'] == is_allowed
 
@@ -717,15 +756,17 @@ def test_auth_delete_voters_in_pollbook(is_owner,
 @reg.add_scenario('uploadCensusFile', 'allow')
 @reg.add_scenario('uploadCensusFile', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_upload_census_file(is_owner,
+def test_auth_upload_census_file(db_session,
+                                 is_owner,
                                  is_allowed,
                                  client,
+                                 logged_in_user,
                                  simple_election_group,
                                  owned_election_group,
                                  feide_id_plane_text_census_file_builder):
     """Allow and deny scenarios for uploadCensusFile."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
     variables = {
         'censusFile': feide_id_plane_text_census_file_builder.files['file'],
@@ -742,7 +783,7 @@ def test_auth_upload_census_file(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['uploadCensusFile']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -752,14 +793,16 @@ def test_auth_upload_census_file(is_owner,
 @reg.add_scenario('reviewVoter', 'allow')
 @reg.add_scenario('reviewVoter', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
-def test_auth_review_voter(is_owner,
+def test_auth_review_voter(db_session,
+                           is_owner,
                            is_allowed,
                            client,
+                           logged_in_user,
                            simple_election_group,
                            owned_election_group):
     """Allow and deny scenarios for reviewVoter."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
     voter = next(x for x in pollbook.voters if x.self_added)
     variables = {'id': str(voter.id), 'verify': True}
@@ -771,25 +814,24 @@ def test_auth_review_voter(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['reviewVoter']
     assert response['ok'] == is_allowed
 
 
 @reg.add_scenario('undoReviewVoter', 'allow')
 @reg.add_scenario('undoReviewVoter', 'deny')
-@pytest.mark.parametrize(
-    'is_owner,is_allowed',
-    [(True, True),
-     (False, False)])
-def test_auth_undo_review_voter(is_owner,
+@pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
+def test_auth_undo_review_voter(db_session,
+                                is_owner,
                                 is_allowed,
                                 client,
+                                logged_in_user,
                                 simple_election_group,
                                 owned_election_group):
     """Allow and deny scenarios for undoReviewVoter."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
     voter = next(x for x in pollbook.voters if x.self_added)
     variables = {'id': str(voter.id)}
@@ -801,7 +843,7 @@ def test_auth_undo_review_voter(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['undoReviewVoter']
     assert response['ok'] == is_allowed
 
@@ -809,15 +851,16 @@ def test_auth_undo_review_voter(is_owner,
 @reg.add_scenario('addElectionGroupRoleByIdentifier', 'allow')
 @reg.add_scenario('addElectionGroupRoleByIdentifier', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
-def test_auth_add_election_group_role_by_identifier(is_owner,
+def test_auth_add_election_group_role_by_identifier(db_session,
+                                                    is_owner,
                                                     is_allowed,
                                                     client,
                                                     owned_election_group,
                                                     simple_election_group,
                                                     logged_in_user):
     """Allow and deny scenarios for addElectionGroupRoleByIdentifier."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     person = logged_in_user.person
     feide_id = next(i for i in person.identifiers if i.id_type == 'feide_id')
     variables = {
@@ -841,7 +884,7 @@ def test_auth_add_election_group_role_by_identifier(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['addElectionGroupRoleByIdentifier']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -851,13 +894,16 @@ def test_auth_add_election_group_role_by_identifier(is_owner,
 @reg.add_scenario('removeElectionGroupRoleByGrant', 'allow')
 @reg.add_scenario('removeElectionGroupRoleByGrant', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
-def test_auth_remove_election_group_role_by_grant(is_owner,
+def test_auth_remove_election_group_role_by_grant(db_session,
+                                                  is_owner,
                                                   is_allowed,
                                                   client,
+                                                  logged_in_user,
                                                   election_group_grant,
                                                   owned_election_group_grant):
     """Allow and deny scenarios for removeElectionGroupRoleByGrant."""
-    grant = (owned_election_group_grant if is_owner else election_group_grant)
+    grant = (owned_election_group_grant(db_session, logged_in_user.person)
+             if is_owner else election_group_grant(db_session))
     variables = {'grantId': str(grant.grant_id)}
     mutation = """
     mutation ($grantId: UUID!) {
@@ -868,7 +914,7 @@ def test_auth_remove_election_group_role_by_grant(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['removeElectionGroupRoleByGrant']
     assert response['success'] == is_allowed
     if not is_allowed:
@@ -883,7 +929,8 @@ def test_auth_remove_election_group_role_by_grant(is_owner,
      (False, True, True),
      (True, False, False),
      (False, False, False)])
-def test_auth_vote(is_owner,
+def test_auth_vote(db_session,
+                   is_owner,
                    as_logged_in_user,
                    is_allowed,
                    client,
@@ -895,11 +942,14 @@ def test_auth_vote(is_owner,
                    logged_in_user):
     """Allow and deny scenarios for vote."""
     if as_logged_in_user:
-        election_group = (owned_logged_in_votable_election_group if
-                          is_owner else logged_in_votable_election_group)
+        election_group = (owned_logged_in_votable_election_group(
+            db_session, logged_in_user.person) if is_owner else
+                          logged_in_votable_election_group(
+                              db_session, logged_in_user.person))
     else:
-        election_group = (owned_votable_election_group if is_owner else
-                          votable_election_group)
+        election_group = (owned_votable_election_group(
+            db_session, logged_in_user.person)
+                          if is_owner else votable_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
     logged_in_feide_id = next(x.id_value for x in
                               logged_in_user.person.identifiers if
@@ -922,7 +972,7 @@ def test_auth_vote(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['vote']
     assert response['ok'] == is_allowed
 
@@ -930,15 +980,17 @@ def test_auth_vote(is_owner,
 @reg.add_scenario('addElectionGroupKeyBackup', 'allow')
 @reg.add_scenario('addElectionGroupKeyBackup', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_add_election_group_key_backup(is_owner,
+def test_auth_add_election_group_key_backup(db_session,
+                                            is_owner,
                                             is_allowed,
                                             client,
+                                            logged_in_user,
                                             simple_election_group,
                                             owned_election_group,
                                             master_key):
     """Allow and deny scenarios for addElectionGroupKeyBackup."""
-    election_group = (owned_election_group if is_owner else
-                      simple_election_group)
+    election_group = (owned_election_group(db_session, logged_in_user.person)
+                      if is_owner else simple_election_group(db_session))
     _, master_key = master_key
     variables = {
         'electionGroupId': str(election_group.id),
@@ -962,7 +1014,7 @@ def test_auth_add_election_group_key_backup(is_owner,
     }
     """
     execution = client.execute(
-        mutation, variables=variables, context=get_context())
+        mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['addElectionGroupKeyBackup']
     assert response['success'] == is_allowed
     if not is_allowed:
