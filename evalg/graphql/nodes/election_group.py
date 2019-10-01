@@ -356,14 +356,16 @@ class UpdateBaseSettings(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         group_id = args.get('id')
-        el_grp = evalg.models.election.ElectionGroup.query.get(group_id)
+        el_grp = session.query(evalg.models.election.ElectionGroup).get(
+            group_id)
         if not can_manage_election_group(session, user, el_grp):
             return UpdateBaseSettings(ok=False)
         el_grp.meta['candidate_rules']['candidate_gender'] = args.get(
             'has_gender_quota')
         session.add(el_grp)
         for e in args.get('elections'):
-            election = evalg.models.election.Election.query.get(e['id'])
+            election = session.query(
+                evalg.models.election.Election).get(e['id'])
             election.meta['candidate_rules']['seats'] = e.seats
             election.meta['candidate_rules']['substitutes'] = e.substitutes
             election.active = e.active
@@ -388,8 +390,8 @@ class PublishElectionGroup(graphene.Mutation):
     def mutate(self, info, **args):
         session = get_session(info)
         group_id = args.get('id')
-        election_group = evalg.models.election.ElectionGroup.query.get(
-            group_id)
+        election_group = session.query(
+            evalg.models.election.ElectionGroup).get(group_id)
         user = get_current_user(info)
 
         if not election_group:
@@ -440,8 +442,8 @@ class UnpublishElectionGroup(graphene.Mutation):
     def mutate(self, info, **args):
         session = get_session(info)
         group_id = args.get('id')
-        election_group = evalg.models.election.ElectionGroup.query.get(
-            group_id)
+        election_group = session.query(
+            evalg.models.election.ElectionGroup).get(group_id)
         user = get_current_user(info)
         if not election_group:
             return UnpublishElectionGroupResponse(
@@ -486,8 +488,8 @@ class AnnounceElectionGroup(graphene.Mutation):
     def mutate(self, info, **args):
         session = get_session(info)
         group_id = args.get('id')
-        election_group = evalg.models.election.ElectionGroup.query.get(
-            group_id)
+        election_group = session.query(
+            evalg.models.election.ElectionGroup).get(group_id)
         user = get_current_user(info)
         if not election_group:
             return AnnounceElectionGroupResponse(
@@ -532,8 +534,8 @@ class UnannounceElectionGroup(graphene.Mutation):
     def mutate(self, info, **args):
         session = get_session(info)
         group_id = args.get('id')
-        election_group = evalg.models.election.ElectionGroup.query.get(
-            group_id)
+        election_group = session.query(
+            evalg.models.election.ElectionGroup).get(group_id)
         user = get_current_user(info)
         if not election_group:
             return UnannounceElectionGroupResponse(

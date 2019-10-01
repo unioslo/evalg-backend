@@ -49,6 +49,21 @@ def get_context():
     }
 
 
+def get_test_context(db_session):
+    """
+    Context for testing.
+
+    We use the pytest-flask-sqlalchemy plugin to do transaction rollbacks
+    after tests. This context enables us to pass the pytest-flask-sqlalchemy
+    db_session to the test graphql client.
+    """
+    return {
+        'session': db_session,
+        'request': flask.request,
+        'user': user,
+    }
+
+
 def init_app(app):
     from evalg.graphql import middleware
 

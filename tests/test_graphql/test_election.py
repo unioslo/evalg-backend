@@ -37,7 +37,7 @@ def test_announce_election_group(
     db_session.flush()
     assert not election_group.announced
 
-    make_person_publisher(logged_in_user.person)
+    make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -67,7 +67,7 @@ def test_unannounce_election_group(
     db_session.flush()
     assert election_group.announced
 
-    make_person_publisher(logged_in_user.person)
+    make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -107,7 +107,7 @@ def test_publish_election_group(
     db_session.flush()
     assert not election_group.published
 
-    make_person_publisher(logged_in_user.person)
+    make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
     mutation = """
     mutation ($id: UUID!) {
@@ -137,7 +137,7 @@ def test_unpublish_election_group(
     db_session.flush()
     assert election_group.published
 
-    make_person_publisher(logged_in_user.person)
+    make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
     mutation = """
     mutation ($id: UUID!) {

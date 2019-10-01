@@ -60,7 +60,6 @@ def test_query_persons(db_session, make_full_election, make_pollbook_vote,
         }
     }
     """
-
     election_group = make_full_election('test_query_persons')
     pollbook_id = next(iter(election_group['pollbooks']))
     for person_id, person in persons.items():
@@ -74,7 +73,6 @@ def test_query_persons(db_session, make_full_election, make_pollbook_vote,
     execution = client.execute(query, context=context)
     assert not execution.get('errors')
     response = execution['data']['persons']
-    print(response)
 
     for person_id, person in persons.items():
         response_person = filter(
