@@ -30,7 +30,7 @@ class MasterKey(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 def resolve_master_keys(_, info):
     """List all election groups that should be visible to the current user."""
-    return MasterKey.get_query(info).all()
+    return MasterKey.get_query(info).filter_by(active=True).all()
 
 
 list_active_master_keys_query = graphene.List(
