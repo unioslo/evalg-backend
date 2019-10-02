@@ -763,13 +763,13 @@ def test_auth_upload_census_file(db_session,
                                  logged_in_user,
                                  simple_election_group,
                                  owned_election_group,
-                                 feide_id_plane_text_census_file_builder):
+                                 feide_id_plane_text_census_builder):
     """Allow and deny scenarios for uploadCensusFile."""
     election_group = (owned_election_group(db_session, logged_in_user.person)
                       if is_owner else simple_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
     variables = {
-        'censusFile': feide_id_plane_text_census_file_builder.files['file'],
+        'censusFile': feide_id_plane_text_census_builder.files['file'],
         'pollbookId': str(pollbook.id)
     }
     mutation = """

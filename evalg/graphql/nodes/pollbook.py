@@ -462,6 +462,7 @@ class UploadCensusFile(graphene.Mutation):
                 message='No access to pollbook id {!r}'.format(pollbook_id))
 
         logger.info('Updating %r from %r', pollbook, census_file)
+
         parser = CensusFileParser.factory(census_file)
         if not parser:
             return UploadCensusFileResponse(
