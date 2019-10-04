@@ -119,7 +119,7 @@ def main(args=None):
             sep=os.linesep,
             pub=pub))
     elif args.decrypt:
-        print('Enter master key: ', end='', flush=True)
+        print('Enter master key (private key): ', end='', flush=True)
         privkey = sys.stdin.readline()
         dstring = get_decrypted_string(args.estring,
                                        privkey.strip(),
