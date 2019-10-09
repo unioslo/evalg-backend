@@ -112,6 +112,7 @@ PERMISSIONS = {
         'election_group': 'can_access_election_group_count',
         'election_results': 'can_access_election_group_count',
         'initiated_at': 'can_access_election_group_count',
+        'initiated_by': 'can_access_election_group_count',
         'finished_at': 'can_access_election_group_count',
         'audit': 'can_access_election_group_count',
         'status': 'can_access_election_group_count',
