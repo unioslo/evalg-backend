@@ -470,6 +470,12 @@ class UnpublishElectionGroup(graphene.Mutation):
                 code='permission-denied',
                 message='Not allowed to unpublish election groups'
             )
+        if election_group.status == 'closed':
+            return UnpublishElectionGroupResponse(
+                success=False,
+                code='election-closed',
+                message='Not allowed to unpublish a closed election group'
+            )
         evalg.proc.election.unpublish_group(session, election_group)
         return UnpublishElectionGroupResponse(success=True)
 
