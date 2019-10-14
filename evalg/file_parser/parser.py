@@ -63,7 +63,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
     @classmethod
     def find_identifier_type(cls, ids):
         """
-        Find the identity type of a list of identity's.
+        Find the identity type of a list of identities.
 
         All of the identifiers needs to be of the same type.
         """
