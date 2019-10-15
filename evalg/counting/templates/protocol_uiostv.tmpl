@@ -13,8 +13,8 @@
 Valg-ID: {{ meta.election_id }}
 Valg-tittel: {{ nb(meta.election_name) }}
 Valg-type: {{ meta.election_type }}
-Valgperiode: {{ meta.election_start }} (UTC) - {{ meta.election_end }} (UTC)
-Opptellingstidspunkt: {{ meta.counted_at }}
+Valgperiode: {{ meta.election_start }} (CET) - {{ meta.election_end }} (CET)
+Opptellingstidspunkt: {{ meta.counted_at }} (CET)
 Opptelling startet av: {{ meta.counted_by|default('Ukjent', true) }}
 Kandidater: {{ meta.candidates.values() |join(', ')}}
 Antall faste kandidater å velge: {{ meta.num_regular }}
