@@ -8,6 +8,7 @@ from . import authorization
 from . import ballot
 from . import base
 from . import candidate
+from . import census_file_import
 from . import election_list
 from . import election_group_count
 from . import election_result
@@ -25,6 +26,7 @@ __all__ = [
     'ballot',
     'base',
     'candidate',
+    'census_file_import',
     'election_list',
     'election_group_count',
     'election_result',
