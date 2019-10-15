@@ -106,6 +106,14 @@ def logged_in_user(db_session, app, config):
         yield user
 
 
+@pytest.fixture(scope='session')
+def celery_config():
+    return {
+        'broker_url': 'redis://',
+        'result_backend': 'redis://'
+    }
+
+
 def election_keys():
     return {
         'public': 'bO1pw6/Bslji0XvXveSuVbe4vp93K1DcpqYgIxRhYAs=',

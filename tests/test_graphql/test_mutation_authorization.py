@@ -764,10 +764,13 @@ def test_auth_upload_census_file(db_session,
                                  simple_election_group,
                                  owned_election_group,
                                  feide_id_plane_text_census_builder,
+                                 celery_app,
                                  monkeypatch):
     """Allow and deny scenarios for uploadCensusFile."""
 
     # Mokeypatch away the celery job.
+    monkeypatch.setattr(
+        'evalg.tasks.celery_worker.celery', celery_app)
     monkeypatch.setattr(
         'evalg.tasks.celery_worker.import_census_file_task.delay',
         lambda x, y: f"Patched {x}-{y}")
