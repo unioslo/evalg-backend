@@ -36,6 +36,11 @@ class CensusFileImport(ModelBase):
         doc='The census file',
     )
 
+    file_name = schema.Column(
+        sqltypes.UnicodeText,
+        doc='file name'
+    )
+
     mime_type = schema.Column(
         sqltypes.UnicodeText,
         doc='file mime type'
