@@ -138,14 +138,14 @@ class CensusFileParser(metaclass=abc.ABCMeta):
         return [x.get_mime_type() for x in CensusFileParser.__subclasses__()]
 
     @classmethod
-    def factory(cls, census_file, feide_postfix='uio.no'):
+    def factory(cls, census_file, mime_type, feide_postfix='uio.no'):
         """Return the correct file parser if supported."""
         supported_mime_types = {
             x.get_mime_type(): x for x in CensusFileParser.__subclasses__()
         }
 
-        if census_file.mimetype in supported_mime_types:
-            parser = supported_mime_types[census_file.mimetype](
+        if mime_type in supported_mime_types:
+            parser = supported_mime_types[mime_type](
                 census_file, feide_postfix=feide_postfix)
 
             if parser.id_type is None:
@@ -156,7 +156,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
                     ))
             return parser
         raise ValueError('No parser for filetype {}'.format(
-            census_file.mimetype))
+            mime_type))
 
 
 class PlainTextParser(CensusFileParser):
@@ -164,12 +164,12 @@ class PlainTextParser(CensusFileParser):
 
     def __init__(self, census_file, feide_postfix):
         super().__init__(census_file, feide_postfix)
-        content = self.census_file.read().decode('utf-8')
+        content = self.census_file.decode('utf-8')
         self.fields = content.splitlines()
 
         if len(self.fields) > 0 and self.is_fs_header(self.fields[0]):
+            # TODO: Remove this..?
             # File is a csv file erroneously save as .txt.
-            self.census_file.seek(0)
             parser = CsvParser(self.census_file, feide_postfix=feide_postfix)
             self.fields = [x for x in parser.parse()]
             self.has_fs_header = True
@@ -188,7 +188,7 @@ class CsvParser(CensusFileParser):
 
     def __init__(self, census_file, feide_postfix):
         super().__init__(census_file, feide_postfix)
-        csvfile = io.StringIO(self.census_file.stream.read().decode('utf-8'))
+        csvfile = io.StringIO(self.census_file.decode('utf-8'))
 
         first_line = csvfile.readline()
         self.has_fs_header = self.is_fs_header(first_line)
