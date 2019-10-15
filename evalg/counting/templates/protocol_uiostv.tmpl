@@ -120,8 +120,9 @@ Hovedoppgjør
 ============
 {% endif %}
 
-Opptellingsrunde {{ event.event_data['round_id'] }} ({% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} kandidater valgt)
+Opptellingsrunde {{ event.event_data['round_id'] }}
 -----------------------------------------------------------------------
+{% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} gjenstående kandidater valgt
 
 {% elif event.event_type == 'NEW_SUBSTITUTE_ROUND' -%}
 {% if event.event_data['round_id'] == 1 %}
@@ -129,8 +130,9 @@ Valgoppgjør for vara {{ event.event_data['substitute_nr'] }}
 ============================
 {% endif %}
 
-Opptellingsrunde {{ event.event_data['round_id'] }} (for vara {{ event.event_data['substitute_nr'] }}): {% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} kandidater valgt
+Opptellingsrunde {{ event.event_data['round_id'] }} (for vara {{ event.event_data['substitute_nr'] }})
 -----------------------------------------------------------------------
+{% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} gjenstående kandidater valgt
 
 {% elif event.event_type == 'NO_ELECTABLE_SUBSTITUTES' -%}
 Skal ikke velge varakandidater.
