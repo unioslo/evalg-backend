@@ -770,7 +770,7 @@ def test_auth_upload_census_file(db_session,
 
     # Mokeypatch away the celery job.
     monkeypatch.setattr(
-        'evalg.tasks.celery_worker.celery', celery_app)
+        'evalg.tasks.flask_celery.make_celery', lambda a: celery_app)
     monkeypatch.setattr(
         'evalg.tasks.celery_worker.import_census_file_task.delay',
         lambda x, y: f"Patched {x}-{y}")
