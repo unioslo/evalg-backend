@@ -69,6 +69,7 @@ def config():
         BACKEND_PUBLIC_KEY = 'KLUDKkCPrAEcK9SrYDyMsrLEShm6axS9uSG/sOfibCA='
         ENVELOPE_TYPE = 'base64-nacl'
         ENVELOPE_PADDED_LEN = 1000
+        CELERY_BROKER_URL = 'redis://'
 
     return Config()
 
