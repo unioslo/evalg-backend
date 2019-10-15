@@ -1,6 +1,7 @@
 alembic
 aniso8601
 blinker
+celery
 click
 Flask==1.0.2
 flask-allows
