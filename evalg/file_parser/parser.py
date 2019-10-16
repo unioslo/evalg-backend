@@ -30,9 +30,9 @@ class CensusFileParser(metaclass=abc.ABCMeta):
         elif self.id_type == 'feide_id':
             for field in self.fields:
                 if self._convert_to_feide:
-                    yield "{}@{}".format(field, self.feide_postfix)
+                    yield "{}@{}".format(field.lower(), self.feide_postfix)
                 else:
-                    yield field
+                    yield field.lower()
         else:
             return None
 
@@ -63,7 +63,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
     @classmethod
     def find_identifier_type(cls, ids):
         """
-        Find the identity type of a list of indentitys.
+        Find the identity type of a list of identities.
 
         All of the identifiers needs to be of the same type.
         """
@@ -90,6 +90,9 @@ class CensusFileParser(metaclass=abc.ABCMeta):
             raise ValueError('Invalid ids, mix of feide and other ids')
 
         if all([cls.is_posix_uid(x) for x in ids]):
+            return 'uid'
+
+        if all([cls.is_posix_uid(x.lower()) for x in ids]):
             return 'uid'
 
         raise ValueError('No supported id type found in file')
@@ -184,7 +187,7 @@ class CsvParser(CensusFileParser):
     """A parser for CSV files."""
 
     def __init__(self, census_file, feide_postfix):
-        super().__init__(census_file,feide_postfix)
+        super().__init__(census_file, feide_postfix)
         csvfile = io.StringIO(self.census_file.stream.read().decode('utf-8'))
 
         first_line = csvfile.readline()

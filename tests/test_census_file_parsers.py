@@ -19,8 +19,34 @@ def test_uid_plain_text(uid_plane_text_census_builder, feide_ids):
 
 def test_uid_plain_text_crlf(uid_plane_text_crlf_census_builder, feide_ids):
     """Test parsing of plain text uid file, with crlf linebrakes."""
-    file = uid_plane_text_crlf_census_builder.files['file']
-    parser = cparser.CensusFileParser.factory(file)
+    census_file = uid_plane_text_crlf_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(census_file)
+    assert parser is not None
+    assert isinstance(parser, cparser.PlainTextParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_plain_text_upper_case(uid_plane_text_upper_case_builder,
+                                   feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    census_file = uid_plane_text_upper_case_builder.files['file']
+    parser = cparser.CensusFileParser.factory(census_file)
+    assert parser is not None
+    assert isinstance(parser, cparser.PlainTextParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_plain_text_mixed_case(uid_plane_text_mixed_case_builder,
+                                   feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    census_file = uid_plane_text_mixed_case_builder.files['file']
+    parser = cparser.CensusFileParser.factory(census_file)
     assert parser is not None
     assert isinstance(parser, cparser.PlainTextParser)
     assert parser.id_type == 'feide_id'

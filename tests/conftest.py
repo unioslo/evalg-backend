@@ -966,10 +966,23 @@ def make_full_election(make_election_group,
 #
 # TODO: convert the rest of the tests to use the fixture bellow.
 
+
 @pytest.fixture
 def uids():
     """A list of uids."""
     return ['pederaas', 'martekir', 'larsh', 'hansta']
+
+
+@pytest.fixture
+def uids_upper_case():
+    """A list of uids."""
+    return ['PEDERAAS', 'MARTEKIR', 'LARSH', 'HANSTA']
+
+
+@pytest.fixture
+def uids_mixed_case():
+    """A list of uids."""
+    return ['PEDERAAS', 'martekir', 'larsh', 'HANSTA']
 
 
 @pytest.fixture()
@@ -1072,6 +1085,18 @@ def uid_plane_text_census_builder(feide_ids):
 def uid_plane_text_crlf_census_builder(feide_ids):
     """Plain text census file of feide ids."""
     return generate_census_file_builder(feide_ids, 'txt', linebrake='\r\n')
+
+
+@pytest.fixture
+def uid_plane_text_upper_case_builder(uids_upper_case):
+    """Plain text upper case census file."""
+    return generate_census_file_builder(uids_upper_case, 'txt')
+
+
+@pytest.fixture
+def uid_plane_text_mixed_case_builder(uids_mixed_case):
+    """Plain text upper case census file."""
+    return generate_census_file_builder(uids_mixed_case, 'txt')
 
 
 @pytest.fixture
