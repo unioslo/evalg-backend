@@ -203,8 +203,12 @@ get_election_template_query = graphene.Field(
     resolver=resolve_election_template)
 
 
+@permission_controller.control_object_type
 class ElectionKeyMeta(graphene.ObjectType):
     """Election key meta info."""
+
+    class Meta:
+        default_resolver = permission_controlled_default_resolver
 
     generated_at = types.DateTime()
     generated_by = graphene.Field(Person)
