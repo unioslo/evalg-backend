@@ -13,8 +13,8 @@
 Valg-ID: {{ meta.election_id }}
 Valg-tittel: {{ nb(meta.election_name) }}
 Valg-type: {{ meta.election_type }}
-Valgperiode: {{ meta.election_start }} (UTC) - {{ meta.election_end }} (UTC)
-Opptellingstidspunkt: {{ meta.counted_at }}
+Valgperiode: {{ meta.election_start }} (CET) - {{ meta.election_end }} (CET)
+Opptellingstidspunkt: {{ meta.counted_at }} (CET)
 Opptelling startet av: {{ meta.counted_by|default('Ukjent', true) }}
 Kandidater: {{ meta.candidates.values() |join(', ')}}
 Antall faste kandidater å velge: {{ meta.num_regular }}
@@ -120,8 +120,9 @@ Hovedoppgjør
 ============
 {% endif %}
 
-Opptellingsrunde {{ event.event_data['round_id'] }} ({% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} kandidater valgt)
+Opptellingsrunde {{ event.event_data['round_id'] }}
 -----------------------------------------------------------------------
+{% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} gjenstående kandidater valgt
 
 {% elif event.event_type == 'NEW_SUBSTITUTE_ROUND' -%}
 {% if event.event_data['round_id'] == 1 %}
@@ -129,8 +130,9 @@ Valgoppgjør for vara {{ event.event_data['substitute_nr'] }}
 ============================
 {% endif %}
 
-Opptellingsrunde {{ event.event_data['round_id'] }} (for vara {{ event.event_data['substitute_nr'] }}): {% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} kandidater valgt
+Opptellingsrunde {{ event.event_data['round_id'] }} (for vara {{ event.event_data['substitute_nr'] }})
 -----------------------------------------------------------------------
+{% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} gjenstående kandidater valgt
 
 {% elif event.event_type == 'NO_ELECTABLE_SUBSTITUTES' -%}
 Skal ikke velge varakandidater.

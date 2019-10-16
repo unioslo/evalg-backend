@@ -111,7 +111,7 @@ def main(args=None):
         default='',
         help=('The base64 encoded public key used to check the '
               'encryption signature'))
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     if args.generate:
         priv, pub = get_key_pair_string()
         print('Private key: {priv}{sep}Public key: {pub}'.format(

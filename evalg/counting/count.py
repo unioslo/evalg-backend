@@ -10,6 +10,8 @@ import os
 import random  # testing only
 import secrets
 
+import pytz
+
 from evalg.counting.algorithms import uiostv, uiomv
 
 
@@ -537,11 +539,13 @@ class ElectionCountPath:
             'election_type': election.type_str,
             'candidate_ids': [str(cand.id) for cand in election.candidates],
             'candidates': candidates,
-            'counted_at': datetime.datetime.now().strftime(
-                '%Y-%m-%d %H:%M:%S'),
+            'counted_at': datetime.datetime.now().astimezone(
+                pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
             'counted_by': None,
-            'election_start': election.start.strftime('%Y-%m-%d %H:%M:%S'),
-            'election_end': election.start.strftime('%Y-%m-%d %H:%M:%S'),
+            'election_start': election.start.astimezone(
+                pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
+            'election_end': election.end.astimezone(
+                pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
             'drawing': self.drawing,
             'ballots_count': election.total_amount_ballots,
             'counting_ballots_count': election.total_amount_counting_ballots,
