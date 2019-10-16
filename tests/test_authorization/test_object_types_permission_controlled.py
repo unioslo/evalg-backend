@@ -1,7 +1,8 @@
 from evalg.graphql.nodes.utils import permissions
 from evalg.graphql.nodes.election import Election, ElectionResult
 from evalg.graphql.nodes.election_group import (ElectionGroup,
-                                                ElectionGroupCount)
+                                                ElectionGroupCount,
+                                                ElectionKeyMeta)
 from evalg.graphql.nodes.candidates import Candidate, ElectionList
 from evalg.graphql.nodes.privkeys_backup import MasterKey
 from evalg.graphql.nodes.pollbook import Pollbook, Voter, CensusFileImport
@@ -23,6 +24,7 @@ controlled_object_types = {
     'Pollbook': Pollbook,
     'Group': Group,
     'CensusFileImport': CensusFileImport,
+    'ElectionKeyMeta': ElectionKeyMeta,
 }
 
 
