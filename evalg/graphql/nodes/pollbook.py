@@ -67,6 +67,24 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
     voters_with_vote = graphene.List(lambda: Voter)
     voters_without_vote = graphene.List(lambda: Voter)
 
+    nr_of_voters = graphene.types.Int()
+
+    # Temp fix before pagination
+    # TODO: remove this as part of EVALG-670
+    voters = graphene.List(lambda: Voter)
+
+    @permission_controller
+    def resolve_voters(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_first_n_voters_in_pollbook(
+            session, self.id, 50)
+
+    @permission_controller
+    def resolve_nr_of_voters(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_nr_of_voters_in_pollbook(
+            session, self.id)
+
     @permission_controller
     def resolve_self_added_voters(self, info):
         session = get_session(info)
@@ -107,6 +125,15 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
         session = get_session(info)
         return evalg.proc.pollbook.get_voters_without_vote_in_pollbook(
             session, self.id)
+
+
+@permission_controller.control_object_type
+class CensusFileImport(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = evalg.models.census_file_import.CensusFileImport
+        # Binary blob not supported by graphql
+        exclude_fields = ('census_file',)
+        default_resolver = permission_controlled_default_resolver
 
 
 def resolve_pollbooks_by_fields(_, info):
@@ -473,6 +500,7 @@ class UploadCensusFile(graphene.Mutation):
 
         file_import = evalg.models.census_file_import.CensusFileImport(
             initiated_at=datetime.datetime.now(datetime.timezone.utc),
+            file_name=census_file.filename,
             census_file=file_content,
             mime_type=census_file.mimetype,
             pollbook_id=pollbook_id
@@ -486,7 +514,4 @@ class UploadCensusFile(graphene.Mutation):
 
         logger.info('Started file import as celery job')
 
-        return UploadCensusFileResponse(
-            success=True,
-            num_failed=result['failed'],
-            num_ok=result['ok'])
+        return UploadCensusFileResponse(success=True)

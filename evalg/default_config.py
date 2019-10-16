@@ -193,6 +193,18 @@ PERMISSIONS = {
         'verified_voters_with_votes_count': 'can_manage_pollbook',
         'voters_with_vote': 'can_manage_pollbook',
         'voters_without_vote': 'can_manage_pollbook',
+        'census_file_imports': 'can_manage_pollbook',
+        'nr_of_voters': 'can_manage_pollbook',
+    },
+    'CensusFileImport': {
+        'pollbook_id': 'can_manage_census_file_upload',
+        'pollbook': 'can_manage_census_file_upload',
+        'file_name': 'can_manage_census_file_upload',
+        'mime_type': 'can_manage_census_file_upload',
+        'import_results': 'can_manage_census_file_upload',
+        'initiated_at': 'can_manage_census_file_upload',
+        'finished_at': 'can_manage_census_file_upload',
+        'status': 'can_manage_census_file_upload',
     },
     # Nobody has access, since it is not used for anything currently
     'Group': None

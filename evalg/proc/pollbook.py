@@ -200,6 +200,20 @@ class ElectionVoterPolicy(object):
         return voter
 
 
+def get_nr_of_voters_in_pollbook(session, pollbook_id):
+    pollbook = session.query(Pollbook).get(pollbook_id)
+    return len(pollbook.voters)
+
+
+def get_first_n_voters_in_pollbook(session, pollbook_id, n):
+    voters = session.query(
+        Voter
+    ).filter(
+        Voter.pollbook_id == pollbook_id
+    ).limit(n).all()
+    return voters
+
+
 def get_person_for_voter(session, voter):
     query = session.query(
         Person
