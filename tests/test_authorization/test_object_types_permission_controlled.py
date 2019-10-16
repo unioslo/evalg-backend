@@ -4,7 +4,7 @@ from evalg.graphql.nodes.election_group import (ElectionGroup,
                                                 ElectionGroupCount)
 from evalg.graphql.nodes.candidates import Candidate, ElectionList
 from evalg.graphql.nodes.privkeys_backup import MasterKey
-from evalg.graphql.nodes.pollbook import Pollbook, Voter
+from evalg.graphql.nodes.pollbook import Pollbook, Voter, CensusFileImport
 from evalg.graphql.nodes.person import Person
 from evalg.graphql.nodes.votes import Vote
 from evalg.graphql.nodes.group import Group
@@ -22,6 +22,7 @@ controlled_object_types = {
     'Vote': Vote,
     'Pollbook': Pollbook,
     'Group': Group,
+    'CensusFileImport': CensusFileImport,
 }
 
 
