@@ -55,3 +55,5 @@ class Pollbook(ModelBase):
         lazy='joined')
 
     voters = db.relationship('Voter')
+
+    census_file_imports = db.relationship('CensusFileImport')

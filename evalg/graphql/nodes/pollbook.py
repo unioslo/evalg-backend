@@ -1,5 +1,6 @@
 """GraphQL ObjectType for Pollbook and Voter nodes."""
 import collections
+import datetime
 import logging
 
 import graphene
@@ -7,6 +8,7 @@ import graphene_sqlalchemy
 from graphene_file_upload.scalars import Upload
 
 import evalg.database.query
+import evalg.models.census_file_import
 import evalg.models.election
 import evalg.models.person
 import evalg.models.pollbook
@@ -65,6 +67,24 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
     voters_with_vote = graphene.List(lambda: Voter)
     voters_without_vote = graphene.List(lambda: Voter)
 
+    nr_of_voters = graphene.types.Int()
+
+    # Temp fix before pagination
+    # TODO: remove this as part of EVALG-670
+    voters = graphene.List(lambda: Voter)
+
+    @permission_controller
+    def resolve_voters(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_first_n_voters_in_pollbook(
+            session, self.id, 50)
+
+    @permission_controller
+    def resolve_nr_of_voters(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_nr_of_voters_in_pollbook(
+            session, self.id)
+
     @permission_controller
     def resolve_self_added_voters(self, info):
         session = get_session(info)
@@ -105,6 +125,15 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
         session = get_session(info)
         return evalg.proc.pollbook.get_voters_without_vote_in_pollbook(
             session, self.id)
+
+
+@permission_controller.control_object_type
+class CensusFileImport(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = evalg.models.census_file_import.CensusFileImport
+        # Binary blob not supported by graphql
+        exclude_fields = ('census_file',)
+        default_resolver = permission_controlled_default_resolver
 
 
 def resolve_pollbooks_by_fields(_, info):
@@ -441,10 +470,7 @@ class UploadCensusFile(graphene.Mutation):
         pollbook_id = kwargs['pollbook_id']
         census_file = kwargs['census_file']
         session = get_session(info)
-        voters = evalg.proc.pollbook.ElectionVoterPolicy(session)
         result = collections.Counter(ok=0, failed=0)
-
-        logger.debug('kwargs %r', kwargs)
 
         try:
             pollbook = session.query(evalg.models.pollbook.Pollbook).get(
@@ -462,8 +488,9 @@ class UploadCensusFile(graphene.Mutation):
                 message='No access to pollbook id {!r}'.format(pollbook_id))
 
         logger.info('Updating %r from %r', pollbook, census_file)
-
-        parser = CensusFileParser.factory(census_file)
+        file_content = census_file.read()
+        parser = CensusFileParser.factory(file_content,
+                                          census_file.mimetype)
         if not parser:
             return UploadCensusFileResponse(
                 success=False,
@@ -471,22 +498,20 @@ class UploadCensusFile(graphene.Mutation):
                 message='Unsupported file type {!r}'.format(
                     census_file.mimetype))
 
-        id_type = parser.id_type
-        logger.debug('Loading file using parser %r (id_type=%r)',
-                     type(parser), id_type)
-        for i, id_value in enumerate(parser.parse(), 1):
-            try:
-                voters.add_voter_id(pollbook, id_type, id_value,
-                                    self_added=False)
-            except Exception as e:
-                logger.warning('Entry #%d: unable to add voter: %s',
-                               i, e, exc_info=True)
-                result['failed'] += 1
-                continue
-            result['ok'] += 1
+        file_import = evalg.models.census_file_import.CensusFileImport(
+            initiated_at=datetime.datetime.now(datetime.timezone.utc),
+            file_name=census_file.filename,
+            census_file=file_content,
+            mime_type=census_file.mimetype,
+            pollbook_id=pollbook_id
+        )
 
+        session.add(file_import)
         session.commit()
-        return UploadCensusFileResponse(
-            success=True,
-            num_failed=result['failed'],
-            num_ok=result['ok'])
+
+        from evalg.tasks.celery_worker import import_census_file_task
+        import_census_file_task.delay(pollbook_id, file_import.id)
+
+        logger.info('Started file import as celery job')
+
+        return UploadCensusFileResponse(success=True)

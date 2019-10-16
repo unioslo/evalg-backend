@@ -69,6 +69,7 @@ def config():
         BACKEND_PUBLIC_KEY = 'KLUDKkCPrAEcK9SrYDyMsrLEShm6axS9uSG/sOfibCA='
         ENVELOPE_TYPE = 'base64-nacl'
         ENVELOPE_PADDED_LEN = 1000
+        CELERY_BROKER_URL = 'redis://'
 
     return Config()
 
@@ -103,6 +104,14 @@ def logged_in_user(db_session, app, config):
     with app.test_request_context():
         app.preprocess_request()
         yield user
+
+
+@pytest.fixture(scope='session')
+def celery_config():
+    return {
+        'broker_url': 'redis://',
+        'result_backend': 'redis://'
+    }
 
 
 def election_keys():

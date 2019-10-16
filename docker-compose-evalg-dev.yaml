@@ -20,6 +20,24 @@ services:
       LC_ALL: C.UTF-8
       LANG: C.UTF-8
 
+  evalg-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    volumes:
+      - .:/usr/src/evalg:z
+      - ./instance:/usr/local/var/evalg-instance:z
+    working_dir: /usr/src/evalg
+    depends_on:
+      - db
+      - evalg
+    command: celery -A evalg.tasks.celery_worker.celery worker -l info --concurrency 2
+    environment:
+      C_FORCE_ROOT: 1
+      PYTHONDONTWRITEBYTECODE: "yes"
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+
   db:
     image: harbor.uio.no/library/postgres:latest
     ports:

@@ -67,6 +67,15 @@ def can_manage_pollbook(session, user, pollbook, **args):
 
 
 @all_permissions
+def can_manage_census_file_upload(session, user, census_file_upload, **args):
+    return Permission(
+        IsElectionGroupAdmin(
+            session, census_file_upload.pollbook.election.group_id),
+        identity=user
+    )
+
+
+@all_permissions
 def can_manage_election_list(session, user, **args):
     if 'list_id' in args:
         election_list = session.query(ElectionList).get(args.get('list_id'))
