@@ -14,6 +14,7 @@ from flask_allows import Permission
 from evalg.proc.pollbook import get_voters_for_person
 from evalg.utils import Name2Callable
 from evalg.models.election_list import ElectionList
+from evalg.models.election import ElectionGroup
 from evalg.graphql.nodes.utils.base import (get_session,
                                             get_current_user)
 from evalg.authorization.permissions import (IsElectionGroupAdmin,
@@ -105,6 +106,16 @@ def can_access_election_group_count(session,
 
 
 @all_permissions
+def can_view_election_group_key_meta(session, user, **args):
+    if 'id' in args:
+        return Permission(
+            IsElectionGroupAdmin(session, args.get('id')),
+            identity=user
+        )
+    return False
+
+
+@all_permissions
 def can_view_person(session, user, person, **args):
     if Permission(IsPerson(person), identity=user):
         return True
@@ -139,7 +150,6 @@ def can_view_voter(session, user, voter, **args):
             identity=user):
         return True
     return False
-
 
 
 @all_permissions

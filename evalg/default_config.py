@@ -207,8 +207,8 @@ PERMISSIONS = {
         'status': 'can_manage_census_file_upload',
     },
     'ElectionKeyMeta': {
-        'generated_at', 'can_manage_election_group',
-        'generated_by', 'can_manage_election_group',
+        'generated_at', 'can_view_election_group_key_meta',
+        'generated_by', 'can_view_election_group_key_meta',
     },
     # Nobody has access, since it is not used for anything currently
     'Group': None
