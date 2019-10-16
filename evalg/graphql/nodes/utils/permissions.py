@@ -106,13 +106,10 @@ def can_access_election_group_count(session,
 
 
 @all_permissions
-def can_view_election_group_key_meta(session, user, **args):
-    if 'id' in args:
-        return Permission(
-            IsElectionGroupAdmin(session, args.get('id')),
-            identity=user
-        )
-    return False
+def can_view_election_group_key_meta(session, user, election_key_meta, **args):
+    return Permission(
+        IsElectionGroupAdmin(session, election_key_meta.election_group_id),
+        identity=user)
 
 
 @all_permissions
