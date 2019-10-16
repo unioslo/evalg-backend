@@ -47,7 +47,8 @@ def import_census_file_task(pollbook_id, census_file_id):
                                 self_added=False)
             results['added_nr'] += 1
         except ValueError:
-            logger.info('Entry #%d: unable to add voter: %s')
+            logger.info('Entry #%d: Voter exists in pollbook: %s',
+                        i, pollbook_id)
             results['already_in_pollbook_nr'] += 1
             results['already_in_pollbook'].append(id_value)
             continue
