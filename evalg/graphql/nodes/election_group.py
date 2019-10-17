@@ -210,8 +210,25 @@ class ElectionKeyMeta(graphene.ObjectType):
     class Meta:
         default_resolver = permission_controlled_default_resolver
 
+    def __init__(self, election_group_id):
+        self.election_group_id = election_group_id
+
     generated_at = types.DateTime()
     generated_by = graphene.Field(Person)
+
+    @permission_controller
+    def resolve_generated_at(self, info):
+        session = get_session(info)
+        key_meta = evalg.proc.group.get_election_key_meta(
+            session, self.election_group_id)
+        return key_meta[0].transaction.issued_at
+
+    @permission_controller
+    def resolve_generated_by(self, info):
+        session = get_session(info)
+        key_meta = evalg.proc.group.get_election_key_meta(
+            session, self.election_group_id)
+        return key_meta[0].transaction.user
 
 
 def resolve_election_key_meta(_, info, **args):
@@ -222,17 +239,10 @@ def resolve_election_key_meta(_, info, **args):
         election_group_id)
     if not can_manage_election_group(session, user, el_grp):
         return None
-
-    key_meta = evalg.proc.group.get_election_key_meta(session,
-                                                      election_group_id)
+    key_meta = evalg.proc.group.get_election_key_meta(
+        session, election_group_id)
     if key_meta and len(key_meta) > 0:
-        generated_at = key_meta[0].transaction.issued_at
-        generated_by = key_meta[0].transaction.user
-
-        return ElectionKeyMeta(
-            generated_at=generated_at,
-            generated_by=generated_by
-        )
+        return ElectionKeyMeta(election_group_id)
     raise GraphQLError('No info on key found')
 
 
