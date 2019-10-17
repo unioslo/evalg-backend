@@ -115,6 +115,7 @@ class Round:
                 count_result_stats[pollbook][candidate] = {}
                 count_result_stats[pollbook][candidate]['total'] = (
                     decimal.Decimal(0))
+                count_result_stats[pollbook][candidate]['amount'] = 0
         for ballot in self._counter_obj.ballots:
             if not ballot.candidates:
                 # blank ballot
@@ -128,6 +129,7 @@ class Round:
                 results[candidate] += ballot_weights[ballot]
                 count_result_stats[ballot.pollbook][
                     candidate]['total'] += ballot_weights[ballot]
+                count_result_stats[ballot.pollbook][candidate]['amount'] += 1
                 count_result_stats[ballot.pollbook][
                     'total'] += ballot_weights[ballot]
         # set % of total pollbook score - stats

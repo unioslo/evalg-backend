@@ -182,6 +182,8 @@ class CountingEvent:
                         new_count_result_stats[pbook_id][
                             str(cand_id)]['total'] = str(items['total'])
                         new_count_result_stats[pbook_id][
+                            str(cand_id)]['amount'] = str(items['amount'])
+                        new_count_result_stats[pbook_id][
                             str(cand_id)]['percent_pollbook'] = str(
                                 items['percent_pollbook'])
                 self.event_data['count_result_stats'] = new_count_result_stats
@@ -560,6 +562,13 @@ class ElectionCountPath:
         pollbook_mappings = {}
         for pollbook in election.pollbooks:
             pollbook_mappings.update({str(pollbook.id): pollbook.name})
+            if 'scale_factor' not in meta:
+                if hasattr(pollbook, 'scale_factor'):
+                    meta['scale_factor'] = str(pollbook.scale_factor.quantize(
+                        decimal.Decimal('1.00'),
+                        decimal.ROUND_HALF_EVEN))
+                else:
+                    meta['scale_factor'] = '1'
             pollbook_meta.append(
                 {'id': str(pollbook.id),
                  'name': pollbook.name,

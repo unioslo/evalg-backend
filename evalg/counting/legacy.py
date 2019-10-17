@@ -102,6 +102,16 @@ class EvalgLegacyPollbook:
         return self._name
 
     @property
+    def scale_factor(self):
+        """scale_factor-property"""
+        return self._scale_factor
+
+    @scale_factor.setter
+    def scale_factor(self, value):
+        """scale_factor-property setter"""
+        self._scale_factor = value
+
+    @property
     def weight(self):
         """weight-property"""
         return self._weight
@@ -362,8 +372,13 @@ class EvalgLegacyElection:
         min_wpv = min([pollbook.weight_per_vote for
                        pollbook in pollbook_list if pollbook.weight_per_vote],
                       default=decimal.Decimal(1))
+        # scale_factor is calculated only once in order to avoid round off
+        # discrepancies.
+        # scale_factor is only used for the protocol generation
+        scale_factor = decimal.Decimal(1) / min_wpv
         for pollbook in pollbook_list:
             pollbook.set_weight_per_pollbook(min_wpv)
+            pollbook.scale_factor = scale_factor
 
     @property
     def ballots(self):
@@ -508,6 +523,8 @@ class EvalgLegacyElection:
             else:
                 self._num_substitutes = self._num_choosable
         self._election_type = election_elem.attrib.get('election_type')
+        if self._election_type == 'uit_plur_with_subs':
+            self._election_type = 'uio_mv'
         self._start = datetime.datetime.fromisoformat(
             election_elem.attrib.get('start'))
         self._end = datetime.datetime.fromisoformat(
