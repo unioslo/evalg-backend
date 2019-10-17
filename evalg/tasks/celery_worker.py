@@ -47,16 +47,16 @@ def import_census_file_task(pollbook_id, census_file_id):
         try:
             voter = voter_policy.create_voter(
                 id_type, id_value, self_added=False)
-            if not voter:
-                logger.info('Entry #%d: Voter exists in pollbook: %s',
-                            i, pollbook_id)
-                results['already_in_pollbook_nr'] += 1
-                results['already_in_pollbook'].append(id_value)
-            else:
+            if voter:
                 results['added_nr'] += 1
                 logger.info('Entry #%d: Added voter to pollbook: %s',
                             i, pollbook_id)
                 voters.append(voter)
+            else:
+                logger.info('Entry #%d: Voter exists in pollbook: %s',
+                            i, pollbook_id)
+                results['already_in_pollbook_nr'] += 1
+                results['already_in_pollbook'].append(id_value)
 
         except Exception as e:
             logger.warning('Entry #%d: unable to add voter: %s',
@@ -65,7 +65,7 @@ def import_census_file_task(pollbook_id, census_file_id):
             results['error'].append(id_value)
             continue
 
-    db.session.bulk_save_objects(voters)
+    db.session.add_all(voters)
     db.session.commit()
 
     census_file.finished_at = datetime.datetime.now(datetime.timezone.utc)
