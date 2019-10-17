@@ -87,6 +87,7 @@ PERMISSIONS = {
         'start': 'allow',
         'end': 'allow',
         'information_url': 'allow',
+        'contact': 'allow',
         'mandate_period_start': 'allow',
         'mandate_period_end': 'allow',
         'group_id': 'allow',
