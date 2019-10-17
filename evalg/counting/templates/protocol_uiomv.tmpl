@@ -30,7 +30,8 @@ Navn: {{ pollbook_name(pollbook['id']) }}
 Antall stemmer: {{ pollbook.ballots_count }}
 Antall blanke stemmer: {{ pollbook.empty_ballots_count }}
 Manntallsgruppens vekting: (vekt i %) {{ pollbook.weight }} / (ikke-blanke stemmer) {{ pollbook.counting_ballots_count }} = {{ pollbook.weight_per_vote }}
-Vekt per stemme: {{ pollbook.weight_per_pollbook }}
+Multiplikator: {{ meta.scale_factor }}
+Vekt per stemme: {{ pollbook.weight_per_vote }} * {{ meta.scale_factor }} = {{ pollbook.weight_per_pollbook }}
 
 {% endfor -%}
 
@@ -49,7 +50,7 @@ Status
 Stemmetall totalt: {{ event.event_data['total_score'] }}
 Stemmetall 1/2: {{ event.event_data['half_score'] }}
 {% for result in event.event_data['count_results'] -%}
-{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if 'count_result_stats' in event.event_data %} ({% for pollbook_id in event.event_data['count_result_stats'] %}{{ pollbook_name(pollbook_id) }}: {{ event.event_data['count_result_stats'][pollbook_id][result[0]]['total'] }} ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['percent_pollbook'] }}%){% if not loop.last %}, {% endif %}{% endfor %}){% endif %}
+{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if 'count_result_stats' in event.event_data %} ({% for pollbook_id in event.event_data['count_result_stats'] %}{{ pollbook_name(pollbook_id) }}: {{ event.event_data['count_result_stats'][pollbook_id][result[0]]['total'] }} ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['amount'] }} stemmer) ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['percent_pollbook'] }}%){% if not loop.last %}, {% endif %}{% endfor %}){% endif %}
 {% endfor %}
 {% else %}
 DEBUG: Unimplemented event {{ event.event_type }}

@@ -89,6 +89,7 @@ def set_weight_per_pollbooks(pollbooks):
     )
     for pollbook in pollbooks:
         set_weight_per_pollbook(pollbook, min_wpv)
+        pollbook.scale_factor = decimal.Decimal(1) / min_wpv
 
 
 class ElectionGroupCounter:

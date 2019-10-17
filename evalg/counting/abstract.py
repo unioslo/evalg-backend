@@ -57,6 +57,12 @@ class AbstractPollbook(EvalgCountingAbstractBase):
 
     @property
     @abc.abstractmethod
+    def scale_factor(self):
+        """scale_factor-property"""
+        pass
+
+    @property
+    @abc.abstractmethod
     def weight(self):
         """weight-property"""
         pass
