@@ -130,6 +130,23 @@ def can_view_person(session, user, person, **args):
 
 
 @all_permissions
+def can_view_person_ids(session, user, person_ids, **args):
+    if Permission(IsPerson(person_ids.person), identity=user):
+        return True
+    voters = get_voters_for_person(session, person_ids.person).all()
+    for voter in voters:
+        if Permission(
+                IsElectionGroupAdmin(session,
+                                     voter.pollbook.election.group_id),
+                identity=user):
+            return True
+    if Permission(HasPersonCreatedMyElectionsKey(session, person_ids.person),
+                  identity=user):
+        return True
+    return False
+
+
+@all_permissions
 def can_manage_voter(session, user, voter, **args):
     if Permission(
             IsElectionGroupAdmin(session, voter.pollbook.election.group_id),
