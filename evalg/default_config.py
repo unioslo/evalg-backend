@@ -156,6 +156,12 @@ PERMISSIONS = {
         'principal': 'can_view_person',
         'identifiers': 'can_view_person',
     },
+    'PersonIdentifier': {
+        'person_id': 'can_view_person_ids',
+        'id_type': 'can_view_person_ids',
+        'id_value': 'can_view_person_ids',
+        'person': 'can_view_person_ids',
+    },
     'Voter': {
         'id_type': 'can_view_voter',
         'id_value': 'can_view_voter',

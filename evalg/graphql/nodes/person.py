@@ -35,9 +35,11 @@ from evalg.graphql.nodes.roles import Role
 logger = logging.getLogger(__name__)
 
 
+@permission_controller.control_object_type
 class PersonIdentifier(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.person.PersonExternalId
+        default_resolver = permission_controlled_default_resolver
 
 
 @permission_controller.control_object_type
