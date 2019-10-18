@@ -12,8 +12,14 @@ import io
 import os
 import sys
 
-import nacl.encoding
-import nacl.public
+try:
+    import nacl.encoding
+    import nacl.public
+except ModuleNotFoundError:
+    print('nacl library not found. Try "sudo dnf install python3-pynacl"',
+          file=sys.stderr,
+          flush=True)
+    sys.exit(1)
 
 
 def get_key_pair_string():
@@ -129,11 +135,11 @@ def main(args=None):
             with io.open(args.output,
                          'w',
                          encoding='utf-8',
-                         newline='\r\n') as fp:
-                fp.write(('{dstring}{sep}Offentlig nøkkel / Public key: '
-                          '{pubkey}').format(dstring=dstring,
-                                             sep=os.linesep,
-                                             pubkey=args.pubkey))
+                         newline='\r\n') as keyfile:
+                keyfile.write(('{dstring}{sep}Offentlig nøkkel / Public key: '
+                               '{pubkey}').format(dstring=dstring,
+                                                  sep=os.linesep,
+                                                  pubkey=args.pubkey))
 
 
 if __name__ == '__main__':
