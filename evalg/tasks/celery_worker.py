@@ -30,7 +30,9 @@ def import_census_file_task(pollbook_id, census_file_id):
                                       census_file.mime_type)
 
     id_type = parser.id_type
-    voters = evalg.proc.pollbook.ElectionVoterPolicy(db.session)
+    voter_policy = evalg.proc.pollbook.CachedPollbookVoterPolicy(
+        db.session, pollbook)
+
     logger.debug('Loading file using parser %r (id_type=%r)',
                  type(parser), id_type)
     results = {
@@ -40,18 +42,22 @@ def import_census_file_task(pollbook_id, census_file_id):
         'error_nr': 0,
         'error': [],
     }
+    voters = []
     for i, id_value in enumerate(parser.parse(), 1):
-
         try:
-            voters.add_voter_id(pollbook, id_type, id_value,
-                                self_added=False)
-            results['added_nr'] += 1
-        except ValueError:
-            logger.info('Entry #%d: Voter exists in pollbook: %s',
-                        i, pollbook_id)
-            results['already_in_pollbook_nr'] += 1
-            results['already_in_pollbook'].append(id_value)
-            continue
+            voter = voter_policy.create_voter(
+                id_type, id_value, self_added=False)
+            if voter:
+                results['added_nr'] += 1
+                logger.info('Entry #%d: Added voter to pollbook: %s',
+                            i, pollbook_id)
+                voters.append(voter)
+            else:
+                logger.info('Entry #%d: Voter exists in pollbook: %s',
+                            i, pollbook_id)
+                results['already_in_pollbook_nr'] += 1
+                results['already_in_pollbook'].append(id_value)
+
         except Exception as e:
             logger.warning('Entry #%d: unable to add voter: %s',
                            i, e, exc_info=True)
@@ -59,9 +65,7 @@ def import_census_file_task(pollbook_id, census_file_id):
             results['error'].append(id_value)
             continue
 
-        if i % 1000 == 0:
-            db.session.commit()
-
+    db.session.add_all(voters)
     db.session.commit()
 
     census_file.finished_at = datetime.datetime.now(datetime.timezone.utc)

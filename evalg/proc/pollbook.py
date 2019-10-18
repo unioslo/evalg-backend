@@ -124,6 +124,49 @@ def get_voters_without_vote_in_pollbook(session, pollbook_id):
     return voters
 
 
+class CachedPollbookVoterPolicy(object):
+    """
+    Version of ElectionVoterPolicy that's bound to one pollbook.
+
+    The voters in the pollbook are cached to speed up runtime.
+    """
+
+    def __init__(self, session, pollbook):
+        self.session = session
+        self.pollbook = pollbook
+        self._create_voter_cache()
+
+    def _create_voter_cache(self):
+        """Simple cache of all voter ids in the pollbook"""
+        voters = self.session.query(Voter).filter(
+            Voter.pollbook_id == self.pollbook.id
+        ).all()
+
+        self.id_types = list({x.id_type for x in voters})
+        self.cache = {x: {} for x in self.id_types}
+        for voter in voters:
+            self.cache[voter.id_type][voter.id_value] = voter
+
+    def create_voter(self, id_type, id_value, self_added=True, reason=None):
+        """
+        Returns a new Voter object if the id is not present in the cache.
+
+        The Voter object is not added to the session/committed etc.
+        Returns None if the id exists in the pollbook.
+        """
+        if id_type in self.id_types and id_value in self.cache[id_type]:
+            return None
+        return Voter(
+            pollbook_id=self.pollbook.id,
+            id_type=id_type,
+            id_value=id_value,
+            self_added=self_added,
+            reviewed=False,
+            verified=(not self_added),
+            reason=reason,
+        )
+
+
 class ElectionVoterPolicy(object):
     def __init__(self, session):
         self.session = session
