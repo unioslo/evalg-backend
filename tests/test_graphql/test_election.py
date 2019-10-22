@@ -157,25 +157,6 @@ def test_unpublish_election_group(
     assert not election_group_after_after.published
 
 
-def test_query_elections(election_foo, client):
-    query = """
-    query elections {
-        elections {
-            id
-            name
-            description
-        }
-    }
-    """
-    context = get_context()
-    execution = client.execute(query, context=context)
-    assert not execution.get('errors')
-    response = execution['data']['elections']
-
-    elections_db = Election.query.all()
-    assert len(response) == len(elections_db)
-
-
 def test_query_election_by_id(election_foo, client):
     variables = {'id': str(election_foo.id)}
     query = """
