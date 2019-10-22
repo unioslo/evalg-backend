@@ -66,19 +66,10 @@ class Candidate(graphene_sqlalchemy.SQLAlchemyObjectType):
         return convert_json(self.meta)
 
 
-def resolve_candidates_by_fields(_, info):
-    session = get_session(info)
-    return session.query(evalg.models.candidate.Candidate).all()
-
-
 def resolve_candidate_by_id(self, info, **args):
     session = get_session(info)
     return session.query(evalg.models.candidate.Candidate).get(args['id'])
 
-
-list_candidates_query = graphene.List(
-    Candidate,
-    resolver=resolve_candidates_by_fields)
 
 get_candidate_query = graphene.Field(
     Candidate,
