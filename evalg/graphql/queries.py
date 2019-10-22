@@ -34,7 +34,6 @@ class ElectionQuery(graphene.ObjectType):
 
     # Pollbooks and registered voters
     pollbook = nodes.pollbook.get_pollbook_query
-    voters = nodes.pollbook.list_voters_query
     voter = nodes.pollbook.get_voter_query
     voters_for_person = nodes.pollbook.find_voters_query
     search_voters = nodes.pollbook.search_voters_query
