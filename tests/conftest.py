@@ -74,7 +74,7 @@ def config():
     return Config()
 
 
-@pytest.yield_fixture(scope='session')
+@pytest.yield_fixture(scope='function')
 def database(app, request):
     with app.app_context():
         db.create_all()
@@ -88,7 +88,7 @@ def app(config):
     return app
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def _db(app, database):
     """
     Provide the transactional fixtures with access to the database via a
