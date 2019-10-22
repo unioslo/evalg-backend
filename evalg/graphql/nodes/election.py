@@ -56,17 +56,9 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
         return resolve_election_count_by_id(None, info, id=self.id)
 
 
-def resolve_elections_by_fields(_, info):
-    return Election.get_query(info).all()
-
-
 def resolve_election_by_id(_, info, **args):
     return Election.get_query(info).get(args['id'])
 
-
-list_elections_query = graphene.List(
-    Election,
-    resolver=resolve_elections_by_fields)
 
 get_election_query = graphene.Field(
     Election,
