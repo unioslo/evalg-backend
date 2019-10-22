@@ -69,16 +69,6 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     nr_of_voters = graphene.types.Int()
 
-    # Temp fix before pagination
-    # TODO: remove this as part of EVALG-670
-    voters = graphene.List(lambda: Voter)
-
-    @permission_controller
-    def resolve_voters(self, info):
-        session = get_session(info)
-        return evalg.proc.pollbook.get_first_n_voters_in_pollbook(
-            session, self.id, 50)
-
     @permission_controller
     def resolve_nr_of_voters(self, info):
         session = get_session(info)

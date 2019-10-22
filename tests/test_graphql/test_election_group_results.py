@@ -94,18 +94,6 @@ def test_mutation_start_election_group_count_responses(
     assert (not result['success'] and
             result['code'] == 'invalid-election-key')
 
-    variables = {
-        'id': str(election_group_baz.id),
-        'electionKey': election_keys_foo['public']
-    }
-    execution = client.execute(mutation, variables=variables,
-                               context=context)
-    assert not execution.get('errors')
-    result = execution['data']['startElectionGroupCount']
-    # The mutation should fail because the wrong code is given
-    assert (not result['success'] and
-            result['code'] == 'permission-denied')
-
 
 def test_query_election_group_counting_results(client,
                                                db_session,

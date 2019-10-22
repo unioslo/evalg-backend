@@ -1,7 +1,11 @@
 import datetime
 import enum
 import re
+
+
 from collections.abc import Iterable, Mapping
+from flask import g
+from functools import wraps
 from types import DynamicClassAttribute
 
 under_pat = re.compile(r'_([a-z])')
@@ -119,3 +123,19 @@ class Name2Callable(Mapping):
         self.map[callable_.__name__] = callable_
         self.last_item_added = callable_
         return callable_
+
+
+def flask_request_memoize(f):
+    """
+    Flask memoize wrapper for a callable.
+
+    Based on the same wrapper i Cerebrum.utils.funcwrap.
+    Caching is done via flask.g and will be removed when the session ends.
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        arg_string = f'{args}{kwargs}'
+        if arg_string not in g:
+            setattr(g, arg_string, f(*args, **kwargs))
+        return getattr(g, arg_string)
+    return wrapper
