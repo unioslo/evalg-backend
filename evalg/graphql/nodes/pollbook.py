@@ -126,19 +126,10 @@ class CensusFileImport(graphene_sqlalchemy.SQLAlchemyObjectType):
         default_resolver = permission_controlled_default_resolver
 
 
-def resolve_pollbooks_by_fields(_, info):
-    session = get_session(info)
-    return session.query(evalg.models.pollbook.Pollbook).all()
-
-
 def resolve_pollbook_by_id(_, info, **args):
     session = get_session(info)
     return session.query(evalg.models.pollbook.Pollbook).get(args['id'])
 
-
-list_pollbooks_query = graphene.List(
-    Pollbook,
-    resolver=resolve_pollbooks_by_fields)
 
 get_pollbook_query = graphene.Field(
     Pollbook,
