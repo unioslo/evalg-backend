@@ -12,7 +12,7 @@ from evalg.proc.authz import (get_principals_for_person,
                               get_person_roles_matching)
 from evalg.proc.pollbook import get_voters_for_person
 from evalg.proc.group import get_election_key_meta
-from evalg.utils import flask_session_memoize
+from evalg.utils import flask_request_memoize
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class Requirement(OriginalRequirement):
         return self.fulfill(user)
 
 
-@flask_session_memoize
+@flask_request_memoize
 def role_in_principals(principals, **match):
     assert 'target_type' in match
     assert 'name' in match
@@ -41,7 +41,7 @@ class IsElectionGroupAdmin(Requirement):
         self.session = session
         self.election_group_id = election_group_id
 
-    @flask_session_memoize
+    @flask_request_memoize
     def fulfill(self, user):
         principals = get_principals_for_person(self.session, user.person)
         return role_in_principals(
@@ -55,7 +55,7 @@ class IsPerson(Requirement):
     def __init__(self, person):
         self.person = person
 
-    @flask_session_memoize
+    @flask_request_memoize
     def fulfill(self, user):
         return user.person.id == self.person.id
 
@@ -65,7 +65,7 @@ class HasPersonCreatedMyElectionsKey(Requirement):
         self.person = person
         self.session = session
 
-    @flask_session_memoize
+    @flask_request_memoize
     def fulfill(self, user):
         user_roles = get_person_roles_matching(
             self.session,
@@ -88,7 +88,7 @@ class IsVoter(Requirement):
         self.session = session
         self.voter = voter
 
-    @flask_session_memoize
+    @flask_request_memoize
     def fulfill(self, user):
         return self.voter.id in [
             v.id for v in get_voters_for_person(
@@ -102,7 +102,7 @@ class IsPublisher(Requirement):
     def __init__(self, session):
         self.session = session
 
-    @flask_session_memoize
+    @flask_request_memoize
     def fulfill(self, user, request=None):
         principals = get_principals_for_person(self.session, user.person)
         return role_in_principals(

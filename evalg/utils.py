@@ -125,7 +125,7 @@ class Name2Callable(Mapping):
         return callable_
 
 
-def flask_session_memoize(f):
+def flask_request_memoize(f):
     """
     Flask memoize wrapper for a callable.
 
