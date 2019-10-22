@@ -214,39 +214,6 @@ def test_query_election_list_by_id(pref_candidates_foo,
         assert candidate.meta == v['meta']
 
 
-def test_query_election_list(election_list_pref_foo, client):
-    """Test the elections query."""
-    query = """
-    query {
-        electionLists {
-            id
-            name
-            candidates {
-                id
-                listId
-                name
-                meta
-            }
-        }
-    }
-    """
-    context = get_context()
-    execution = client.execute(query, context=context)
-    assert not execution.get('errors')
-    response = execution['data']['electionLists']
-    assert len(response) == 1
-    foo_candidates = {str(x.id): x for x in election_list_pref_foo.candidates}
-    response_candidates = {x['id']: x for x in response[0]['candidates']}
-    assert foo_candidates.keys() == response_candidates.keys()
-
-    for k, v in response_candidates.items():
-        candidate = foo_candidates[k]
-        assert str(candidate.id) == v['id']
-        assert str(candidate.list_id) == v['listId']
-        assert candidate.name == v['name']
-        assert candidate.meta == v['meta']
-
-
 def test_delete_candidate_mutation(pref_candidates_foo, election_list_pref_foo,
                                    client, logged_in_user):
     """Test the delete candidate mutation."""
