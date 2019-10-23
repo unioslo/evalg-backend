@@ -157,25 +157,6 @@ def test_unpublish_election_group(
     assert not election_group_after_after.published
 
 
-def test_query_elections(election_foo, client):
-    query = """
-    query elections {
-        elections {
-            id
-            name
-            description
-        }
-    }
-    """
-    context = get_context()
-    execution = client.execute(query, context=context)
-    assert not execution.get('errors')
-    response = execution['data']['elections']
-
-    elections_db = Election.query.all()
-    assert len(response) == len(elections_db)
-
-
 def test_query_election_by_id(election_foo, client):
     variables = {'id': str(election_foo.id)}
     query = """
@@ -225,39 +206,6 @@ def test_query_election_list_by_id(pref_candidates_foo,
     foo_candidates = {str(x.id): x for x in election_list_pref_foo.candidates}
     response_candidates = {x['id']: x for x in response['candidates']}
     assert foo_candidates.keys() == response_candidates.keys()
-    for k, v in response_candidates.items():
-        candidate = foo_candidates[k]
-        assert str(candidate.id) == v['id']
-        assert str(candidate.list_id) == v['listId']
-        assert candidate.name == v['name']
-        assert candidate.meta == v['meta']
-
-
-def test_query_election_list(election_list_pref_foo, client):
-    """Test the elections query."""
-    query = """
-    query {
-        electionLists {
-            id
-            name
-            candidates {
-                id
-                listId
-                name
-                meta
-            }
-        }
-    }
-    """
-    context = get_context()
-    execution = client.execute(query, context=context)
-    assert not execution.get('errors')
-    response = execution['data']['electionLists']
-    assert len(response) == 1
-    foo_candidates = {str(x.id): x for x in election_list_pref_foo.candidates}
-    response_candidates = {x['id']: x for x in response[0]['candidates']}
-    assert foo_candidates.keys() == response_candidates.keys()
-
     for k, v in response_candidates.items():
         candidate = foo_candidates[k]
         assert str(candidate.id) == v['id']

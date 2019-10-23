@@ -51,10 +51,6 @@ class Person(graphene_sqlalchemy.SQLAlchemyObjectType):
     identifiers = graphene.List(PersonIdentifier)
 
 
-def resolve_persons_by_info(_, info):
-    return Person.get_query(info).all()
-
-
 def resolve_person_by_id(_, info, **args):
     return Person.get_query(info).get(args['id'])
 
@@ -74,10 +70,6 @@ def resolve_get_person_for_voter(_, info, **args):
         id=voter_id)
     return evalg.proc.pollbook.get_person_for_voter(session, voter)
 
-
-list_persons_query = graphene.List(
-    Person,
-    resolver=resolve_persons_by_info)
 
 get_person_query = graphene.Field(
     Person,

@@ -28,20 +28,10 @@ class ElectionList(graphene_sqlalchemy.SQLAlchemyObjectType):
         default_resolver = permission_controlled_default_resolver
 
 
-def resolve_candidate_lists_by_fields(_, info, **args):
-    session = get_session(info)
-    return session.query(evalg.models.election_list.ElectionList).all()
-
-
 def resolve_candidate_list_by_id(_, info, **args):
     session = get_session(info)
     return session.query(evalg.models.election_list.ElectionList).get(
         args['id'])
-
-
-list_candidate_lists_query = graphene.List(
-    ElectionList,
-    resolver=resolve_candidate_lists_by_fields)
 
 
 get_candidate_list_query = graphene.Field(
@@ -66,19 +56,10 @@ class Candidate(graphene_sqlalchemy.SQLAlchemyObjectType):
         return convert_json(self.meta)
 
 
-def resolve_candidates_by_fields(_, info):
-    session = get_session(info)
-    return session.query(evalg.models.candidate.Candidate).all()
-
-
 def resolve_candidate_by_id(self, info, **args):
     session = get_session(info)
     return session.query(evalg.models.candidate.Candidate).get(args['id'])
 
-
-list_candidates_query = graphene.List(
-    Candidate,
-    resolver=resolve_candidates_by_fields)
 
 get_candidate_query = graphene.Field(
     Candidate,
