@@ -21,6 +21,14 @@ class NoMoreElectableCandidates(Exception):
     pass
 
 
+class NoMoreExcludableCandidates(Exception):
+    """
+    Raised in a substitute round when all excludable candidates
+    are protected by $21
+    """
+    pass
+
+
 class NoMoreGloballyElectableCandidates(Exception):
     """Raised when §19.1 is detected (globally)"""
     pass
@@ -722,6 +730,14 @@ class RegularRound:
                     count.CountingEventType.CANDIDATE_QUOTA_PROTECTED,
                     {'candidate': str(candidate.id)}))
             return
+        if candidate in self._excluded:
+            # in case of quota max. value reached exclusion
+            logger.info("Candidate %s is already excluded", candidate)
+            self._state.add_event(
+                count.CountingEvent(
+                    count.CountingEventType.EXCLUDED_EARLIER,
+                    {'candidate': str(candidate.id)}))
+            return None  # make pylint happy
         self._excluded.append(candidate)
         if self._vcount_results_remaining.pop(candidate, None) is None:
             logger.warning(
@@ -1787,7 +1803,22 @@ class SubstituteRound(RegularRound):
                         total_surplus)
             # §16.3 - check if someone can be excluded,
             # but §21 comes into play here as well.
-            excludable_candidates = self._get_excludable_candidates()
+            results_remaining = collections.Counter(
+                self._vcount_results_remaining)
+            while True:
+                # avoid infinite loop in case some miracle happens
+                if not results_remaining:
+                    excludable_candidates = tuple()
+                    break
+                try:
+                    excludable_candidates = self._get_excludable_candidates(
+                        results_remaining.most_common())
+                    break
+                except NoMoreExcludableCandidates:
+                    # pop the bottom candidate and try again
+                    results_remaining.pop(
+                        results_remaining.most_common()[-1][0])
+                    continue
             if not excludable_candidates:
                 logger.debug("No candidates for exclusion")
                 self._state.add_event(count.CountingEvent(
@@ -2083,6 +2114,10 @@ class SubstituteRound(RegularRound):
             logger.warning("Candidate %s was elected in an earlier election "
                            "count and can not be excluded here (§21)",
                            candidate)
+            self._state.add_event(
+                count.CountingEvent(
+                    count.CountingEventType.ELECTED_EARLIER,
+                    {'candidate': str(candidate.id)}))
             return None  # make pylint happy
         return super()._exclude_candidate(candidate)
 
@@ -2140,7 +2175,7 @@ class SubstituteRound(RegularRound):
                  'election_number': str(election_number)}))
         return election_number
 
-    def _get_excludable_candidates(self):
+    def _get_excludable_candidates(self, results=None):
         """
         Important implementation of §16.3
 
@@ -2150,7 +2185,8 @@ class SubstituteRound(RegularRound):
         if self._first_substitute_count or not self._vcount_results_remaining:
             # first round or no counts in the previous round
             return tuple()
-        results = self._vcount_results_remaining.most_common()
+        if results is None:
+            results = self._vcount_results_remaining.most_common()
         if len(results) < 2:
             # paranoia: this should not happen because of §19
             # that is always checked before exclusion
@@ -2181,9 +2217,18 @@ class SubstituteRound(RegularRound):
         if largest_exclusion_group_size <= max_possible_to_exclude:
             # return the largest possible group
             # make it look ugly because of debugging
-            return self._get_filtered_excludables(
+            filtered_excludables = self._get_filtered_excludables(
                 map(operator.itemgetter(0),
                     results[-largest_exclusion_group_size:]))
+            if largest_exclusion_group_size and not filtered_excludables:
+                logger.info(
+                    "No candidates left to exclude after filtering ($21)")
+                self._state.add_event(
+                    count.CountingEvent(
+                        count.CountingEventType.NO_EXCL_CANDIDATES_21,
+                        {}))
+                raise NoMoreExcludableCandidates
+            return filtered_excludables
         # the candidates from exclusion are too many
 
         # pick a smaller size and perform the §16.3 - A check again!
@@ -2195,9 +2240,18 @@ class SubstituteRound(RegularRound):
                     sum_from(-max_possible_to_exclude) + total_surplus <
                     results[-(max_possible_to_exclude + 1)][1]
             ):
-                return self._get_filtered_excludables(
+                filtered_excludables = self._get_filtered_excludables(
                     map(operator.itemgetter(0),
                         results[-max_possible_to_exclude:]))
+                if not filtered_excludables:
+                    logger.info(
+                        "No candidates left to exclude after filtering (§21)")
+                    self._state.add_event(
+                        count.CountingEvent(
+                            count.CountingEventType.NO_EXCL_CANDIDATES_21,
+                            {}))
+                    raise NoMoreExcludableCandidates
+                return filtered_excludables
             max_possible_to_exclude -= 1
         # §16.3 - A didn't pass for any subgroup (size)
         # Nobody can be excluded here and now
@@ -2220,6 +2274,10 @@ class SubstituteRound(RegularRound):
                 logger.info("Candidate %s was elected in an earlier election "
                             "count and can not be excluded here (§21)",
                             excludable)
+                self._state.add_event(
+                    count.CountingEvent(
+                        count.CountingEventType.ELECTED_EARLIER,
+                        {'candidate': str(excludable.id)}))
                 continue
             filtered_excludables.append(excludable)
         return tuple(filtered_excludables)

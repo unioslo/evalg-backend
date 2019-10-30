@@ -93,6 +93,9 @@ Status (oppsummering):
 {% elif event.event_type == 'ELECT_19_1' -%}
 {{ person_name(event.event_data['candidate']) }} er valgt i henhold til §19.1.
 
+{% elif event.event_type == 'ELECTED_EARLIER' -%}
+{{ person_name(event.event_data['candidate']) }} er valgt i et tidligere valgoppgjør og kan dermed ikke ekskluderes (§21).
+
 {% elif event.event_type == 'ELECTION_NUMBER' -%}
 Beregner valgtall:
 Kvotient (§18.3, §33): ({{ event.event_data['weight_counting_ballots'] }} (vekt av ikke-blanke stemmer) / ({{ event.event_data['candidates_to_elect'] }} kandidater å velge + 1) (beregnes med to desimaler, uten forhøyning) = {{ event.event_data['quotient'] }}
@@ -102,6 +105,9 @@ Valgtallet er: {{ event.event_data['quotient'] }} (kvotient) + {{ event.event_da
 Beregner valgtall for vara runde:
 Kvotient (§18.3, §33): ({{ event.event_data['weight_counting_ballots'] }} (vekt av ikke-blanke stemmer) / ({{ event.event_data['candidates_to_elect'] }} faste kandidater å velge + ({{ event.event_data['substitute_number'] }}. vara) + 1) (beregnes med to desimaler, uten forhøyning) = {{ event.event_data['quotient'] }}
 Valgtallet er: {{ event.event_data['quotient'] }} (kvotient) + {{ event.event_data['epsilon'] }} (epsilon) = {{ event.event_data['election_number'] }}
+
+{% elif event.event_type == 'EXCLUDED_EARLIER' -%}
+{{ person_name(event.event_data['candidate']) }} er allerede ekskludert.
 
 {% elif event.event_type == 'MAX_QUOTA_VALUE_REACHED' -%}
 Maksimumskvote for gruppa "{{ event.event_data['quota_group'] }}" ({%- if not event.event_data['members'] %}ingen medlemmer som ikke er valgt{% else %}{{ person_names_list(event.event_data['members']) }}{% endif -%}) er fylt.
@@ -138,6 +144,10 @@ Opptellingsrunde {{ event.event_data['round_id'] }} (for vara {{ event.event_dat
 {% elif event.event_type == 'NO_ELECTABLE_SUBSTITUTES' -%}
 Skal ikke velge varakandidater.
 (Avslutter hele opptellingen)
+{% elif event.event_type == 'NO_EXCL_CANDIDATES_21' -%}
+Ingen av de opprinnelige kanidatene valgt for ekskludering i henhold til §16.3 kunne ekskluderes (§21).
+Tilpasser kandidater og prøver på nytt.
+
 {% elif event.event_type == 'NOT_ENOUGH_FOR_SUBSTITUTE_ROUND' -%}
 Ikke nok kandidater for å velge vara.
 (Avslutter hele opptellingen)

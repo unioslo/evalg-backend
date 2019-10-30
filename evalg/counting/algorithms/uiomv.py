@@ -162,18 +162,18 @@ class Round:
                     count_result_stats[pollbook][candidate][
                         'percent_pollbook'])
         count_results = results.most_common()
-        logger.info("Total score: %s", total_score)
-        logger.info("Half score: %s", total_score / decimal.Decimal(2))
-        self._state.add_event(
-            count.CountingEvent(
-                count.CountingEventType.NEW_COUNT,
-                {'count_results': count_results,
-                 'count_result_stats': count_result_stats,
-                 'half_score': str(total_score / decimal.Decimal(2)),
-                 'total_score': str(total_score)}))
+        total_stats = {}
         for vcount in count_results:
             # debugging mostly
             candidate, candidate_count = vcount
+            total_stats[str(candidate.id)] = {}
+            if total_score:
+                total_stats[str(candidate.id)]['percent_score'] = str(
+                    (decimal.Decimal(100) * candidate_count /
+                     total_score).quantize(
+                         decimal.Decimal('1.00'), decimal.ROUND_HALF_EVEN))
+            else:
+                total_stats[str(candidate.id)]['percent_score'] = '0'
             if candidate_count > total_score / decimal.Decimal(2):
                 logger.info("Candidate %s: %s (has more than 1/2 of the total "
                             "score and will be elected)",
@@ -182,6 +182,16 @@ class Round:
                 elected_candidate = candidate
                 continue
             logger.info("Candidate %s: %s", candidate, candidate_count)
+        logger.info("Total score: %s", total_score)
+        logger.info("Half score: %s", total_score / decimal.Decimal(2))
+        self._state.add_event(
+            count.CountingEvent(
+                count.CountingEventType.NEW_COUNT,
+                {'count_results': count_results,
+                 'count_result_stats': count_result_stats,
+                 'total_stats': total_stats,
+                 'half_score': str(total_score / decimal.Decimal(2)),
+                 'total_score': str(total_score)}))
         if elected_candidate is None:
             # drawing
             logger.info(

@@ -50,7 +50,7 @@ Status
 Stemmetall totalt: {{ event.event_data['total_score'] }}
 Stemmetall 1/2: {{ event.event_data['half_score'] }}
 {% for result in event.event_data['count_results'] -%}
-{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if 'count_result_stats' in event.event_data %} ({% for pollbook_id in event.event_data['count_result_stats'] %}{{ pollbook_name(pollbook_id) }}: {{ event.event_data['count_result_stats'][pollbook_id][result[0]]['total'] }} ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['amount'] }} stemmer) ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['percent_pollbook'] }}%){% if not loop.last %}, {% endif %}{% endfor %}){% endif %}
+{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if 'count_result_stats' in event.event_data %} ({% for pollbook_id in event.event_data['count_result_stats'] %}{{ pollbook_name(pollbook_id) }}: {{ event.event_data['count_result_stats'][pollbook_id][result[0]]['total'] }} ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['amount'] }} stemmer) ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['percent_pollbook'] }}%){% if not loop.last %}, {% endif %}{% endfor %}){% endif %} (total: {{ event.event_data['total_stats'][result[0]]['percent_score'] }}%)
 {% endfor %}
 {% else %}
 DEBUG: Unimplemented event {{ event.event_type }}

@@ -63,11 +63,17 @@ class CountingEventType(enum.Enum):
     # a candidate is elected according to §19.1
     ELECT_19_1 = enum.auto()
 
+    # a candidate was elected in an earlier election §21
+    ELECTED_EARLIER = enum.auto()
+
     # calculation of election number for a regular round
     ELECTION_NUMBER = enum.auto()
 
     # calculation of election number for a substitute round
     ELECTION_NUMBER_SUBSTITUTE = enum.auto()
+
+    # a candidate was excluded earlier
+    EXCLUDED_EARLIER = enum.auto()
 
     # a candidate is member of a group that reached its max. value
     MAX_QUOTA_VALUE_EXCLUDED = enum.auto()
@@ -86,6 +92,9 @@ class CountingEventType(enum.Enum):
 
     # no substitute candidates to be elected
     NO_ELECTABLE_SUBSTITUTES = enum.auto()
+
+    # §21 within §16.3
+    NO_EXCL_CANDIDATES_21 = enum.auto()
 
     # not enough unelected candidates for a substitute-round
     NOT_ENOUGH_FOR_SUBSTITUTE_ROUND = enum.auto()
