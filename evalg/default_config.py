@@ -80,7 +80,7 @@ PERMISSIONS = {
         'status': 'allow',
         'election_group_counts': 'can_manage_election_group',
         'publication_blockers': 'can_manage_election_group',
-        'roles': 'can_manage_election_group'
+        'roles': 'can_manage_election_group',
     },
     'Election': {
         'name': 'allow',
@@ -202,6 +202,7 @@ PERMISSIONS = {
         'voters_without_vote': 'can_manage_pollbook',
         'census_file_imports': 'can_manage_pollbook',
         'nr_of_voters': 'can_manage_pollbook',
+        'voter_dump': 'can_manage_pollbook',
     },
     'CensusFileImport': {
         'pollbook_id': 'can_manage_census_file_upload',

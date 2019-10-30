@@ -6,6 +6,7 @@ import logging
 import graphene
 import graphene_sqlalchemy
 from graphene_file_upload.scalars import Upload
+from graphene.types.generic import GenericScalar
 
 import evalg.database.query
 import evalg.models.census_file_import
@@ -68,6 +69,7 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
     voters_without_vote = graphene.List(lambda: Voter)
 
     nr_of_voters = graphene.types.Int()
+    voter_dump = graphene.Field(GenericScalar)
 
     @permission_controller
     def resolve_nr_of_voters(self, info):
@@ -115,6 +117,11 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
         session = get_session(info)
         return evalg.proc.pollbook.get_voters_without_vote_in_pollbook(
             session, self.id)
+
+    @permission_controller
+    def resolve_voter_dump(self, info):
+        session = get_session(info)
+        return evalg.proc.pollbook.get_voter_dump(session, self.id)
 
 
 @permission_controller.control_object_type
