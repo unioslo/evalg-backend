@@ -2221,8 +2221,8 @@ class SubstituteRound(RegularRound):
                 map(operator.itemgetter(0),
                     results[-largest_exclusion_group_size:]))
             if largest_exclusion_group_size and not filtered_excludables:
-                logger.info(
-                    "No candidates left to exclude after filtering ($21)")
+                logger.info("No candidates left to exclude after filtering "
+                            "(§21 or §27)")
                 self._state.add_event(
                     count.CountingEvent(
                         count.CountingEventType.NO_EXCL_CANDIDATES_21,
@@ -2244,8 +2244,8 @@ class SubstituteRound(RegularRound):
                     map(operator.itemgetter(0),
                         results[-max_possible_to_exclude:]))
                 if not filtered_excludables:
-                    logger.info(
-                        "No candidates left to exclude after filtering (§21)")
+                    logger.info("No candidates left to exclude after "
+                                "filtering (§21 or §27)")
                     self._state.add_event(
                         count.CountingEvent(
                             count.CountingEventType.NO_EXCL_CANDIDATES_21,
@@ -2438,8 +2438,12 @@ class SubstituteRound(RegularRound):
                                    self._substitute_nr +
                                    1)
             members = set(quota_group.members)
-            sum_remaining_members = len(members.intersection(
-                set(self._get_remaining_candidates())))
+            # for §27 purposes we do not count previously elected quota members
+            remaining_candidates = set(
+                self._get_remaining_candidates()).difference(set(
+                    self._elected))
+            sum_remaining_members = len(
+                members.intersection(remaining_candidates))
             sum_elected_substitutes = len(members.intersection(set(
                 self._elected_substitutes)))
             if not sum_remaining_members:
