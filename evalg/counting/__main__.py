@@ -2,7 +2,8 @@
 """
 CLI entry point for the evalg.counting package
 
-python -m evalg.counting --count <path to decrypted vote-xxx.zip>
+python -m evalg.counting --count-legacy <path to decrypted vote-xxx.zip>
+python -m evalg.counting --count <path to .json ballot dump file>
 """
 import argparse
 import logging
