@@ -12,6 +12,7 @@ from evalg.counting.count import Counter
 from evalg.counting.legacy import (EvalgLegacyElection,
                                    EvalgLegacyInvalidBallot,
                                    EvalgLegacyInvalidFile)
+from evalg.counting import standalone
 
 
 if __name__ == '__main__':
@@ -29,6 +30,12 @@ if __name__ == '__main__':
         default=False,
         help='Perform a count')
     group.add_argument(
+        '--count-legacy',
+        action='store_true',
+        dest='count_legacy',
+        default=False,
+        help='Perform a legacy count')
+    parser.add_argument(
         '--dump',
         action='store_true',
         dest='dump',
@@ -52,17 +59,23 @@ if __name__ == '__main__':
         'electionfile',
         metavar='<filename>',
         type=str,
-        help='the election file (votes-XYZ.zip)')
+        help=('the election file (.json for --count and '
+              'votes-XYZ.zip for --count-lagacy)'))
     args = parser.parse_args()
     try:
-        legacy_election = EvalgLegacyElection(args.electionfile)
-        logger.debug("Adding legacy election: %s", legacy_election)
-        counter = Counter(legacy_election,
-                          legacy_election.ballots,
-                          args.alternative_paths)
-        if args.dump:
-            print(counter.dumps())
         if args.count:
+            election = standalone.Election(args.electionfile)
+            logger.debug("Adding standalone election: %s", election)
+        if args.count_legacy:
+            election = EvalgLegacyElection(args.electionfile)
+            logger.debug("Adding legacy election: %s", election)
+        if args.count_legacy or args.count:
+            counter = Counter(election,
+                              election.ballots,
+                              args.alternative_paths)
+            if args.dump:
+                print(counter.dumps(), flush=True)
+                sys.exit(0)
             election_count_tree = counter.count()
             election_count_tree.print_summary()  # debug
             # print(election_count_tree.default_path.get_result().to_json())
@@ -73,10 +86,10 @@ if __name__ == '__main__':
                     fp.write(path_protocol.render())
             else:
                 print(path_protocol.render())
-    except EvalgLegacyInvalidBallot as e:
+    except (EvalgLegacyInvalidBallot, standalone.InvalidBallotException) as e:
         logger.error("Invalid ballot: %s", e)
         sys.exit(1)
-    except EvalgLegacyInvalidFile:
+    except (EvalgLegacyInvalidFile, standalone.InvalidFileException):
         logger.error("Missing or invalid election-file: %s", args.electionfile)
         sys.exit(1)
     except Exception as e:
