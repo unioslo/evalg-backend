@@ -31,7 +31,6 @@ def ballot():
         'ballotData': {
             'voteType': 'majorityVote',
             'isBlankVote': True,
-            'candidateId': None,
+            'rankedCandidateIds': [],
         }
     }
-
