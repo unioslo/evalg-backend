@@ -989,6 +989,36 @@ def uids_upper_case():
 
 
 @pytest.fixture
+def uids_empty_line_end():
+    """A list of uids."""
+    return ['pederaas', 'martekir', 'larsh', 'hansta', '', '']
+
+
+@pytest.fixture
+def uids_empty_line_middle():
+    """A list of uids."""
+    return ['pederaas', 'martekir', '', 'larsh', 'hansta']
+
+
+@pytest.fixture
+def uids_empty_line_start():
+    """A list of uids."""
+    return ['', 'pederaas', 'martekir', 'larsh', 'hansta']
+
+
+@pytest.fixture
+def uids_empty_line_mix():
+    """A list of uids."""
+    return ['', 'pederaas', 'martekir', '', 'larsh', 'hansta', '']
+
+
+@pytest.fixture
+def uids_whitespace_lines():
+    """A list of uids."""
+    return ['  ', 'pederaas', 'martekir', '\t', 'larsh', 'hansta', '\t  ']
+
+
+@pytest.fixture
 def uids_mixed_case():
     """A list of uids."""
     return ['PEDERAAS', 'martekir', 'larsh', 'HANSTA']
@@ -1094,6 +1124,66 @@ def uid_plane_text_census_builder(feide_ids):
 def uid_plane_text_crlf_census_builder(feide_ids):
     """Plain text census file of feide ids."""
     return generate_census_file_builder(feide_ids, 'txt', linebrake='\r\n')
+
+
+@pytest.fixture
+def uids_plane_text_empty_line_end_census_builder(uids_empty_line_end):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_empty_line_end, 'txt')
+
+
+@pytest.fixture
+def uids_plane_text_empty_line_middle_census_builder(uids_empty_line_middle):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_empty_line_middle, 'txt')
+
+
+@pytest.fixture
+def uids_plane_text_empty_line_start_census_builder(uids_empty_line_start):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_empty_line_start, 'txt')
+
+
+@pytest.fixture
+def uids_plane_text_empty_line_mix_census_builder(uids_empty_line_mix):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_empty_line_mix, 'txt')
+
+
+@pytest.fixture
+def uids_plane_text_whitespace_lines_census_builder(uids_whitespace_lines):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_whitespace_lines, 'txt')
+
+
+@pytest.fixture
+def uids_csv_empty_line_end_census_builder(uids_empty_line_end):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_empty_line_end, 'csv')
+
+
+@pytest.fixture
+def uids_csv_empty_line_middle_census_builder(uids_empty_line_middle):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_empty_line_middle, 'csv')
+
+
+@pytest.fixture
+def uids_csv_empty_line_start_census_builder(uids_empty_line_start):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_empty_line_start, 'csv')
+
+
+@pytest.fixture
+def uids_csv_empty_line_mix_census_builder(uids_empty_line_mix):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_empty_line_mix, 'csv')
+
+
+@pytest.fixture
+def uids_csv_whitespace_lines_census_builder(uids_whitespace_lines):
+    """Plane text census file with empty lines."""
+    return generate_census_file_builder(uids_whitespace_lines, 'csv')
 
 
 @pytest.fixture
