@@ -41,7 +41,6 @@ class IsElectionGroupAdmin(Requirement):
         self.session = session
         self.election_group_id = election_group_id
 
-    @flask_request_memoize
     def fulfill(self, user):
         principals = get_principals_for_person(self.session, user.person)
         return role_in_principals(
@@ -55,7 +54,6 @@ class IsPerson(Requirement):
     def __init__(self, person):
         self.person = person
 
-    @flask_request_memoize
     def fulfill(self, user):
         return user.person.id == self.person.id
 
@@ -65,7 +63,6 @@ class HasPersonCreatedMyElectionsKey(Requirement):
         self.person = person
         self.session = session
 
-    @flask_request_memoize
     def fulfill(self, user):
         user_roles = get_person_roles_matching(
             self.session,
@@ -88,7 +85,6 @@ class IsVoter(Requirement):
         self.session = session
         self.voter = voter
 
-    @flask_request_memoize
     def fulfill(self, user):
         return self.voter.id in [
             v.id for v in get_voters_for_person(
@@ -102,7 +98,6 @@ class IsPublisher(Requirement):
     def __init__(self, session):
         self.session = session
 
-    @flask_request_memoize
     def fulfill(self, user, request=None):
         principals = get_principals_for_person(self.session, user.person)
         return role_in_principals(
