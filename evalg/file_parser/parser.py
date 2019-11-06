@@ -29,6 +29,12 @@ class CensusFileParser(metaclass=abc.ABCMeta):
                     continue
         elif self.id_type == 'feide_id':
             for field in self.fields:
+
+                # Remove whitespaces
+                field = field.strip()
+                if len(field) == 0:
+                    continue
+
                 if self._convert_to_feide:
                     yield "{}@{}".format(field.lower(), self.feide_postfix)
                 else:
@@ -69,6 +75,9 @@ class CensusFileParser(metaclass=abc.ABCMeta):
         """
         if not ids:
             raise ValueError('No ids given')
+
+        # Remove empty lines or lines with only whitespaces
+        ids = [x.strip() for x in ids if len(x.strip()) > 0]
         try:
             [int(x) for x in ids]
         except ValueError:

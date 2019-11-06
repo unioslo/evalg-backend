@@ -55,11 +55,151 @@ def test_uid_plain_text_mixed_case(uid_plane_text_mixed_case_builder,
     assert sorted(result) == sorted(feide_ids)
 
 
+def test_uid_plain_text_empty_line_start(
+        uids_plane_text_empty_line_start_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_plane_text_empty_line_start_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.PlainTextParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_plain_text_empty_line_middle(
+        uids_plane_text_empty_line_middle_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_plane_text_empty_line_middle_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.PlainTextParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_plain_text_empty_line_end(
+        uids_plane_text_empty_line_end_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_plane_text_empty_line_end_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.PlainTextParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_plain_text_empty_line_mix(
+        uids_plane_text_empty_line_mix_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_plane_text_empty_line_mix_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.PlainTextParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_plain_text_whitespace_lines(
+        uids_plane_text_whitespace_lines_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_plane_text_whitespace_lines_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.PlainTextParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
 def test_uid_cvs(uid_csv_census_builder, feide_ids):
     """Test parsing of csv uid file."""
     file = uid_csv_census_builder.files['file']
     parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
 
+    assert parser is not None
+    assert isinstance(parser, cparser.CsvParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_csv_empty_line_start(
+        uids_csv_empty_line_start_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_csv_empty_line_start_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.CsvParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_csv_empty_line_middle(
+        uids_csv_empty_line_middle_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_csv_empty_line_middle_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.CsvParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_csv_empty_line_end(
+        uids_csv_empty_line_end_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_csv_empty_line_end_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.CsvParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_csv_empty_line_mix(
+        uids_csv_empty_line_mix_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_csv_empty_line_mix_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
+    assert parser is not None
+    assert isinstance(parser, cparser.CsvParser)
+    assert parser.id_type == 'feide_id'
+    result = list(parser.parse())
+    assert len(result) == len(feide_ids)
+    assert sorted(result) == sorted(feide_ids)
+
+
+def test_uid_csv_whitespace_lines(
+        uids_csv_whitespace_lines_census_builder,
+        feide_ids):
+    """Test parsing of plain text uid file, with crlf linebrakes."""
+    file = uids_csv_whitespace_lines_census_builder.files['file']
+    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
     assert parser is not None
     assert isinstance(parser, cparser.CsvParser)
     assert parser.id_type == 'feide_id'
