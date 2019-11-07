@@ -249,7 +249,7 @@ class RegularRound:
         self._round_cnt = (1 if self._parent is None else
                            (self._parent.round_cnt + 1))
         # prevent infinite loops due to bugs
-        if self._round_cnt > 100:
+        if self._round_cnt > 500:
             logger.critical('Infinite recursion caught. Killing everything...')
             raise count.CountingFailure(
                 'Infinite recursion caught in regular round')
@@ -1738,7 +1738,7 @@ class SubstituteRound(RegularRound):
             self._ballot_owners = dict(self._parent.ballot_owners)
             self._transferred_uncounted_ballots = dict(
                 self._parent.transferred_uncounted_ballots)
-        if self._round_cnt > 200:
+        if self._round_cnt > 1000:
             logger.critical('Infinite recursion caught. Killing everything...')
             raise count.CountingFailure(
                 'Infinite recursion caught in regular round')
