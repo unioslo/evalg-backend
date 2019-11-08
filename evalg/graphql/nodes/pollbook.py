@@ -46,12 +46,20 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     person = graphene.Field(Person)
 
+    has_voted = graphene.Field(graphene.types.Boolean)
+
     @permission_controller
     def resolve_person(self, info):
         voter_id = self.id
         session = get_session(info)
         voter = session.query(evalg.models.voter.Voter).get(voter_id)
         return evalg.proc.pollbook.get_person_for_voter(session, voter)
+
+    @permission_controller
+    def resolve_has_voted(self, info):
+        voter_id = self.id
+        session = get_session(info)
+        return evalg.proc.pollbook.has_voter_voted(session, voter_id)
 
 
 @permission_controller.control_object_type
@@ -144,11 +152,22 @@ get_pollbook_query = graphene.Field(
     id=graphene.Argument(graphene.UUID, required=True))
 
 
-def resolve_search_voters(_, info, **args):
-    election_group_id = args.pop('election_group_id')
+def resolve_search_voters(_, info, **kwargs):
+    election_group_id = kwargs.pop('election_group_id')
     session = get_session(info)
+
+    if 'search' in kwargs and kwargs.get('search') == '':
+        # Return nothing if the search string is empty
+        return []
+
+    if 'limit' in kwargs:
+        limit = kwargs.pop('limit')
+        return evalg.proc.pollbook.get_voters_in_election_group(
+            session, election_group_id, **kwargs
+        ).limit(limit).all()
+
     return evalg.proc.pollbook.get_voters_in_election_group(
-        session, election_group_id, **args
+        session, election_group_id, **kwargs
     ).all()
 
 
@@ -172,6 +191,9 @@ search_voters_query = graphene.List(
     reviewed=graphene.Argument(graphene.Boolean, required=False),
     verified=graphene.Argument(graphene.Boolean, required=False),
     has_voted=graphene.Argument(graphene.Boolean, required=False),
+    limit=graphene.Argument(graphene.Int, required=False),
+    search=graphene.Argument(graphene.String, required=False),
+    pollbook_id=graphene.Argument(graphene.UUID, required=False),
 )
 
 

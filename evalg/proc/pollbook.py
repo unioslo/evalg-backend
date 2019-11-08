@@ -9,6 +9,7 @@ This includes:
 """
 import logging
 
+from flask import current_app
 from sqlalchemy import and_, func
 
 import evalg.database.query
@@ -283,9 +284,15 @@ def get_person_for_voter(session, voter):
     return query
 
 
-def get_voters_in_election_group(session, election_group_id, self_added=None,
-                                 reviewed=None, verified=None,
-                                 has_voted=None):
+def get_voters_in_election_group(
+        session,
+        election_group_id,
+        self_added=None,
+        reviewed=None,
+        verified=None,
+        has_voted=None,
+        search=None,
+        pollbook_id=None):
     query = session.query(
         Voter
     ).join(
@@ -310,8 +317,10 @@ def get_voters_in_election_group(session, election_group_id, self_added=None,
         query = query.filter(Voter.reviewed == reviewed)
     if verified is not None:
         query = query.filter(Voter.verified == verified)
+    if pollbook_id is not None:
+        query = query.filter(Voter.pollbook_id == pollbook_id)
     if has_voted is not None:
-        query = query.join(
+        query = query.outerjoin(
             Vote,
             and_(
                 Voter.id == Vote.voter_id
@@ -323,7 +332,21 @@ def get_voters_in_election_group(session, election_group_id, self_added=None,
             query = query.having(func.count(Vote.ballot_id) > 0)
         else:
             query = query.having(func.count(Vote.ballot_id) == 0)
+    if search is not None:
+        query = query.filter(Voter.id_value.like(f'%{search}%'))
     return query
+
+
+def has_voter_voted(session, voter_id):
+    query = session.query(
+        func.count(Vote.voter_id)
+    ).filter(
+        Vote.voter_id == voter_id
+    ).scalar()
+
+    if query > 0:
+        return True
+    return False
 
 
 def get_voters_by_self_added(session, pollbook_id, self_added):

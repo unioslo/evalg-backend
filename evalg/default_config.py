@@ -174,6 +174,7 @@ PERMISSIONS = {
         'reason': 'can_view_voter',
         'verified_status': 'can_view_voter',
         'person': 'can_view_voter',
+        'has_voted': 'can_view_voter',
     },
     'MasterKey': {
         'active': 'allow',
