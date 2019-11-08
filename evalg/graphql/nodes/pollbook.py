@@ -164,7 +164,7 @@ def resolve_search_voters(_, info, **kwargs):
         limit = kwargs.pop('limit')
         return evalg.proc.pollbook.get_voters_in_election_group(
             session, election_group_id, **kwargs
-        ).order_by('id').limit(limit).all()
+        ).limit(limit).all()
 
     return evalg.proc.pollbook.get_voters_in_election_group(
         session, election_group_id, **kwargs
@@ -193,6 +193,7 @@ search_voters_query = graphene.List(
     has_voted=graphene.Argument(graphene.Boolean, required=False),
     limit=graphene.Argument(graphene.Int, required=False),
     search=graphene.Argument(graphene.String, required=False),
+    pollbook_id=graphene.Argument(graphene.UUID, required=False),
 )
 
 
