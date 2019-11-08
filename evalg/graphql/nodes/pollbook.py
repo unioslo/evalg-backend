@@ -164,7 +164,7 @@ def resolve_search_voters(_, info, **kwargs):
         limit = kwargs.pop('limit')
         return evalg.proc.pollbook.get_voters_in_election_group(
             session, election_group_id, **kwargs
-        ).limit(limit).all()
+        ).order_by('id').limit(limit).all()
 
     return evalg.proc.pollbook.get_voters_in_election_group(
         session, election_group_id, **kwargs
