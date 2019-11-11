@@ -28,18 +28,6 @@ class ElectionList(graphene_sqlalchemy.SQLAlchemyObjectType):
         default_resolver = permission_controlled_default_resolver
 
 
-def resolve_candidate_list_by_id(_, info, **args):
-    session = get_session(info)
-    return session.query(evalg.models.election_list.ElectionList).get(
-        args['id'])
-
-
-get_candidate_list_query = graphene.Field(
-    ElectionList,
-    resolver=resolve_candidate_list_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
-
-
 @permission_controller.control_object_type
 class Candidate(graphene_sqlalchemy.SQLAlchemyObjectType):
     """

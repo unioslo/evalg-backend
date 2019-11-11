@@ -26,9 +26,7 @@ class ElectionQuery(graphene.ObjectType):
         nodes.election_group.list_election_group_counting_results_query
     election_result = nodes.election.get_election_result_query
 
-    # Candidates and candidate lists
-    # TODO: rename *election_list* to *candidate_list*?
-    election_list = nodes.candidates.get_candidate_list_query
+    # Candidates
     candidate = nodes.candidates.get_candidate_query
 
     # Pollbooks and registered voters

@@ -157,43 +157,6 @@ def test_unpublish_election_group(
     assert not election_group_after_after.published
 
 
-def test_query_election_list_by_id(pref_candidates_foo,
-                                   election_list_pref_foo,
-                                   client):
-    """Test the election list by id query."""
-    variables = {'id': str(election_list_pref_foo.id)}
-    query = """
-    query($id: UUID!) {
-        electionList(id: $id) {
-            id
-            name
-            candidates {
-                id
-                listId
-                name
-                meta
-            }
-        }
-    }
-    """
-    context = get_context()
-    execution = client.execute(query, variables=variables, context=context)
-    assert not execution.get('errors')
-    response = execution['data']['electionList']
-    assert str(election_list_pref_foo.id) == response['id']
-    assert election_list_pref_foo.name == response['name']
-    assert len(pref_candidates_foo) == len(response['candidates'])
-    foo_candidates = {str(x.id): x for x in election_list_pref_foo.candidates}
-    response_candidates = {x['id']: x for x in response['candidates']}
-    assert foo_candidates.keys() == response_candidates.keys()
-    for k, v in response_candidates.items():
-        candidate = foo_candidates[k]
-        assert str(candidate.id) == v['id']
-        assert str(candidate.list_id) == v['listId']
-        assert candidate.name == v['name']
-        assert candidate.meta == v['meta']
-
-
 def test_delete_candidate_mutation(pref_candidates_foo, election_list_pref_foo,
                                    client, logged_in_user):
     """Test the delete candidate mutation."""
