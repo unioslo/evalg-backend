@@ -31,7 +31,6 @@ class ElectionQuery(graphene.ObjectType):
     search_voters = nodes.pollbook.search_voters_query
 
     # Users, persons and groups
-    person = nodes.person.get_person_query
     search_persons = nodes.person.search_persons_query
     search_groups = nodes.group.search_groups_query
     viewer = nodes.person.get_current_viewer_query
