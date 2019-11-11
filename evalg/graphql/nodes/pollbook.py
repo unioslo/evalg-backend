@@ -160,11 +160,6 @@ def resolve_search_voters(_, info, **kwargs):
     ).all()
 
 
-def resolve_voter_by_id(_, info, **args):
-    session = get_session(info)
-    return session.query(evalg.models.voter.Voter).get(args['id'])
-
-
 def resolve_voters_by_person_id(_, info, **args):
     person_id = args['id']
     session = get_session(info)
@@ -185,11 +180,6 @@ search_voters_query = graphene.List(
     pollbook_id=graphene.Argument(graphene.UUID, required=False),
 )
 
-
-get_voter_query = graphene.Field(
-    Voter,
-    resolver=resolve_voter_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
 
 # TODO: Re-design person-voter relationship
 find_voters_query = graphene.List(
