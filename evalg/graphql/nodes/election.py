@@ -58,16 +58,6 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
         return resolve_election_count_by_id(None, info, id=self.id)
 
 
-def resolve_election_by_id(_, info, **args):
-    return Election.get_query(info).get(args['id'])
-
-
-get_election_query = graphene.Field(
-    Election,
-    resolver=resolve_election_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
-
-
 @permission_controller.control_object_type
 class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:

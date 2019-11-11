@@ -16,7 +16,6 @@ class ElectionQuery(graphene.ObjectType):
     persons_with_multiple_verified_voters = \
         nodes.election_group.persons_with_multiple_verified_voters_query
     election_template = nodes.election_group.get_election_template_query
-    election = nodes.election.get_election_query
 
     # Election results
     election_group_count = \

@@ -157,26 +157,6 @@ def test_unpublish_election_group(
     assert not election_group_after_after.published
 
 
-def test_query_election_by_id(election_foo, client):
-    variables = {'id': str(election_foo.id)}
-    query = """
-    query election($id: UUID!) {
-        election(id: $id) {
-            id
-            name
-            description
-        }
-    }
-    """
-    context = get_context()
-    execution = client.execute(query, variables=variables, context=context)
-    assert not execution.get('errors')
-    response = execution['data']['election']
-    assert str(election_foo.id) == response['id']
-    assert election_foo.name == response['name']
-    assert election_foo.description == response['description']
-
-
 def test_query_election_list_by_id(pref_candidates_foo,
                                    election_list_pref_foo,
                                    client):
