@@ -44,17 +44,6 @@ class Candidate(graphene_sqlalchemy.SQLAlchemyObjectType):
         return convert_json(self.meta)
 
 
-def resolve_candidate_by_id(self, info, **args):
-    session = get_session(info)
-    return session.query(evalg.models.candidate.Candidate).get(args['id'])
-
-
-get_candidate_query = graphene.Field(
-    Candidate,
-    resolver=resolve_candidate_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
-
-
 #
 # Mutations
 #
