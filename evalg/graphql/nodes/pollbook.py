@@ -141,17 +141,6 @@ class CensusFileImport(graphene_sqlalchemy.SQLAlchemyObjectType):
         default_resolver = permission_controlled_default_resolver
 
 
-def resolve_pollbook_by_id(_, info, **args):
-    session = get_session(info)
-    return session.query(evalg.models.pollbook.Pollbook).get(args['id'])
-
-
-get_pollbook_query = graphene.Field(
-    Pollbook,
-    resolver=resolve_pollbook_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
-
-
 def resolve_search_voters(_, info, **kwargs):
     election_group_id = kwargs.pop('election_group_id')
     session = get_session(info)
