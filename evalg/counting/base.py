@@ -198,6 +198,7 @@ class Protocol:
         :rtype: str
         """
         tmpl = Environment(
+            newline_sequence='\r\n',
             loader=PackageLoader('evalg.counting', 'templates')).get_template(
                 template)
         return tmpl.render(**self.to_dict())
