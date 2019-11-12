@@ -29,22 +29,6 @@ class Vote(graphene_sqlalchemy.SQLAlchemyObjectType):
         default_resolver = permission_controlled_default_resolver
 
 
-def resolve_votes_by_person_id(_, info, **args):
-    person_id = args['id']
-    session = get_session(info)
-    person = evalg.database.query.lookup(
-        session,
-        evalg.models.person.Person,
-        id=person_id)
-    return evalg.proc.vote.get_votes_for_person(session, person).all()
-
-
-find_votes_query = graphene.List(
-    Vote,
-    resolver=resolve_votes_by_person_id,
-    id=graphene.Argument(graphene.UUID, required=True))
-
-
 class ElectionVoteCounts(graphene.ObjectType):
     """ Vote counts for election, grouped by voter status. """
     id = graphene.UUID()

@@ -34,8 +34,5 @@ class ElectionQuery(graphene.ObjectType):
     viewer = nodes.person.get_current_viewer_query
     person_for_voter = nodes.person.get_person_for_voter_query
 
-    # Votes
-    votes_for_person = nodes.votes.find_votes_query
-
     # MasterKeys
     master_keys = nodes.privkeys_backup.list_active_master_keys_query
