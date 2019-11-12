@@ -51,16 +51,6 @@ class Person(graphene_sqlalchemy.SQLAlchemyObjectType):
     identifiers = graphene.List(PersonIdentifier)
 
 
-def resolve_person_by_id(_, info, **args):
-    return Person.get_query(info).get(args['id'])
-
-
-def resolve_person_search(_, info, **args):
-    # TODO: arg should be renamed *search_term* or somethign similar
-    session = get_session(info)
-    return evalg.proc.person.search_persons(session, args['val'])
-
-
 def resolve_get_person_for_voter(_, info, **args):
     voter_id = args['voter_id']
     session = get_session(info)
@@ -69,17 +59,6 @@ def resolve_get_person_for_voter(_, info, **args):
         evalg.models.voter.Voter,
         id=voter_id)
     return evalg.proc.pollbook.get_person_for_voter(session, voter)
-
-
-get_person_query = graphene.Field(
-    Person,
-    resolver=resolve_person_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
-
-search_persons_query = graphene.List(
-    Person,
-    resolver=resolve_person_search,
-    val=graphene.Argument(graphene.String, required=True))
 
 
 get_person_for_voter_query = graphene.Field(

@@ -16,7 +16,6 @@ class ElectionQuery(graphene.ObjectType):
     persons_with_multiple_verified_voters = \
         nodes.election_group.persons_with_multiple_verified_voters_query
     election_template = nodes.election_group.get_election_template_query
-    election = nodes.election.get_election_query
 
     # Election results
     election_group_count = \
@@ -27,20 +26,11 @@ class ElectionQuery(graphene.ObjectType):
         nodes.election_group.list_election_group_counting_results_query
     election_result = nodes.election.get_election_result_query
 
-    # Candidates and candidate lists
-    # TODO: rename *election_list* to *candidate_list*?
-    election_list = nodes.candidates.get_candidate_list_query
-    candidate = nodes.candidates.get_candidate_query
-
     # Pollbooks and registered voters
-    pollbook = nodes.pollbook.get_pollbook_query
-    voter = nodes.pollbook.get_voter_query
     voters_for_person = nodes.pollbook.find_voters_query
     search_voters = nodes.pollbook.search_voters_query
 
     # Users, persons and groups
-    person = nodes.person.get_person_query
-    search_persons = nodes.person.search_persons_query
     search_groups = nodes.group.search_groups_query
     viewer = nodes.person.get_current_viewer_query
     person_for_voter = nodes.person.get_person_for_voter_query

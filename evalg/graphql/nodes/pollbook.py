@@ -141,17 +141,6 @@ class CensusFileImport(graphene_sqlalchemy.SQLAlchemyObjectType):
         default_resolver = permission_controlled_default_resolver
 
 
-def resolve_pollbook_by_id(_, info, **args):
-    session = get_session(info)
-    return session.query(evalg.models.pollbook.Pollbook).get(args['id'])
-
-
-get_pollbook_query = graphene.Field(
-    Pollbook,
-    resolver=resolve_pollbook_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
-
-
 def resolve_search_voters(_, info, **kwargs):
     election_group_id = kwargs.pop('election_group_id')
     session = get_session(info)
@@ -169,11 +158,6 @@ def resolve_search_voters(_, info, **kwargs):
     return evalg.proc.pollbook.get_voters_in_election_group(
         session, election_group_id, **kwargs
     ).all()
-
-
-def resolve_voter_by_id(_, info, **args):
-    session = get_session(info)
-    return session.query(evalg.models.voter.Voter).get(args['id'])
 
 
 def resolve_voters_by_person_id(_, info, **args):
@@ -196,11 +180,6 @@ search_voters_query = graphene.List(
     pollbook_id=graphene.Argument(graphene.UUID, required=False),
 )
 
-
-get_voter_query = graphene.Field(
-    Voter,
-    resolver=resolve_voter_by_id,
-    id=graphene.Argument(graphene.UUID, required=True))
 
 # TODO: Re-design person-voter relationship
 find_voters_query = graphene.List(
