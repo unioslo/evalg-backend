@@ -1303,15 +1303,17 @@ def uid_zip_builder(uids):
 
 
 @pytest.fixture
-def master_key(db_session, election_keys_foo):
-    """Master key fixture."""
-    private_key = nacl.public.PrivateKey.generate()
-    pubkey = private_key.public_key.encode(nacl.encoding.Base64Encoder)
-    master_key = MasterKey(description='Master key for testing',
-                           public_key=pubkey.decode())
-    db_session.add(master_key)
-    db_session.flush()
-    return private_key, master_key
+def master_key(election_keys_foo):
+    def master_key(db_session):
+        """Master key fixture."""
+        private_key = nacl.public.PrivateKey.generate()
+        pubkey = private_key.public_key.encode(nacl.encoding.Base64Encoder)
+        master_key = MasterKey(description='Master key for testing',
+                               public_key=pubkey.decode())
+        db_session.add(master_key)
+        db_session.flush()
+        return private_key, master_key
+    return master_key
 
 
 def unit_name():

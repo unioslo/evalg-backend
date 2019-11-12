@@ -1001,7 +1001,7 @@ def test_auth_add_election_group_key_backup(db_session,
     """Allow and deny scenarios for addElectionGroupKeyBackup."""
     election_group = (owned_election_group(db_session, logged_in_user.person)
                       if is_owner else simple_election_group(db_session))
-    _, master_key = master_key
+    _, master_key = master_key(db_session)
     variables = {
         'electionGroupId': str(election_group.id),
         'encryptedPrivKey': 'Test123',
