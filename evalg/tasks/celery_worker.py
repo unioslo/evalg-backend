@@ -1,3 +1,4 @@
+"""Different Celery-tasks for eValg"""
 import datetime
 import json
 import logging
@@ -8,18 +9,19 @@ import evalg.proc.pollbook
 from evalg import create_app, db
 from evalg.tasks.flask_celery import make_celery
 from evalg.file_parser.parser import CensusFileParser
-from evalg.models.privkeys_backup import MasterKey
 
 logger = logging.getLogger(__name__)
 app = create_app()
 celery = LocalProxy(lambda: make_celery(app))
 
 
-@celery.task
-def import_census_file_task(pollbook_id, census_file_id):
-
-    logger.info('Starting to import census file %s into pollbook %s',
-                pollbook_id, census_file_id)
+@celery.task(bind=True)
+def import_census_file_task(self, pollbook_id, census_file_id):
+    """Import census-file functionality"""
+    logger.info('Starting to import census file %s into pollbook %s (%s)',
+                pollbook_id,
+                census_file_id,
+                self.request.id)
     census_file = db.session.query(
         evalg.models.census_file_import.CensusFileImport).get(census_file_id)
 
@@ -72,5 +74,7 @@ def import_census_file_task(pollbook_id, census_file_id):
     census_file.import_results = json.dumps(results)
     db.session.add(census_file)
     db.session.commit()
-    logger.info('Finished importing census file %s into pollbook %s',
-                pollbook_id, census_file_id)
+    logger.info('Finished importing census file %s into pollbook %s (%s)',
+                pollbook_id,
+                census_file_id,
+                self.request.id)
