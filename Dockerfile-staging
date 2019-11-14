@@ -27,6 +27,7 @@ RUN set -ex \
     && apk add --no-cache --virtual .evalg-deps \
             bash \
             git \
+            libc-dev \
             logrotate \
             postgresql-dev \
             postgresql-libs \
