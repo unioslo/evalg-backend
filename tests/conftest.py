@@ -1710,12 +1710,60 @@ def countable_election_group():
             db_session, countable_election=True, multiple=True)
     return countable_election_group
 
+
 @pytest.fixture
 def owned_countable_election_group():
     """Countable election group owned by the logged in user."""
     def owned_countable_election_group(db_session, owner):
         return new_election_group_generator(
             db_session, owner=owner, countable_election=True, multiple=True)
+    return owned_countable_election_group
+
+
+@pytest.fixture
+def counted_election_group():
+    """Counted election group."""
+    def countable_election_group(db_session):
+        election_group = new_election_group_generator(
+            db_session, countable_election=True, multiple=True)
+
+        election_group_counter = evalg.proc.count.ElectionGroupCounter(
+            db_session,
+            election_group.id,
+            election_keys()['private']
+        )
+
+        count = election_group_counter.log_start_count()
+        election_group_counter.deserialize_ballots()
+        election_group_counter.process_for_count()
+
+        election_group_counter.generate_results(count)
+        election_group_counter.log_finalize_count(count)
+        return election_group
+    return countable_election_group
+
+
+@pytest.fixture
+def owned_counted_election_group():
+    """Counted election group owned by the logged in user."""
+    def owned_countable_election_group(db_session, owner):
+        election_group = new_election_group_generator(
+            db_session, owner=owner, countable_election=True, multiple=True)
+
+        election_group_counter = evalg.proc.count.ElectionGroupCounter(
+            db_session,
+            election_group.id,
+            election_keys()['private']
+        )
+
+        count = election_group_counter.log_start_count()
+        election_group_counter.deserialize_ballots()
+        election_group_counter.process_for_count()
+
+        election_group_counter.generate_results(count)
+        election_group_counter.log_finalize_count(count)
+        return election_group
+
     return owned_countable_election_group
 
 

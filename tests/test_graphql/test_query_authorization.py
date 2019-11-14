@@ -1,11 +1,6 @@
 
 
-
-
-
 #    election_groups
-#    election_group
-#    election_group_key_meta
 #    persons_with_multiple_verified_voters
 #    election_template
 #
@@ -15,21 +10,14 @@
 #
 #    voters_for_person
 #    search_voters
-#
 #    search_groups
-#    viewer
-#    person_for_voter
-#
-#    votes_for_person
-#
-#    master_keys
-#
 
 import itertools
 import pytest
 
 from evalg.graphql import get_test_context, schema
 from evalg.proc.pollbook import ElectionVoterPolicy
+from evalg.proc.election import get_latest_election_group_count
 from .utils.queries import queries
 from .utils.register import RegisterOperationTestScenario
 
@@ -312,6 +300,202 @@ def test_auth_master_keys(db_session, client, master_key):
     response = execution['data']['masterKeys']
     assert len(response) == 1
     assert response[0]['publicKey'] == master_key.public_key
+
+
+@pytest.mark.test
+@reg.add_scenario('electionGroupCountingResults', 'allow')
+def test_auth_election_group_counting_results_owned(
+        db_session,
+        client,
+        logged_in_user,
+        owned_counted_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = owned_counted_election_group(
+        db_session,
+        logged_in_user.person)
+    variables = {'id': str(election_group.id)}
+    execution = client.execute(queries['electionGroupCountingResults'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['electionGroupCountingResults']
+    assert len(response) == 1
+    assert response[0]['id']
+    assert response[0]['groupId']
+    assert response[0]['initiatedAt']
+    assert response[0]['finishedAt']
+    assert response[0]['status']
+
+
+@pytest.mark.test
+@reg.add_scenario('electionGroupCountingResults', 'deny')
+def test_auth_election_group_counting_results_not_owned(
+        db_session,
+        client,
+        logged_in_user,
+        counted_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = counted_election_group(db_session)
+    variables = {'id': str(election_group.id)}
+    execution = client.execute(queries['electionGroupCountingResults'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['electionGroupCountingResults']
+    assert len(response) == 1
+    assert response[0]['id']
+    assert not response[0]['groupId']
+    assert not response[0]['initiatedAt']
+    assert not response[0]['finishedAt']
+    assert not response[0]['status']
+
+
+@pytest.mark.test
+@reg.add_scenario('electionGroupCount', 'allow')
+def test_auth_election_group_count_owned(
+        db_session,
+        client,
+        logged_in_user,
+        owned_counted_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = owned_counted_election_group(
+        db_session,
+        logged_in_user.person)
+    count = get_latest_election_group_count(
+        db_session, election_group.id)
+    variables = {'id': str(count.id)}
+    execution = client.execute(queries['electionGroupCount'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['electionGroupCount']
+    assert response['id']
+    assert response['groupId']
+    assert response['initiatedAt']
+    assert response['finishedAt']
+    assert response['status']
+
+
+@pytest.mark.test
+@reg.add_scenario('electionGroupCount', 'deny')
+def test_auth_election_group_count_not_owned(
+        db_session,
+        client,
+        logged_in_user,
+        counted_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = counted_election_group(db_session)
+    count = get_latest_election_group_count(
+        db_session, election_group.id)
+    variables = {'id': str(count.id)}
+    execution = client.execute(queries['electionGroupCount'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['electionGroupCount']
+    assert response['id']
+    assert not response['groupId']
+    assert not response['initiatedAt']
+    assert not response['finishedAt']
+    assert not response['status']
+
+
+@pytest.mark.test
+@reg.add_scenario('searchVoters', 'allow')
+def test_auth_search_voters_owned(
+        db_session,
+        client,
+        logged_in_user,
+        owned_votable_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = owned_votable_election_group(db_session,
+                                                  logged_in_user.person)
+    voter = election_group.elections[0].pollbooks[0].voters[0]
+    variables = {
+        'electionGroupId': str(election_group.id),
+        'search': voter.id_value
+    }
+    execution = client.execute(queries['searchVoters'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['searchVoters']
+    assert len(response) == 1
+    assert response[0]['id']
+    assert response[0]['idValue'] == voter.id_value
+    assert response[0]['idType'] == voter.id_type
+
+
+@pytest.mark.test
+@reg.add_scenario('searchVoters', 'deny')
+def test_auth_search_voters_not_owned(
+        db_session,
+        client,
+        logged_in_user,
+        votable_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = votable_election_group(db_session)
+
+    voter = election_group.elections[0].pollbooks[0].voters[0]
+    variables = {
+        'electionGroupId': str(election_group.id),
+        'search': voter.id_value
+    }
+    execution = client.execute(queries['searchVoters'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    assert execution['data']['searchVoters'] == [None]
+
+
+@pytest.mark.test
+@reg.add_scenario('electionResult', 'allow')
+def test_auth_election_result_owned(
+        db_session,
+        client,
+        logged_in_user,
+        owned_counted_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = owned_counted_election_group(
+        db_session,
+        logged_in_user.person)
+    count = get_latest_election_group_count(
+        db_session, election_group.id)
+    election_result = count.election_results[0]
+    variables = {'id': str(election_result.id)}
+    execution = client.execute(queries['electionResult'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['electionResult']
+    assert response['id']
+    assert response['electionProtocol']
+    assert len(response['ballots']) == 0
+    assert response['electionId']
+    assert response['electionGroupCountId']
+    assert response['result']
+    assert response['pollbookStats']
+    assert response['ballotsWithMetadata']
+
+
+@pytest.mark.test
+@reg.add_scenario('electionResult', 'deny')
+def test_auth_election_result_not_owned(
+        db_session,
+        client,
+        logged_in_user,
+        counted_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = counted_election_group(db_session)
+    count = get_latest_election_group_count(
+        db_session, election_group.id)
+    election_result = count.election_results[0]
+    variables = {'id': str(election_result.id)}
+    execution = client.execute(queries['electionResult'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['electionResult']
+    assert response['id']
+    assert not response['electionProtocol']
+    assert not response['ballots']
+    assert not response['electionId']
+    assert not response['electionGroupCountId']
+    assert not response['result']
+    assert not response['pollbookStats']
+    assert not response['ballotsWithMetadata']
 
 
 @pytest.mark.parametrize(
