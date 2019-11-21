@@ -102,6 +102,9 @@ class CountingEventType(enum.Enum):
     # the min_value_substitutes for a quota-group is adjusted
     QUOTA_MIN_VALUE_SUB_ADJUSTED = enum.auto()
 
+    # quota status for substitutes updated
+    QUOTA_SUB_UPDATED = enum.auto()
+
     # candidates with the same score that can not be elected together
     SAME_SCORE = enum.auto()
 
@@ -598,9 +601,7 @@ class ElectionCountPath:
                 {'name': quota.name,
                  'members': [str(member.id) for member in quota.members],
                  'min_value': quota.min_value,
-                 'min_value_substitutes': quota.min_value_substitutes,
-                 'max_value_regular': counter_obj.max_choosable(quota),
-                 'max_value_substitutes': counter_obj.max_substitutes(quota)})
+                 'max_value_regular': counter_obj.max_choosable(quota)})
         meta['quotas'] = quota_meta
         rounds = []
         for state in self._round_state_list:
@@ -871,7 +872,7 @@ class Counter:
 
     def max_substitutes(self, quota):
         """
-        Returns the maximum about of substitute candidates for `quota`
+        Returns the maximum amount of substitute candidates for `quota`
 
         :param quota: The quota-object
         :type quota: object

@@ -5,7 +5,7 @@
 {{ meta.candidates[person_id] }}
 {%- endmacro %}
 {% macro person_names_list(person_ids) -%}
-{%- for person_id in person_ids %}{{ meta.candidates[person_id] }}{%- if not loop.last %}, {% endif -%}{%- endfor %}
+{%- for person_id in person_ids %}{{ meta.candidates[person_id] }}{%- if not loop.last %}, {% endif -%}{%- else %}Ingen{%- endfor %}
 {%- endmacro %}
 {% macro pollbook_name(pollbook_id) -%}
 {{ nb(meta.pollbook_mappings[pollbook_id]) }}
@@ -44,9 +44,7 @@ Kvotering
 {% for quota in meta.quotas -%}
 Navn: {{ quota.name }}
 Min. verdi: {{ quota.min_value }}
-Min. verdi (vara): {{ quota.min_value_substitutes }}
 Max. verdi: {{ quota.max_value_regular }}
-Max. verdi (vara): {{ quota.max_value_substitutes }}
 Medlemmer:
 {%- for member in quota.members %}
 {{ person_name(member) }}
@@ -154,6 +152,17 @@ Ikke nok kandidater for å velge vara.
 {% elif event.event_type == 'QUOTA_MIN_VALUE_SUB_ADJUSTED' -%}
 Kvote-klasse "{{ event.event_data['quota_group_name'] }}" har ikke nok kandidater som ikke er valgt for å oppfylle minstekvote for vara.
 Endrer minstekvote fra {{ event.event_data['current_value'] }} til {{ event.event_data['new_value'] }}.
+
+{% elif event.event_type == 'QUOTA_SUB_UPDATED' -%}
+Kvotering (vara)
+----------------
+{% for quota in event.event_data['quotas'] -%}
+Navn: {{ quota.name }}
+Min. verdi (vara): {{ quota['min_value_substitutes'] }}
+Max. verdi (vara): {{ quota['max_value_substitutes'] }}
+Medlemmer som ikke er valgt: {{ person_names_list(quota['unelected_members']) }}
+
+{% endfor %}
 
 {% elif event.event_type == 'SAME_SCORE' -%}
 {{ event.event_data['candidates']|length }} kandidater har samme stemmetall ({{ event.event_data['identical_score'] }}) og vi kan ikke velge alle.

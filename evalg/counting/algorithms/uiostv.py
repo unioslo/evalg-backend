@@ -729,7 +729,7 @@ class RegularRound:
                 count.CountingEvent(
                     count.CountingEventType.CANDIDATE_QUOTA_PROTECTED,
                     {'candidate': str(candidate.id)}))
-            return
+            return None
         if candidate in self._excluded:
             # in case of quota max. value reached exclusion
             logger.info("Candidate %s is already excluded", candidate)
@@ -750,6 +750,7 @@ class RegularRound:
                 count.CountingEventType.CANDIDATE_EXCLUDED,
                 {'candidate': str(candidate.id)}))
         self._check_remaining_candidates()
+        return None  # please pylint
 
     def _get_bottom_candidates(self):
         """
@@ -1653,26 +1654,7 @@ class SubstituteRound(RegularRound):
                      'round_count': self._round_cnt}))
             self._election_number = self._get_election_number()
             self._set_initial_ballot_state()
-            # adjust the min_value_substitutes for quotas, in case not enough
-            # candidates
-            for quota_group in self._counter_obj.quotas:
-                unelected = len(self._get_unelected_quota_members(quota_group))
-                if (
-                        quota_group.min_value_substitutes and
-                        unelected < quota_group.min_value_substitutes
-                ):
-                    logger.info("Amount unelected members (%d) in "
-                                "quota-group %s < than current "
-                                "min_value_substitutes %d. Adjusting.",
-                                unelected,
-                                quota_group.name,
-                                quota_group.min_value_substitutes)
-                    self._state.add_event(count.CountingEvent(
-                        count.CountingEventType.QUOTA_MIN_VALUE_SUB_ADJUSTED, {
-                            'quota_group_name': quota_group.name,
-                            'current_value': quota_group.min_value_substitutes,
-                            'new_value': unelected}))
-                    quota_group.min_value_substitutes = unelected
+            self._update_quota_values()
         elif self._parent.state.substitute_final:
             # New substitute count
             self._round_cnt = self._parent.round_cnt + 1
@@ -2505,3 +2487,51 @@ class SubstituteRound(RegularRound):
                 count.CountingEvent(
                     count.CountingEventType.TERMINATE_19_2, {}))
             return self._terminate_substitute_count()
+
+    def _update_quota_values(self):
+        """
+        Updates the quota values for substitute candidates.
+
+        Re-checks and if necessary updates `min_value_substitutes` and
+        `max_value_substitutes` for the defined quota-groups (if any)
+        """
+        if not self._counter_obj.quotas:
+            return None
+        # adjust the min_value_substitutes for quotas, in case not enough
+        # candidates
+        quota_unelected = {}
+        for quota_group in self._counter_obj.quotas:
+            quota_unelected[quota_group] = [
+                str(cand.id) for
+                cand in self._get_unelected_quota_members(quota_group)]
+            unelected = len(quota_unelected[quota_group])
+            if (
+                    quota_group.min_value_substitutes and
+                    unelected < quota_group.min_value_substitutes
+            ):
+                logger.info("Amount unelected members (%d) in "
+                            "quota-group %s < than current "
+                            "min_value_substitutes %d. Adjusting.",
+                            unelected,
+                            quota_group.name,
+                            quota_group.min_value_substitutes)
+                self._state.add_event(count.CountingEvent(
+                    count.CountingEventType.QUOTA_MIN_VALUE_SUB_ADJUSTED, {
+                        'quota_group_name': quota_group.name,
+                        'current_value': quota_group.min_value_substitutes,
+                        'new_value': unelected}))
+                quota_group.min_value_substitutes = unelected
+        # once min-values are correct, fetch the max-valuee and create an event
+        # this is for event (protocol) purposes only
+        quotas = []
+        for quota_group, unelected_members in quota_unelected.items():
+            quotas.append(
+                {'name': quota_group.name,
+                 'min_value_substitutes': quota_group.min_value_substitutes,
+                 'max_value_substitutes': self._counter_obj.max_substitutes(
+                     quota_group),
+                 'unelected_members': unelected_members})
+        self._state.add_event(count.CountingEvent(
+            count.CountingEventType.QUOTA_SUB_UPDATED,
+            {'quotas': quotas}))
+        return None  # please pylint
