@@ -1,6 +1,4 @@
-"""
-The GraphQL Election ObjectType.
-"""
+"""The GraphQL Election ObjectType."""
 import pytz
 
 import graphene
@@ -39,6 +37,7 @@ from .. import types
 
 @permission_controller.control_object_type
 class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """Election class"""
     class Meta:
         model = evalg.models.election.Election
         default_resolver = permission_controlled_default_resolver
@@ -60,6 +59,7 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 @permission_controller.control_object_type
 class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """ElectionResult class"""
     class Meta:
         model = evalg.models.election_result.ElectionResult
         default_resolver = permission_controlled_default_resolver
@@ -97,7 +97,7 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
                 candidate_names[str(candidate.id)] = candidate.name
             ballots_with_metadata['candidate_names'] = candidate_names
 
-        if (self.election.meta['candidate_type'] == "party_list"):
+        if self.election.meta['candidate_type'] == "party_list":
             # TODO after implementing list elections:
             # Handle this case according to how list and candidate names are
             # stored, and according to what is needed to "decode" UUIDs in
@@ -105,15 +105,17 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
             # This might work:
             list_names = {}
             candidate_names = {}
-            for list in self.election.lists:
-                list_names[str(list.id)] = list.name
-                for candidate in list.candidates:
+            for election_list in self.election.lists:
+                list_names[str(election_list.id)] = election_list.name
+                for candidate in election_list.candidates:
                     candidate_names[str(candidate.id)] = candidate.name
             ballots_with_metadata['list_names'] = list_names
             ballots_with_metadata['candidate_names'] = candidate_names
-        quotas = {}
+        quotas = []
         for quota_group in self.election.quotas:
-            quotas[quota_group.name] = [str(m.id) for m in quota_group.members]
+            quotas.append(
+                {'name': quota_group.name,
+                 'members': [str(m.id) for m in quota_group.members]})
         ballots_with_metadata['quotas'] = quotas
 
         ballots_with_metadata['ballots'] = self.ballots

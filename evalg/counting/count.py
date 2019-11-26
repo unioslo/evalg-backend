@@ -99,8 +99,26 @@ class CountingEventType(enum.Enum):
     # not enough unelected candidates for a substitute-round
     NOT_ENOUGH_FOR_SUBSTITUTE_ROUND = enum.auto()
 
+    # empty quota group detected before the start of the of regular count
+    QUOTA_GROUP_EMPTY = enum.auto()
+
     # the min_value_substitutes for a quota-group is adjusted
     QUOTA_MIN_VALUE_SUB_ADJUSTED = enum.auto()
+
+    # at least one quota-group has min_value == 0
+    QUOTA_MIN_VALUE_ZERO = enum.auto()
+
+    # candidates <= regular candidates to be elected
+    QUOTA_NOT_ENOUGH_CANDIDATES = enum.auto()
+
+    # one of the gender groups is empty before starting a substitute count
+    QUOTA_SUB_GROUP_EMPTY = enum.auto()
+
+    # at least one of the gender groups has min_value_substitutes == 0
+    QUOTA_SUB_MIN_VALUE_ZERO = enum.auto()
+
+    # unelected candidates <= substitute candidates to be elected
+    QUOTA_SUB_NOT_ENOUGH_CANDIDATES = enum.auto()
 
     # quota status for substitutes updated
     QUOTA_SUB_UPDATED = enum.auto()

@@ -20,7 +20,7 @@ class QuotaGroup:
         """
         Keyword Arguments:
         :param name: The name of the quota-group
-        :type name: str
+        :type name: str or dict
 
         :param members: The sequence of candidates
         :type members: collections.abc.Sequence
@@ -198,7 +198,7 @@ class Election(AbstractElection):
     pollbooks = db.relationship('Pollbook')
 
     # Whether election is active.
-    # We usually create more elections than needed to make templates consistent.
+    # We usually create more elections than needed to make templates consistent
     # But not all elections should be used. This can improve voter UI, by
     # telling voter that their group does not have an active election.
     active = db.Column(db.Boolean, default=False)
@@ -252,7 +252,7 @@ class Election(AbstractElection):
     @status.expression
     def status(cls):
         return case([
-            (cls.active == False, 'inactive'),
+            (cls.active is False, 'inactive'),
             (cls.cancelled_at.isnot(None), 'cancelled'),
             (and_(cls.published_at.isnot(None),
                   cls.end <= func.now()), 'closed'),
@@ -353,17 +353,23 @@ class Election(AbstractElection):
                     min_value_males = min([min_value, len(males)])
                     min_value_females = min([min_value, len(females)])
                     quotas.append(
-                        QuotaGroup('Males',
-                                   males,
-                                   min_value_males,
-                                   min([min_value_substitutes,
-                                        len(males) - min_value_males])))
+                        QuotaGroup(
+                            {'en': 'Males',
+                             'nn': 'Menn',
+                             'nb': 'Menn'},
+                            males,
+                            min_value_males,
+                            min([min_value_substitutes,
+                                 len(males) - min_value_males])))
                     quotas.append(
-                        QuotaGroup('Females',
-                                   females,
-                                   min_value_females,
-                                   min([min_value_substitutes,
-                                        len(females) - min_value_females])))
+                        QuotaGroup(
+                            {'en': 'Females',
+                             'nn': 'Kvinner',
+                             'nb': 'Kvinner'},
+                            females,
+                            min_value_females,
+                            min([min_value_substitutes,
+                                 len(females) - min_value_females])))
 
         return quotas
 

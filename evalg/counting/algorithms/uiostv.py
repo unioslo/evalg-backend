@@ -265,6 +265,10 @@ class RegularRound:
         self._counter_obj.append_state_to_current_path(self._state)
         if self._parent is None:
             # first round
+            # make it possible to "manually" disable quotas for this particular
+            # ElectionPath
+            self._quotas_disabled = not bool(self._counter_obj.quotas)
+            self._update_quota_status()  # before the new round
             self._state.add_event(
                 count.CountingEvent(
                     count.CountingEventType.NEW_REGULAR_ROUND,
@@ -282,6 +286,7 @@ class RegularRound:
             self._election_number = self._get_election_number()
             self._set_initial_ballot_state()
         else:
+            self._quotas_disabled = self._parent.quotas_disabled
             self._election_number = self._parent.election_number
             self._elected = list(self._parent.elected)
             self._excluded = list(self._parent.excluded)
@@ -358,6 +363,11 @@ class RegularRound:
     def parent(self):
         """parent-property"""
         return self._parent
+
+    @property
+    def quotas_disabled(self):
+        """quotas_disabled-property"""
+        return self._quotas_disabled
 
     @property
     def round_cnt(self):
@@ -1061,7 +1071,7 @@ class RegularRound:
         :return: The quota-excludable remaining candidates
         :rtype: tuple
         """
-        if not self._counter_obj.quotas:
+        if self._quotas_disabled:
             # no quota-rules defined
             return tuple()
         excludable_candidates = set()
@@ -1174,7 +1184,7 @@ class RegularRound:
         if not self._potentially_elected:
             # Nobody to elect
             return
-        if not self._counter_obj.quotas:
+        if self._quotas_disabled:
             for candidate in list(self._potentially_elected):
                 self._elect_candidate(candidate)
             return
@@ -1240,7 +1250,7 @@ class RegularRound:
                  `candidate` is a member
         :rtype: tuple
         """
-        if not self._counter_obj.quotas:
+        if self._quotas_disabled:
             logger.debug("No quota-groups defined")
             return tuple()
         if elected is None:
@@ -1272,7 +1282,7 @@ class RegularRound:
         :return: Election required
         :rtype: bool
         """
-        if not self._counter_obj.quotas:
+        if self._quotas_disabled:
             logger.debug("No quota-groups defined")
             return False
         quota_groups = self._get_candidate_quota_groups(candidate)
@@ -1545,6 +1555,55 @@ class RegularRound:
                  'total_transferrable_ballot_weight': str(
                      total_transferrable_ballot_weight)}))
 
+    def _update_quota_status(self):
+        """
+        Updates the quota status for regular candidates.
+
+        Re-checks and if necessary disables quota-checks for the
+        regular counts. This method should only be called before
+        the start of the regular count.
+        """
+        # this method *MUST* be rewritten if more than gender-quota
+        # should be handled
+        if self._quotas_disabled:
+            return None
+        empty_quota_group = False
+        no_min_value = False
+        for quota_group in self._counter_obj.quotas:
+            if not quota_group.members:
+                empty_quota_group = True
+            if not quota_group.min_value:
+                no_min_value = True
+        # this is for event (protocol) purposes only
+        if empty_quota_group:
+            logger.info("At least one quota group is empty. "
+                        "Removing quota-rules.")
+            self._state.add_event(count.CountingEvent(
+                count.CountingEventType.QUOTA_GROUP_EMPTY,
+                {}))
+            self._quotas_disabled = True
+            # life is too short. we do not wait for other reasons.
+            return None
+        if no_min_value:
+            logger.info("At least one quota-group has min_value == 0. "
+                        "Removing quota-rules.")
+            self._state.add_event(count.CountingEvent(
+                count.CountingEventType.QUOTA_MIN_VALUE_ZERO,
+                {}))
+            self._quotas_disabled = True
+            return None
+        if (
+                len(self._counter_obj.candidates) <=
+                self._counter_obj.election.num_choosable
+        ):
+            logger.info("Candidates <= regular cendidates to "
+                        "elect. Removing quota-rules.")
+            self._state.add_event(count.CountingEvent(
+                count.CountingEventType.QUOTA_NOT_ENOUGH_CANDIDATES,
+                {}))
+            self._quotas_disabled = True
+        return None  # please pylint
+
     def _update_surplus_for_elected_candidate(self, candidate):
         """Updates the surplus for `candidate` after she is elected"""
         if candidate not in self._elected:
@@ -1611,6 +1670,7 @@ class SubstituteRound(RegularRound):
         self._counter_obj.append_state_to_current_path(self._state)
         if self._parent is None:
             # There were no regular round(s)
+            self._quotas_disabled = not bool(self._counter_obj.quotas)
             self._first_substitute_count = True
             self._state.add_event(
                 count.CountingEvent(
@@ -1634,6 +1694,9 @@ class SubstituteRound(RegularRound):
             self._elected = list(self._parent.elected)
             self._round_cnt = self._parent.round_cnt + 1
             self._first_substitute_count = True
+            # re-evaluate disableing quota-rules from scratch
+            self._quotas_disabled = not bool(self._counter_obj.quotas)
+            self._update_quota_values()
             self._state.add_event(
                 count.CountingEvent(
                     count.CountingEventType.NEW_SUBSTITUTE_ROUND,
@@ -1654,7 +1717,6 @@ class SubstituteRound(RegularRound):
                      'round_count': self._round_cnt}))
             self._election_number = self._get_election_number()
             self._set_initial_ballot_state()
-            self._update_quota_values()
         elif self._parent.state.substitute_final:
             # New substitute count
             self._round_cnt = self._parent.round_cnt + 1
@@ -1662,6 +1724,7 @@ class SubstituteRound(RegularRound):
             self._elected = list(self._parent.elected)
             self._elected_substitutes = list(self._parent.elected_substitutes)
             self._first_substitute_count = True
+            self._quotas_disabled = self._parent.quotas_disabled
             self._state.add_event(
                 count.CountingEvent(
                     count.CountingEventType.NEW_SUBSTITUTE_ROUND,
@@ -1692,6 +1755,7 @@ class SubstituteRound(RegularRound):
             self._elected_earlier = list(self._parent.elected_earlier)
             self._excluded = list(self._parent.excluded)
             self._election_number = self._parent.election_number
+            self._quotas_disabled = self._parent.quotas_disabled
             self._vcount_results_remaining = collections.Counter(
                 self._parent.vcount_results_remaining)
             self._surplus_per_elected_candidate = collections.Counter(
@@ -2302,7 +2366,7 @@ class SubstituteRound(RegularRound):
         if not self._potentially_elected:
             # Nobody to elect
             return
-        if not self._counter_obj.quotas:
+        if self._quotas_disabled:
             for candidate in list(self._potentially_elected):
                 self._elect_candidate(candidate)
             return
@@ -2375,7 +2439,7 @@ class SubstituteRound(RegularRound):
                  `candidate` is a member
         :rtype: tuple
         """
-        if not self._counter_obj.quotas:
+        if self._quotas_disabled:
             logger.debug("No quota-groups defined")
             return tuple()
         if elected is None:
@@ -2407,7 +2471,7 @@ class SubstituteRound(RegularRound):
         :return: Election required
         :rtype: bool
         """
-        if not self._counter_obj.quotas:
+        if self._quotas_disabled:
             logger.debug("No quota-groups defined")
             return False
         quota_groups = self._get_candidate_quota_groups(candidate)
@@ -2493,18 +2557,28 @@ class SubstituteRound(RegularRound):
         Updates the quota values for substitute candidates.
 
         Re-checks and if necessary updates `min_value_substitutes` and
-        `max_value_substitutes` for the defined quota-groups (if any)
+        `max_value_substitutes` for the defined quota-groups (if any).
+
+        This method should only be called before the start of the
+        substitute count.
         """
-        if not self._counter_obj.quotas:
+        # this method *MUST* be rewritten if more than gender-quota
+        # should be handled
+        if self._quotas_disabled:
             return None
         # adjust the min_value_substitutes for quotas, in case not enough
         # candidates
         quota_unelected = {}
+        empty_quota_group = False
         for quota_group in self._counter_obj.quotas:
             quota_unelected[quota_group] = [
                 str(cand.id) for
                 cand in self._get_unelected_quota_members(quota_group)]
             unelected = len(quota_unelected[quota_group])
+            if not unelected:
+                # reevaluate this statement in the future if more than 2
+                # groups can be used! (not only gender - quota)
+                empty_quota_group = True
             if (
                     quota_group.min_value_substitutes and
                     unelected < quota_group.min_value_substitutes
@@ -2523,15 +2597,50 @@ class SubstituteRound(RegularRound):
                 quota_group.min_value_substitutes = unelected
         # once min-values are correct, fetch the max-valuee and create an event
         # this is for event (protocol) purposes only
+        no_min_value_substitutes = False
         quotas = []
         for quota_group, unelected_members in quota_unelected.items():
+            if not quota_group.min_value_substitutes:
+                no_min_value_substitutes = True
+            max_val = self._counter_obj.max_substitutes(quota_group)
+            logger.info("Quota-group %s: min_value_substitutes: %d, "
+                        "max_value_substitutes: %d, %d unelected members",
+                        quota_group.name,
+                        quota_group.min_value_substitutes,
+                        max_val,
+                        len(unelected_members))
             quotas.append(
                 {'name': quota_group.name,
                  'min_value_substitutes': quota_group.min_value_substitutes,
-                 'max_value_substitutes': self._counter_obj.max_substitutes(
-                     quota_group),
+                 'max_value_substitutes': max_val,
                  'unelected_members': unelected_members})
         self._state.add_event(count.CountingEvent(
             count.CountingEventType.QUOTA_SUB_UPDATED,
             {'quotas': quotas}))
+        if empty_quota_group:
+            logger.info("At least one quota group is now empty. "
+                        "Removing quota-rules.")
+            self._state.add_event(count.CountingEvent(
+                count.CountingEventType.QUOTA_SUB_GROUP_EMPTY,
+                {}))
+            self._quotas_disabled = True
+            return None
+        if no_min_value_substitutes:
+            logger.info("At least one quota-group has min_value_substitutes. "
+                        "Removing quota-rules.")
+            self._state.add_event(count.CountingEvent(
+                count.CountingEventType.QUOTA_SUB_MIN_VALUE_ZERO,
+                {}))
+            self._quotas_disabled = True
+            return None
+        if (
+                len(self._get_globally_unelected_candidates()) <=
+                self._counter_obj.election.num_substitutes
+        ):
+            logger.info("Unelected candidates <= substitute cendidates to "
+                        "elect. Removing quota-rules.")
+            self._state.add_event(count.CountingEvent(
+                count.CountingEventType.QUOTA_SUB_NOT_ENOUGH_CANDIDATES,
+                {}))
+            self._quotas_disabled = True
         return None  # please pylint
