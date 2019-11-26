@@ -49,6 +49,12 @@ if __name__ == '__main__':
         default=False,
         help='Calculate all alternative election paths in case of drawing')
     parser.add_argument(
+        '-i', '--interactive-drawing',
+        action='store_true',
+        dest='interactive_drawing',
+        default=False,
+        help='Prompt the user for input when drawing')
+    parser.add_argument(
         '-p', '--protocol-file',
         metavar='<filename>',
         type=str,
@@ -56,6 +62,12 @@ if __name__ == '__main__':
         dest='protocol_file',
         help=('Optional .txt file to store the protocol in '
               '(default: print to stdout)'))
+    parser.add_argument(
+        '-t', '--test-mode',
+        action='store_true',
+        dest='test_mode',
+        default=False,
+        help='Test mode. Use a non random drawing')
     parser.add_argument(
         'electionfile',
         metavar='<filename>',
@@ -73,7 +85,9 @@ if __name__ == '__main__':
         if args.count_legacy or args.count:
             counter = Counter(election,
                               election.ballots,
-                              args.alternative_paths)
+                              args.alternative_paths,
+                              args.test_mode,
+                              args.interactive_drawing)
             if args.dump:
                 print(counter.dumps(), flush=True)
                 sys.exit(0)

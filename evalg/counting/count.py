@@ -9,6 +9,7 @@ import operator
 import os
 import random  # testing only
 import secrets
+import sys
 
 import pytz
 
@@ -303,7 +304,11 @@ class DrawingBranch:
 class DrawingNode:
     """Represents a node for drawing members (currently candidates)"""
 
-    def __init__(self, parent, members, test_mode=False):
+    def __init__(self,
+                 parent,
+                 members,
+                 test_mode=False,
+                 interactive_drawing=False):
         """
         :param parent: The DrawingBranch that spawned this node (None == root)
         :type parent: DrawingBranch, None
@@ -312,15 +317,22 @@ class DrawingNode:
         :type members: collections.abc.Sequence
 
         :param test_mode: Generate the same (non-random) result by using
-                          the same seed. (used for testing)
+                          the same seed. (used for testing) (default: False)
         :type test_mode: bool
+
+        :param interactive_drawing: Prompt the user when drawing
+                                    (manual drawing) (default: False)
+        :type interactive_drawing: bool
         """
         self._parent = parent
+        # N.B. interactive_drawing is used for CLI and testing only
+        self._interactive_drawing = interactive_drawing
         self._probability_factor = len(members)
         self._members = []
         for member in members:
             self._members.append(DrawingBranch(member, self))
         if test_mode:
+            logger.warning("Using testing / non-random mode")
             self._rnd = random.SystemRandom(1)
         else:
             self._rnd = secrets.SystemRandom()
@@ -368,7 +380,23 @@ class DrawingNode:
         visited = self._get_visited_branch()
         if visited is not None:
             return visited
-        branch = self._rnd.choice(self._get_open_branches())
+        open_branches = self._get_open_branches()
+        if self._interactive_drawing:
+            logger.warning("Interactive drawing")
+            while True:
+                idx_list = []
+                for idx, open_branch in enumerate(open_branches, 1):
+                    idx_list.append(idx)
+                    print(f'{idx}: {open_branch.member}', flush=True)
+                print('Select members: ', end='', flush=True)
+                choice = int(sys.stdin.readline().strip())
+                if choice not in idx_list:
+                    print('Invalid choice', flush=True)
+                    continue
+                branch = open_branches[choice - 1]
+                break
+        else:
+            branch = self._rnd.choice(open_branches)
         branch.state = DrawingBranchState.VISITED
         return branch
 
@@ -646,7 +674,8 @@ class Counter:
                  election,
                  ballots,
                  alternative_paths=False,
-                 test_mode=False):
+                 test_mode=False,
+                 interactive_drawing=False):
         """
         :param election: The Election object
         :type election: object
@@ -658,8 +687,12 @@ class Counter:
         :type alternative_paths: bool
 
         :param test_mode: In case of drawing, generate the same (non-random)
-                          "random result(s)"
+                          "random result(s) (default: False)"
         :type test_mode: bool
+
+        :param interactive_drawing: Prompt the user when drawing
+                                    (manual drawing) (default: False)
+        :type interactive_drawing: bool
         """
         if not isinstance(ballots, collections.abc.Sequence):
             raise TypeError(
@@ -673,6 +706,8 @@ class Counter:
         self._quotas = election.quotas
         self._drawing_nodes = []
         self._test_mode = test_mode
+        # N.B. interactive_drawing is used for CLI and testing only
+        self._interactive_drawing = interactive_drawing
 
         self._current_election_path = None
         self._counting_ballots = tuple([ballot for ballot in self._ballots if
@@ -809,7 +844,9 @@ class Counter:
             # first draw
             node = DrawingNode(
                 self._current_election_path.current_drawing_branch,
-                tuple(candidates))
+                tuple(candidates),
+                test_mode=self._test_mode,
+                interactive_drawing=self._interactive_drawing)
             self._drawing_nodes.append(node)  # the root node is always [0]
         else:
             for drawing_node in self._drawing_nodes:
@@ -824,7 +861,9 @@ class Counter:
                 # the branch doesn't own a node (bottom branch)
                 node = DrawingNode(
                     self._current_election_path.current_drawing_branch,
-                    tuple(candidates))
+                    tuple(candidates),
+                    test_mode=self._test_mode,
+                    interactive_drawing=self._interactive_drawing)
                 self._drawing_nodes.append(node)
         branch = node.pick_branch()
         self._current_election_path.current_drawing_branch = branch
