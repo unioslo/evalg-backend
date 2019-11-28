@@ -457,6 +457,57 @@ class ElectionCountTree:
         """
         self._election_path_dict[path] = 1
 
+    def get_results(self):
+        """
+        Returns all possible results ordered by probability
+
+        :return: All results dict
+        :rtype: dict
+        """
+        results_dict = {}
+        for path in self._election_path_dict.keys():
+            total_results = (path.get_elected_regular_candidates() +
+                             path.get_elected_substitute_candidates())
+            if total_results not in results_dict:
+                # first time
+                results_dict[total_results] = {
+                    'paths': 1,
+                    'result_objects': [path.get_result()],
+                    'regulars': path.get_elected_regular_candidates(),
+                    'substitutes': path.get_elected_substitute_candidates(),
+                    'probability': path.get_probability()}
+                continue
+            results_dict[total_results][
+                'probability'] += path.get_probability()
+            results_dict[total_results]['paths'] += 1
+            results_dict[total_results]['result_objects'].append(
+                path.get_result())
+        return results_dict
+
+    @staticmethod
+    def order_results_by(results, key):
+        """
+        Returns a list of result dicts ordered by key.
+
+        Currently key can be 'paths' and 'probability'
+
+        :param key: The key to order by
+        :type key: str
+
+        :param results: tuple-key: result-dict dict
+        :type results: dict
+
+        :return: List of result dicts ordered by the given key
+        :rtype: list
+        """
+        results_list = []
+        results_counter = collections.Counter()
+        for tkey, result_dict in results.items():
+            results_counter[tkey] = result_dict[key]
+        for tkey, _ in results_counter.most_common():
+            results_list.append(results[tkey])
+        return results_list
+
     def print_summary(self):
         """Prints the counting summary to logger.debug"""
         logger.debug("=" * 16)
