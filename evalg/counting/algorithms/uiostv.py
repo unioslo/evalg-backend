@@ -1372,6 +1372,11 @@ class RegularRound:
                     count.CountingEventType.NOT_ENOUGH_FOR_SUBSTITUTE_ROUND,
                     {}))
             return self._state
+        # some testing functionality may want to abort here
+        if self._counter_obj.regular_count_only:
+            logger.info("Regular count only. "
+                        "Explicitly aborting after the regular round")
+            return self._state
         logger.debug("-" * 8)
         logger.debug("-" * 8)
         logger.info("Starting substitute count")
@@ -1672,6 +1677,9 @@ class SubstituteRound(RegularRound):
             # There were no regular round(s)
             self._quotas_disabled = not bool(self._counter_obj.quotas)
             self._first_substitute_count = True
+            if self._counter_obj.regular_count_only:
+                logger.warning(
+                    "Regular count only can not be enforced for this election")
             self._state.add_event(
                 count.CountingEvent(
                     count.CountingEventType.NEW_SUBSTITUTE_ROUND,

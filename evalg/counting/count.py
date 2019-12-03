@@ -465,9 +465,9 @@ class ElectionCountTree:
         :rtype: dict
         """
         results_dict = {}
-        for path in self._election_path_dict.keys():
-            total_results = (path.get_elected_regular_candidates() +
-                             path.get_elected_substitute_candidates())
+        for path in self._election_path_dict:
+            total_results = tuple(path.get_elected_regular_candidates() +
+                                  path.get_elected_substitute_candidates())
             if total_results not in results_dict:
                 # first time
                 results_dict[total_results] = {
@@ -721,12 +721,7 @@ class Counter:
     This class should be agnostic to counting method(s).
     """
 
-    def __init__(self,
-                 election,
-                 ballots,
-                 alternative_paths=False,
-                 test_mode=False,
-                 interactive_drawing=False):
+    def __init__(self, election, ballots, **kwargs):
         """
         :param election: The Election object
         :type election: object
@@ -734,6 +729,7 @@ class Counter:
         :param ballots: The sequence of ballots
         :type ballots: collections.abc.Sequence
 
+        Keyword-arguments:
         :param alternative_paths: In case of drawing, generate alt. paths
         :type alternative_paths: bool
 
@@ -744,21 +740,27 @@ class Counter:
         :param interactive_drawing: Prompt the user when drawing
                                     (manual drawing) (default: False)
         :type interactive_drawing: bool
+
+        :param regular_count_only: Perform only the regular count
+                                   (default: False)
+        :type regular_count_only: bool
         """
         if not isinstance(ballots, collections.abc.Sequence):
             raise TypeError(
                 'ballots must be if the type collections.abc.Sequence')
         self._election_obj = election
         self._ballots = tuple(ballots)
-        self._alternative_paths = alternative_paths
         # having a local copy of quotas is essential
         # evalg.models.election.Election.quotas will always return a new set
         # of QuotaGroup objects
         self._quotas = election.quotas
         self._drawing_nodes = []
-        self._test_mode = test_mode
+        # kwargs:
+        self._alternative_paths = kwargs.get('alternative_paths', False)
+        self._test_mode = kwargs.get('test_mode', False)
         # N.B. interactive_drawing is used for CLI and testing only
-        self._interactive_drawing = interactive_drawing
+        self._interactive_drawing = kwargs.get('interactive_drawing', False)
+        self._regular_count_only = kwargs.get('regular_count_only', False)
 
         self._current_election_path = None
         self._counting_ballots = tuple([ballot for ballot in self._ballots if
@@ -825,6 +827,11 @@ class Counter:
     def quotas(self):
         """quotas-property"""
         return self._quotas
+
+    @property
+    def regular_count_only(self):
+        """regular_count_only-property"""
+        return self._regular_count_only
 
     def append_state_to_current_path(self, state):
         """

@@ -66,6 +66,12 @@ def main(args=None):
         help=('Optional .txt file to store the protocol in '
               '(default: print to stdout)'))
     parser.add_argument(
+        '-R', '--regular-count-only',
+        action='store_true',
+        dest='regular_count_only',
+        default=False,
+        help='Perform only the regular count')
+    parser.add_argument(
         '-r', '--output-results',
         action='store_true',
         dest='output_results',
@@ -94,9 +100,10 @@ def main(args=None):
         if args.count_legacy or args.count:
             counter = Counter(election,
                               election.ballots,
-                              args.alternative_paths,
-                              args.test_mode,
-                              args.interactive_drawing)
+                              alternative_paths=args.alternative_paths,
+                              test_mode=args.test_mode,
+                              interactive_drawing=args.interactive_drawing,
+                              regular_count_only=args.regular_count_only)
             if args.dump:
                 print(counter.dumps(), flush=True)
                 sys.exit(0)
