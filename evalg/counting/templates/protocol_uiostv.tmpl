@@ -83,7 +83,7 @@ Vi velger kandidat som skal ekskluderes ved hjelp av loddtrekning i henhold til 
 {% elif event.event_type == 'DISPLAY_STATUS' -%}
 Status (oppsummering):
 {% for result in event.event_data['count_results'] -%}
-{{ meta.candidates[result[0]] }}: {{ result[1] }}
+{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if result[0] in event.event_data.elected_representatives %} (valgt tidligere){% endif %}
 {% endfor %}
 {% elif event.event_type == 'DRAW_SELECT' -%}
 {{ person_name(event.event_data['candidate']) }} ble trukket ut.
@@ -117,7 +117,7 @@ Maksimumskvote for gruppa "{{ event.event_data['quota_group'] }}" ({%- if not ev
 Status
 ------
 {% for result in event.event_data['count_results'] -%}
-{{ meta.candidates[result[0]] }}: {{ result[1] }}
+{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if result[0] in event.event_data.elected_representatives %} (valgt tidligere){% endif %}
 {% endfor %}
 {% elif event.event_type == 'NEW_REGULAR_ROUND' -%}
 {% if event.event_data['round_id'] == 1 %}

@@ -521,7 +521,8 @@ class RegularRound:
                         self._state.add_event(
                             count.CountingEvent(
                                 count.CountingEventType.DISPLAY_STATUS,
-                                {'count_results': cresults}))
+                                {'count_results': cresults,
+                                 'elected_representatives': tuple()}))
                         new_round = RegularRound(self._counter_obj,
                                                  self)
                         return new_round.count()
@@ -1172,7 +1173,8 @@ class RegularRound:
         round_count_results = count_results.most_common()
         self._state.add_event(
             count.CountingEvent(count.CountingEventType.NEW_COUNT,
-                                {'count_results': round_count_results}))
+                                {'count_results': round_count_results,
+                                 'elected_representatives': tuple()}))
         self._vcount_results_remaining = collections.Counter(count_results)
         for vcount in round_count_results:
             candidate, candidate_count = vcount
@@ -1927,7 +1929,9 @@ class SubstituteRound(RegularRound):
                         self._state.add_event(
                             count.CountingEvent(
                                 count.CountingEventType.DISPLAY_STATUS,
-                                {'count_results': cresults}))
+                                {'count_results': cresults,
+                                 'elected_representatives': tuple(
+                                     [str(can.id) for can in self._elected])}))
                         new_round = SubstituteRound(self._counter_obj,
                                                     self)
                         return new_round.count()
@@ -2362,7 +2366,9 @@ class SubstituteRound(RegularRound):
         round_count_results = count_results.most_common()
         self._state.add_event(
             count.CountingEvent(count.CountingEventType.NEW_COUNT,
-                                {'count_results': round_count_results}))
+                                {'count_results': round_count_results,
+                                 'elected_representatives': tuple(
+                                     [str(can.id) for can in self._elected])}))
         self._vcount_results_remaining = collections.Counter(count_results)
         for vcount in round_count_results:
             candidate, candidate_count = vcount
