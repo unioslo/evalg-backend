@@ -5,7 +5,7 @@
 {{ meta.candidates[person_id] }}
 {%- endmacro %}
 {% macro person_names_list(person_ids) -%}
-{%- for person_id in person_ids %}{{ meta.candidates[person_id] }}{%- if not loop.last %}, {% endif -%}{%- endfor %}
+{%- for person_id in person_ids %}{{ meta.candidates[person_id] }}{%- if not loop.last %}, {% endif -%}{%- else %}Ingen{%- endfor %}
 {%- endmacro %}
 {% macro pollbook_name(pollbook_id) -%}
 {{ nb(meta.pollbook_mappings[pollbook_id]) }}
@@ -16,9 +16,9 @@ Valg-type: {{ meta.election_type }}
 Valgperiode: {{ meta.election_start }} (CET) - {{ meta.election_end }} (CET)
 Opptellingstidspunkt: {{ meta.counted_at }} (CET)
 Opptelling startet av: {{ meta.counted_by|default('Ukjent', true) }}
-Kandidater: {{ meta.candidates.values() |join(', ')}}
-Antall faste kandidater å velge: {{ meta.num_regular }}
-Antall varakandidater å velge: {{ meta.num_substitutes }}
+Kandidater: {{ meta.candidates.values() |join(', ') }}
+Antall faste representanter å velge: {{ meta.num_regular }}
+Antall vararepresentanter å velge: {{ meta.num_substitutes }}
 
 Antall stemmer: {{ meta.ballots_count }}
 Antall blanke stemmer: {{ meta.empty_ballots_count }}
@@ -42,11 +42,9 @@ Kvotering
 =========
 
 {% for quota in meta.quotas -%}
-Navn: {{ quota.name }}
-Min. verdi: {{ quota.min_value }}
-Min. verdi (vara): {{ quota.min_value_substitutes }}
-Max. verdi: {{ quota.max_value_regular }}
-Max. verdi (vara): {{ quota.max_value_substitutes }}
+Navn: {{ nb(quota.name) }}
+Antall faste representanter som kan velges fra denne gruppen må være minst: {{ quota.min_value }}
+Antall faste representanter som kan velges fra denne gruppen kan være maks: {{ quota.max_value_regular }}
 Medlemmer:
 {%- for member in quota.members %}
 {{ person_name(member) }}
@@ -85,7 +83,7 @@ Vi velger kandidat som skal ekskluderes ved hjelp av loddtrekning i henhold til 
 {% elif event.event_type == 'DISPLAY_STATUS' -%}
 Status (oppsummering):
 {% for result in event.event_data['count_results'] -%}
-{{ meta.candidates[result[0]] }}: {{ result[1] }}
+{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if result[0] in event.event_data.elected_representatives %} (valgt tidligere){% endif %}
 {% endfor %}
 {% elif event.event_type == 'DRAW_SELECT' -%}
 {{ person_name(event.event_data['candidate']) }} ble trukket ut.
@@ -98,12 +96,12 @@ Status (oppsummering):
 
 {% elif event.event_type == 'ELECTION_NUMBER' -%}
 Beregner valgtall:
-Kvotient (§18.3, §33): ({{ event.event_data['weight_counting_ballots'] }} (vekt av ikke-blanke stemmer) / ({{ event.event_data['candidates_to_elect'] }} kandidater å velge + 1) (beregnes med to desimaler, uten forhøyning) = {{ event.event_data['quotient'] }}
+Kvotient (§18.3, §33): ({{ event.event_data['weight_counting_ballots'] }} (vekt av ikke-blanke stemmer) / ({{ event.event_data['candidates_to_elect'] }} representant(er) å velge + 1) (beregnes med to desimaler, uten forhøyning) = {{ event.event_data['quotient'] }}
 Valgtallet er: {{ event.event_data['quotient'] }} (kvotient) + {{ event.event_data['epsilon'] }} (epsilon) = {{ event.event_data['election_number'] }}
 
 {% elif event.event_type == 'ELECTION_NUMBER_SUBSTITUTE' -%}
 Beregner valgtall for vara runde:
-Kvotient (§18.3, §33): ({{ event.event_data['weight_counting_ballots'] }} (vekt av ikke-blanke stemmer) / ({{ event.event_data['candidates_to_elect'] }} faste kandidater å velge + ({{ event.event_data['substitute_number'] }}. vara) + 1) (beregnes med to desimaler, uten forhøyning) = {{ event.event_data['quotient'] }}
+Kvotient (§18.3, §33): ({{ event.event_data['weight_counting_ballots'] }} (vekt av ikke-blanke stemmer) / ({{ event.event_data['candidates_to_elect'] }} faste representant(er) å velge + ({{ event.event_data['substitute_number'] }}. vara) + 1) (beregnes med to desimaler, uten forhøyning) = {{ event.event_data['quotient'] }}
 Valgtallet er: {{ event.event_data['quotient'] }} (kvotient) + {{ event.event_data['epsilon'] }} (epsilon) = {{ event.event_data['election_number'] }}
 
 {% elif event.event_type == 'EXCLUDED_EARLIER' -%}
@@ -119,7 +117,7 @@ Maksimumskvote for gruppa "{{ event.event_data['quota_group'] }}" ({%- if not ev
 Status
 ------
 {% for result in event.event_data['count_results'] -%}
-{{ meta.candidates[result[0]] }}: {{ result[1] }}
+{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if result[0] in event.event_data.elected_representatives %} (valgt tidligere){% endif %}
 {% endfor %}
 {% elif event.event_type == 'NEW_REGULAR_ROUND' -%}
 {% if event.event_data['round_id'] == 1 %}
@@ -142,7 +140,7 @@ Opptellingsrunde {{ event.event_data['round_id'] }} (for vara {{ event.event_dat
 {% if event.event_data['election_number'] %}Valgtall: {{ event.event_data['election_number'] }}, {% endif %}Sum overskudd: {{ event.event_data['sum_surplus'] }}, {{ event.event_data['elected_count'] }} av {{ event.event_data['candidates_to_elect_count'] }} gjenstående kandidater valgt
 
 {% elif event.event_type == 'NO_ELECTABLE_SUBSTITUTES' -%}
-Skal ikke velge varakandidater.
+Skal ikke velge vararepresentanter.
 (Avslutter hele opptellingen)
 {% elif event.event_type == 'NO_EXCL_CANDIDATES_21' -%}
 Ingen av de opprinnelige kanidatene valgt for ekskludering i henhold til §16.3 kunne ekskluderes (§21 eller §27).
@@ -151,16 +149,45 @@ Tilpasser kandidater og prøver på nytt.
 {% elif event.event_type == 'NOT_ENOUGH_FOR_SUBSTITUTE_ROUND' -%}
 Ikke nok kandidater for å velge vara.
 (Avslutter hele opptellingen)
+{% elif event.event_type == 'QUOTA_GROUP_EMPTY' -%}
+Minst én av kvote-gruppene er tom. Fjerner kvote-regler for faste representanter.
+
 {% elif event.event_type == 'QUOTA_MIN_VALUE_SUB_ADJUSTED' -%}
 Kvote-klasse "{{ event.event_data['quota_group_name'] }}" har ikke nok kandidater som ikke er valgt for å oppfylle minstekvote for vara.
 Endrer minstekvote fra {{ event.event_data['current_value'] }} til {{ event.event_data['new_value'] }}.
+
+{% elif event.event_type == 'QUOTA_MIN_VALUE_ZERO' -%}
+I minst én av kvote-gruppene er det minimale antallet kandidater som må velges lik 0. Fjerner kvote-regler for faste representanter.
+
+{% elif event.event_type == 'QUOTA_NOT_ENOUGH_CANDIDATES' -%}
+Antall kandidater er mindre eller lik antall faste representanter som skal velges. Fjerner kvote-regler for faste representanter.
+
+{% elif event.event_type == 'QUOTA_SUB_GROUP_EMPTY' -%}
+Minst én av kvote-gruppene er tom. Fjerner kvote-regler for vararepresentanter.
+
+{% elif event.event_type == 'QUOTA_SUB_MIN_VALUE_ZERO' -%}
+I minst én av kvote-gruppene er det minimale antallet kandidater som må velges lik 0. Fjerner kvote-regler for vararepresentanter.
+
+{% elif event.event_type == 'QUOTA_SUB_NOT_ENOUGH_CANDIDATES' -%}
+Antall kandidater som ikke er valgt er mindre eller lik antall vararepresentanter som skal velges. Fjerner kvote-regler for vararepresentanter.
+
+{% elif event.event_type == 'QUOTA_SUB_UPDATED' -%}
+Kvotering (vara)
+----------------
+{% for quota in event.event_data['quotas'] -%}
+Navn: {{ nb(quota.name) }}
+Antall vararepresentanter som kan velges fra denne gruppen må være minst: {{ quota.min_value_substitutes }}
+Antall vararepresentanter som kan velges fra denne gruppen kan være maks: {{ quota.max_value_substitutes }}
+Medlemmer som ikke er valgt: {{ person_names_list(quota.unelected_members) }}
+
+{% endfor %}
 
 {% elif event.event_type == 'SAME_SCORE' -%}
 {{ event.event_data['candidates']|length }} kandidater har samme stemmetall ({{ event.event_data['identical_score'] }}) og vi kan ikke velge alle.
 {% for candidate in event.event_data['candidates'] -%}
 {{ person_name(candidate) }}
 {% endfor -%}
-Vi velger kandidat ved hjelp av loddtrekning i henhold til §29:
+Vi velger representant ved hjelp av loddtrekning i henhold til §29:
 
 {% elif event.event_type == 'SAME_SURPLUS' -%}
 {{ event.event_data['candidates']|length }} kandidater har samme overskudd ({{ event.event_data['identical_surplus'] }}).
@@ -229,7 +256,7 @@ Oppsummering
 
 Loddtrekning: {% if meta.drawing %}Ja{% else %}Nei{% endif %}
 
-Faste kandidater som ble valgt:
+Kandidater som ble valgt som faste representanter:
 {% for candidate_id in meta.regular_candidate_ids -%}
 {{ person_name(candidate_id) }}
 {% if loop.last %}
@@ -239,7 +266,7 @@ Ingen
 
 {% endfor -%}
 
-Vara kandidater som ble valgt:
+Kandidater som ble valgt som vararepresentanter:
 {% for candidate_id in meta.substitute_candidate_ids -%}
 {{ loop.index }}: {{ person_name(candidate_id) }}
 {% if loop.last %}

@@ -198,7 +198,7 @@ class Quota:
                  min_value_substitutes):
         """
         :param quota_name: The quota-name
-        :type quota_name: str
+        :type quota_name: str or dict
 
         :param members_list: The sequence of candidates
         :type members_list: collections.abc.Sequence
@@ -357,8 +357,9 @@ class Election:
             self._pollbook_dict[pollbook_id] = pollbook
             logger.info("Adding pollbook: %s", pollbook)
         if 'quotas' in self._json_dict:
-            for q_name, c_list in self._json_dict['quotas'].items():
-                members = [self._get_candidate_by_id(c_id) for c_id in c_list]
+            for quota_group in self._json_dict['quotas']:
+                members = [self._get_candidate_by_id(c_id) for c_id in
+                           quota_group['members']]
                 if self._num_choosable <= 1:
                     min_value = 0
                 elif self._num_choosable <= 3:
@@ -375,7 +376,7 @@ class Election:
                 min_value = min([min_value, len(members)])
                 min_value_substitutes = min([min_value_substitutes,
                                              len(members) - min_value])
-                quota = Quota(q_name,
+                quota = Quota(quota_group['name'],
                               members,
                               min_value,
                               min_value_substitutes)

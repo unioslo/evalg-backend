@@ -7,20 +7,23 @@ python -m evalg.counting --count <path to .json ballot dump file>
 """
 import argparse
 import logging
+import os
 import sys
 
-from evalg.counting.count import Counter
+from evalg.counting.count import Counter, ElectionCountTree
 from evalg.counting.legacy import (EvalgLegacyElection,
                                    EvalgLegacyInvalidBallot,
                                    EvalgLegacyInvalidFile)
 from evalg.counting import standalone
 
 
-if __name__ == '__main__':
-    DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
-    DEFAULT_LOG_LEVEL = logging.DEBUG
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
+DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
+DEFAULT_LOG_LEVEL = logging.DEBUG
+logger = logging.getLogger(__name__)
+
+
+def main(args=None):
+    """Main runtime"""
     parser = argparse.ArgumentParser(
         description='The following options are available')
     group = parser.add_mutually_exclusive_group(required=True)
@@ -49,6 +52,12 @@ if __name__ == '__main__':
         default=False,
         help='Calculate all alternative election paths in case of drawing')
     parser.add_argument(
+        '-i', '--interactive-drawing',
+        action='store_true',
+        dest='interactive_drawing',
+        default=False,
+        help='Prompt the user for input when drawing')
+    parser.add_argument(
         '-p', '--protocol-file',
         metavar='<filename>',
         type=str,
@@ -57,12 +66,30 @@ if __name__ == '__main__':
         help=('Optional .txt file to store the protocol in '
               '(default: print to stdout)'))
     parser.add_argument(
+        '-R', '--regular-count-only',
+        action='store_true',
+        dest='regular_count_only',
+        default=False,
+        help='Perform only the regular count')
+    parser.add_argument(
+        '-r', '--output-results',
+        action='store_true',
+        dest='output_results',
+        default=False,
+        help='Output results instead of election protocol')
+    parser.add_argument(
+        '-t', '--test-mode',
+        action='store_true',
+        dest='test_mode',
+        default=False,
+        help='Test mode. Use a non random drawing')
+    parser.add_argument(
         'electionfile',
         metavar='<filename>',
         type=str,
         help=('the election file (.json for --count and '
               'votes-XYZ.zip for --count-lagacy)'))
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     try:
         if args.count:
             election = standalone.Election(args.electionfile)
@@ -73,7 +100,10 @@ if __name__ == '__main__':
         if args.count_legacy or args.count:
             counter = Counter(election,
                               election.ballots,
-                              args.alternative_paths)
+                              alternative_paths=args.alternative_paths,
+                              test_mode=args.test_mode,
+                              interactive_drawing=args.interactive_drawing,
+                              regular_count_only=args.regular_count_only)
             if args.dump:
                 print(counter.dumps(), flush=True)
                 sys.exit(0)
@@ -81,12 +111,33 @@ if __name__ == '__main__':
             election_count_tree.print_summary()  # debug
             # print(election_count_tree.default_path.get_result().to_json())
             # print(election_count_tree.default_path.get_protocol().to_json())
-            path_protocol = election_count_tree.default_path.get_protocol()
-            if args.protocol_file:
-                with open(args.protocol_file, 'w', encoding='utf-8') as fp:
-                    fp.write(path_protocol.render())
+            if args.output_results:
+                results_list = ElectionCountTree.order_results_by(
+                    election_count_tree.get_results(),
+                    'probability')
+                print('Election tree: {paths} paths total'.format(paths=len(
+                    election_count_tree.election_paths)))
+                for result_dict in results_list:
+                    print('Paths {paths}, probability {prob}'.format(
+                        paths=result_dict['paths'],
+                        prob=result_dict['probability']))
+                    print('Regular candidates:')
+                    for cand in result_dict['regulars']:
+                        print(cand)
+                    if not result_dict['substitutes']:
+                        print(os.linesep)
+                        continue
+                    print('Substitute candidates:')
+                    for cand in result_dict['substitutes']:
+                        print(cand)
+                    print(os.linesep)
             else:
-                print(path_protocol.render())
+                path_protocol = election_count_tree.default_path.get_protocol()
+                if args.protocol_file:
+                    with open(args.protocol_file, 'w', encoding='utf-8') as fp:
+                        fp.write(path_protocol.render())
+                else:
+                    print(path_protocol.render())
     except (EvalgLegacyInvalidBallot, standalone.InvalidBallotException) as e:
         logger.error("Invalid ballot: %s", e)
         sys.exit(1)
@@ -97,3 +148,8 @@ if __name__ == '__main__':
         logger.critical("Unhandled error: %s", e)
         sys.exit(1)
     sys.exit(0)
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
+    main()

@@ -523,7 +523,7 @@ class EvalgLegacyElection:
             else:
                 self._num_substitutes = self._num_choosable
         self._election_type = election_elem.attrib.get('election_type')
-        if self._election_type == 'uit_plur_with_subs':
+        if self._election_type in 'uit_plur_with_subs':
             self._election_type = 'uio_mv'
         self._start = datetime.datetime.fromisoformat(
             election_elem.attrib.get('start'))
