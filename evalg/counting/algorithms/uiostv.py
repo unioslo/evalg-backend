@@ -1037,7 +1037,10 @@ class RegularRound:
         for can in candidates:
             if can is candidate:
                 continue
-            if can not in self._vcount_results_remaining:
+            if (
+                    can in self._elected or
+                    can not in self._vcount_results_remaining
+            ):
                 # already elected
                 continue
             if self._vcount_results_remaining[can] == score:
@@ -2082,6 +2085,7 @@ class SubstituteRound(RegularRound):
                          candidate)
             return
         if candidate in self._excluded:
+            # should not happen
             logger.error("Candidate %s is marked as excluded. Unable to elect",
                          candidate)
             return
@@ -2152,8 +2156,6 @@ class SubstituteRound(RegularRound):
                  count.CountingEventType.CANDIDATE_ELECTED),
                 {'candidate': str(candidate.id)}))
         if not last_substitute_candidate:
-            if not self._state.paragraph_19_1:
-                self._update_surplus_for_elected_candidate(candidate)
             if self._vcount_results_remaining.pop(candidate, None) is None:
                 logger.warning("Candidate %s not in vcount_results_remaining",
                                candidate)
@@ -2370,12 +2372,20 @@ class SubstituteRound(RegularRound):
                                  'elected_representatives': tuple(
                                      [str(can.id) for can in self._elected])}))
         self._vcount_results_remaining = collections.Counter(count_results)
+        # since this is a substitute count, we now sort the potentially_elected
+        # candidates, putting the unelected ones first
+        # (ordered by count_result as well)
+        already_elected = []
+        still_unelected = []
         for vcount in round_count_results:
             candidate, candidate_count = vcount
             logger.info("Candidate %s: %s", candidate, candidate_count)
             if candidate_count >= self._election_number:
-                # don't elect immediately here, because of debugging jazz.
-                self._potentially_elected.append(candidate)
+                if candidate in self._elected:
+                    already_elected.append(candidate)
+                    continue
+                still_unelected.append(candidate)
+        self._potentially_elected.extend(still_unelected + already_elected)
         # count performed
         if not self._potentially_elected:
             # Nobody to elect
