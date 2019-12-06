@@ -1303,15 +1303,17 @@ def uid_zip_builder(uids):
 
 
 @pytest.fixture
-def master_key(db_session, election_keys_foo):
-    """Master key fixture."""
-    private_key = nacl.public.PrivateKey.generate()
-    pubkey = private_key.public_key.encode(nacl.encoding.Base64Encoder)
-    master_key = MasterKey(description='Master key for testing',
-                           public_key=pubkey.decode())
-    db_session.add(master_key)
-    db_session.flush()
-    return private_key, master_key
+def master_key(election_keys_foo):
+    def master_key(db_session):
+        """Master key fixture."""
+        private_key = nacl.public.PrivateKey.generate()
+        pubkey = private_key.public_key.encode(nacl.encoding.Base64Encoder)
+        master_key = MasterKey(description='Master key for testing',
+                               public_key=pubkey.decode())
+        db_session.add(master_key)
+        db_session.flush()
+        return private_key, master_key
+    return master_key
 
 
 def unit_name():
@@ -1708,12 +1710,60 @@ def countable_election_group():
             db_session, countable_election=True, multiple=True)
     return countable_election_group
 
+
 @pytest.fixture
 def owned_countable_election_group():
     """Countable election group owned by the logged in user."""
     def owned_countable_election_group(db_session, owner):
         return new_election_group_generator(
             db_session, owner=owner, countable_election=True, multiple=True)
+    return owned_countable_election_group
+
+
+@pytest.fixture
+def counted_election_group():
+    """Counted election group."""
+    def countable_election_group(db_session):
+        election_group = new_election_group_generator(
+            db_session, countable_election=True, multiple=True)
+
+        election_group_counter = evalg.proc.count.ElectionGroupCounter(
+            db_session,
+            election_group.id,
+            election_keys()['private']
+        )
+
+        count = election_group_counter.log_start_count()
+        election_group_counter.deserialize_ballots()
+        election_group_counter.process_for_count()
+
+        election_group_counter.generate_results(count)
+        election_group_counter.log_finalize_count(count)
+        return election_group
+    return countable_election_group
+
+
+@pytest.fixture
+def owned_counted_election_group():
+    """Counted election group owned by the logged in user."""
+    def owned_countable_election_group(db_session, owner):
+        election_group = new_election_group_generator(
+            db_session, owner=owner, countable_election=True, multiple=True)
+
+        election_group_counter = evalg.proc.count.ElectionGroupCounter(
+            db_session,
+            election_group.id,
+            election_keys()['private']
+        )
+
+        count = election_group_counter.log_start_count()
+        election_group_counter.deserialize_ballots()
+        election_group_counter.process_for_count()
+
+        election_group_counter.generate_results(count)
+        election_group_counter.log_finalize_count(count)
+        return election_group
+
     return owned_countable_election_group
 
 
