@@ -157,6 +157,39 @@ queries = {
       }
     }
     """,
+    'electionGroups': """
+    query {
+      electionGroups {
+        id
+        name
+        description
+        meta
+        ouId
+        publicKey
+        announcedAt
+        publishedAt
+        cancelledAt
+        deletedAt
+        templateName
+        type
+        published
+        status
+        cancelled
+        deleted
+        announced
+        latestElectionGroupCount {
+          id
+        }
+        elections {
+          id
+        }
+        electionGroupCounts {
+          id
+        }
+        publicationBlockers
+      }
+    }
+    """,
     'electionGroupKeyMeta': """
     query($id: UUID!) {
       electionGroupKeyMeta(id: $id) {
@@ -252,4 +285,16 @@ queries = {
       }
     }
     """,
+    'personsWithMultipleVerifiedVoters': """
+    query($id: UUID!) {
+      personsWithMultipleVerifiedVoters(id: $id) {
+        person {
+          id
+        }
+        voters {
+          id
+        }
+      }
+    }
+    """
 }

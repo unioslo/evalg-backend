@@ -498,6 +498,62 @@ def test_auth_election_result_not_owned(
     assert not response['ballotsWithMetadata']
 
 
+@pytest.mark.test
+@reg.add_scenario('personsWithMultipleVerifiedVoters', 'allow')
+def test_auth_person_with_multiple_verified_voters_owned(
+        db_session,
+        client,
+        logged_in_user,
+        owned_votable_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = owned_votable_election_group(db_session,
+                                                  logged_in_user.person)
+    variables = {'id': str(election_group.id)}
+    execution = client.execute(queries['personsWithMultipleVerifiedVoters'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['personsWithMultipleVerifiedVoters']
+    assert len(response) == 0
+
+
+@pytest.mark.test
+@reg.add_scenario('personsWithMultipleVerifiedVoters', 'deny')
+def test_auth_person_with_multiple_verified_voters_deny(
+        db_session,
+        client,
+        logged_in_user,
+        votable_election_group):
+    """Test auth for the electionGroup query."""
+    election_group = votable_election_group(db_session)
+    variables = {'id': str(election_group.id)}
+    execution = client.execute(queries['personsWithMultipleVerifiedVoters'],
+                               variables=variables,
+                               context=get_test_context(db_session))
+    response = execution['data']['personsWithMultipleVerifiedVoters']
+    assert not response
+
+
+@pytest.mark.test
+@reg.add_scenario('electionGroups', 'allow')
+@reg.add_scenario('electionGroups', 'deny')
+def test_auth_election_groups_votable(
+        db_session,
+        client,
+        logged_in_user,
+        simple_election_group,
+        votable_election_group):
+    """Test auth for the electionGroup query."""
+    # Visible
+    votable_election_group(db_session)
+    # Not visible
+    simple_election_group(db_session)
+    execution = client.execute(queries['electionGroups'],
+                               context=get_test_context(db_session))
+    print(execution)
+    response = execution['data']['electionGroups']
+    assert len(response) == 1
+
+
 @pytest.mark.parametrize(
     'query,scenario',
     list(itertools.product(
