@@ -78,7 +78,7 @@ Vi velger kandidat som skal ekskluderes ved hjelp av loddtrekning i henhold til 
 {{ person_name(event.event_data['candidate']) }} er ekskludert.
 
 {% elif event.event_type == 'DENY_ELECT_QUOTA_MAX' -%}
-{{ person_name(event.event_data['candidate']) }} kan ikke bli valgt for en av hans kvote-grupper er full. Ekskluderer i neste runde i henhold til §29.
+{{ person_name(event.event_data['candidate']) }} kan ikke bli valgt for en av hennes / hans kvote-grupper er full. Ekskluderer i neste runde i henhold til §29.
 
 {% elif event.event_type == 'DISPLAY_STATUS' -%}
 Status (oppsummering):
