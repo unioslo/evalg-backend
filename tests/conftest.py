@@ -182,6 +182,11 @@ def make_election_group(db_session, election_keys_foo, make_person_principal,
             'announced_at': announced_at,
             'published_at': published_at,
             'public_key': election_keys_foo['public'],
+            'meta': {
+                'candidate_rules': {'seats': 1,
+                                    'substitutes': 2,
+                                    'candidate_gender': True}
+            }
         }
         election_group = ElectionGroup(**data)
         db_session.add(election_group)
@@ -260,8 +265,6 @@ def election_group_new(db_session, election_keys_foo):
     db_session.commit()
     # person_principal = make_person_principal(logged_in_user.person)
     # make_role(election_group, person_principal)
-
-
     return election_group
 
 
@@ -1052,7 +1055,6 @@ def uids_student_parliament_missing_faknr():
         'hansta,']
 
 
-
 @pytest.fixture
 def uids_non_posix():
     """A list of uids, where some do not conform to POSIX."""
@@ -1671,6 +1673,7 @@ def simple_election_group():
     def simple_election_group(db_session):
         return new_election_group_generator(db_session)
     return simple_election_group
+
 
 @pytest.fixture
 def owned_election_group():
