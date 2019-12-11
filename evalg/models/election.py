@@ -321,7 +321,7 @@ class Election(AbstractElection):
     @property
     def quotas(self):
         quotas = []
-        if self.meta['candidate_rules'].get('candidate_gender'):
+        if self.election_group.meta['candidate_rules'].get('candidate_gender'):
             quota_names = self.meta['counting_rules']['affirmative_action']
             for quota_name in quota_names:
                 if quota_name == 'gender_40':  # the only one supported so far
