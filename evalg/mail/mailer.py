@@ -22,8 +22,8 @@ def send_mail(template_name, subject, **kwargs):
     to_addr = kwargs.get('to_addr')
 
     if not config.get('MAIL_ENABLE'):
-        current_app.info('No mail sent. Mail not enabled. '
-                         'To: %s', to_addr)
+        current_app.logger.info('No mail sent. Mail not enabled. '
+                                'To: %s', to_addr)
         return
 
     smtp_server = config.get('MAIL_SMTP_SERVER')
