@@ -19,8 +19,6 @@ from evalg.graphql.nodes.utils.permissions import (
     can_manage_election,
     can_vote,
 )
-from evalg.proc.mail import send_vote_confirmation_mail
-
 
 #
 # Query
@@ -126,8 +124,13 @@ class AddVote(graphene.Mutation):
             ok=True)
         session.commit()
 
-        send_vote_confirmation_mail(
-            person=user.person,
-            election_group=vote_policy.voter.pollbook.election.election_group)
+        from evalg.tasks.celery_worker import send_vote_confirmation_mail_task
+
+        election_group = vote_policy.voter.pollbook.election.election_group
+        election_group_name = election_group.name['nb']
+
+        send_vote_confirmation_mail_task.delay(
+            user.person.email,
+            election_group_name)
 
         return node

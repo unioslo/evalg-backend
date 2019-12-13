@@ -44,20 +44,5 @@ def send_mail(template_name, subject, **kwargs):
 
     with smtplib.SMTP(host=smtp_server, port=smtp_port) as smtp:
         smtp.ehlo()
-        try:
-            smtp.starttls()
-        except smtplib.SMTPNotSupportedError as e:
-            current_app.logger.warning('Smtp server does not support tls %s',
-                                       smtp_server)
-            capture_exception(e)
-        try:
-            smtp.send_message(msg, 'noreply@uio.no', to_addr)
-        except smtplib.SMTPRecipientsRefused as e:
-            current_app.logger.error('SMTP error. Could not send email to '
-                                     'the address: %s', to_addr)
-            capture_exception(e)
-
-        except smtplib.SMTPSenderRefused as e:
-            current_app.logger.error('SMTP error. From address not allowed '
-                                     'by server. %s', to_addr)
-            capture_exception(e)
+        smtp.starttls()
+        smtp.send_message(msg)

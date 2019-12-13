@@ -5,6 +5,7 @@ import logging
 
 from werkzeug.local import LocalProxy
 
+import evalg.mail.mailer
 import evalg.proc.pollbook
 from evalg import create_app, db
 from evalg.tasks.flask_celery import make_celery
@@ -78,3 +79,26 @@ def import_census_file_task(self, pollbook_id, census_file_id):
                 pollbook_id,
                 census_file_id,
                 self.request.id)
+
+
+@celery.task(bind=True,
+             autoretry_for=(Exception,),
+             exponential_backoff=60,
+             retry_kwargs={'max_retries': 10},
+             retry_jitter=True)
+def send_vote_confirmation_mail_task(self, email_addr, election_group_name):
+    """Send an vote confirmation mail to the user."""
+    logger.info('Starting send vote confirmation mail task. '
+                'email: %s, election_name: %s',
+                email_addr, election_group_name)
+    subject = 'Bekreftet mottatt stemme'
+
+    evalg.mail.mailer.send_mail(
+        'vote_confirmation.tmpl',
+        to_addr=email_addr,
+        electiongroup_name=election_group_name,
+        subject=subject
+    )
+    logger.info('Send vote confirmation mail task done. ',
+                'email: %s, election_name: %s',
+                 email_addr, election_group_name)
