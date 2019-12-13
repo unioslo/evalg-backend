@@ -4,11 +4,13 @@ GraphQL ObjectTypes for votes and vote mutations.
 import graphene
 import graphene_sqlalchemy
 
-import evalg.proc.vote
+from flask import current_app
+
 import evalg.database.query
 import evalg.models.pollbook
 import evalg.models.voter
 import evalg.models.election
+import evalg.proc.vote
 
 from evalg.graphql.nodes.utils.base import get_session, get_current_user
 from evalg.graphql.nodes.utils.permissions import (
@@ -17,6 +19,7 @@ from evalg.graphql.nodes.utils.permissions import (
     can_manage_election,
     can_vote,
 )
+from evalg.proc.mail import send_vote_confirmation_mail
 
 
 #
@@ -122,4 +125,9 @@ class AddVote(graphene.Mutation):
             election_id=vote_policy.voter.pollbook.election.id,
             ok=True)
         session.commit()
+
+        send_vote_confirmation_mail(
+            person=user.person,
+            election_group=vote_policy.voter.pollbook.election.election_group)
+
         return node
