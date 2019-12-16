@@ -129,8 +129,9 @@ class AddVote(graphene.Mutation):
         election_group = vote_policy.voter.pollbook.election.election_group
         election_group_name = election_group.name['nb']
 
-        send_vote_confirmation_mail_task.delay(
-            user.person.email,
-            election_group_name)
+        if current_app.config.get('MAIL_ENABLE'):
+            send_vote_confirmation_mail_task.delay(
+                user.person.email,
+                election_group_name)
 
         return node
