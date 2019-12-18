@@ -28,6 +28,13 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 # }
 
 
+# Enable email notifications
+MAIL_ENABLE = False
+MAIL_SMTP_SERVER = 'localhost'
+MAIL_SMTP_PORT = 25
+MAIL_FROM_ADDR = ''
+MAIL_REPLY_TO_ADDR = ''
+
 #
 # SAPWS config used to import organizational units.
 #
