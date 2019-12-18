@@ -21,6 +21,11 @@ def send_mail(template_name, subject, **kwargs):
     config = current_app.config
     to_addr = kwargs.get('to_addr')
 
+    if not to_addr:
+        current_app.logger.warning('Could not send email, not to_address '
+                                   'given')
+        return
+
     if not config.get('MAIL_ENABLE'):
         current_app.logger.info('No mail sent. Mail not enabled. '
                                 'To: %s', to_addr)
