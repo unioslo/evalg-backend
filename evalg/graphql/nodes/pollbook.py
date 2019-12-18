@@ -1,5 +1,4 @@
 """GraphQL ObjectType for Pollbook and Voter nodes."""
-import collections
 import datetime
 import logging
 
@@ -7,6 +6,8 @@ import graphene
 import graphene_sqlalchemy
 from graphene_file_upload.scalars import Upload
 from graphene.types.generic import GenericScalar
+
+from sentry_sdk import capture_exception
 
 import evalg.database.query
 import evalg.models.census_file_import
@@ -449,12 +450,12 @@ class UploadCensusFile(graphene.Mutation):
         pollbook_id = kwargs['pollbook_id']
         census_file = kwargs['census_file']
         session = get_session(info)
-        result = collections.Counter(ok=0, failed=0)
 
         try:
             pollbook = session.query(evalg.models.pollbook.Pollbook).get(
                 pollbook_id)
         except Exception as e:
+            capture_exception(e)
             return UploadCensusFileResponse(
                 success=False,
                 code='pollbook-not-found',
