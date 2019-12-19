@@ -99,6 +99,6 @@ def send_vote_confirmation_mail_task(self, email_addr, election_group_name):
         electiongroup_name=election_group_name,
         subject=subject
     )
-    logger.info('Send vote confirmation mail task done. ',
+    logger.info('Send vote confirmation mail task done. '
                 'email: %s, election_name: %s',
                  email_addr, election_group_name)
