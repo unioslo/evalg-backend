@@ -5,6 +5,8 @@ import logging
 
 from werkzeug.local import LocalProxy
 
+from sentry_sdk import capture_exception
+
 import evalg.mail.mailer
 import evalg.proc.pollbook
 from evalg import create_app, db
@@ -62,6 +64,7 @@ def import_census_file_task(self, pollbook_id, census_file_id):
                 results['already_in_pollbook'].append(id_value)
 
         except Exception as e:
+            capture_exception(e)  # overkill?
             logger.warning('Entry #%d: unable to add voter: %s',
                            i, e, exc_info=True)
             results['error_nr'] += 1
@@ -101,4 +104,4 @@ def send_vote_confirmation_mail_task(self, email_addr, election_group_name):
     )
     logger.info('Send vote confirmation mail task done. '
                 'email: %s, election_name: %s',
-                 email_addr, election_group_name)
+                email_addr, election_group_name)

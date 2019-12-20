@@ -9,6 +9,8 @@ from flask import current_app
 
 from sqlalchemy.sql import and_
 
+from sentry_sdk import capture_exception
+
 import evalg.database.query
 from evalg.models.ballot import Envelope
 from evalg.models.votes import Vote
@@ -144,6 +146,7 @@ class ElectionGroupCounter:
             )
         except Exception as e:
             logger.error(e)
+            capture_exception(e)
             return None
         return ballot_serializer
 
@@ -156,6 +159,7 @@ class ElectionGroupCounter:
                 serialized_test_ballot)
         except nacl.exceptions.CryptoError as e:
             logger.error(e)
+            capture_exception(e)
             return False
         return True
 

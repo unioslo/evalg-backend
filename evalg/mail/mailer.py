@@ -6,14 +6,13 @@ import smtplib
 
 from flask import current_app
 from jinja2 import Environment, PackageLoader
-from sentry_sdk import capture_exception
 
 
 def load_template(template_name):
     """Load all jinja2 email templates."""
     return Environment(
-            loader=PackageLoader('evalg.mail',
-                                 'templates')).get_template(template_name)
+        loader=PackageLoader('evalg.mail',
+                             'templates')).get_template(template_name)
 
 
 def send_mail(template_name, subject, **kwargs):

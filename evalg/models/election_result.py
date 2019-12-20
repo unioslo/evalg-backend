@@ -57,6 +57,5 @@ class ElectionResult(ModelBase):
             protcol_cls = count.PROTOCOL_MAPPINGS[self.election.type_str]
             return protcol_cls.from_dict(self.election_protocol).render()
         except KeyError:
-            # re-raise?
-            return 'Unsupported counting method for protocol'
+            raise Exception('Unsupported counting method for protocol')
         return self.value
