@@ -19,7 +19,9 @@ import uuid
 from evalg import db
 from evalg.database.types import NestedMutableJson
 from evalg.database.types import UuidType
+
 from .base import ModelBase
+from .voter import Voter
 
 
 class Pollbook(ModelBase):
@@ -55,5 +57,12 @@ class Pollbook(ModelBase):
         lazy='joined')
 
     voters = db.relationship('Voter')
+    voter_objects = db.relationship('Voter', lazy='dynamic')
 
     census_file_imports = db.relationship('CensusFileImport')
+
+    @property
+    def has_votes(self):
+        """True if there are already cast votes in this pollbook"""
+        return bool(self.voter_objects.filter(
+            Voter.votes.__ne__(None)).count())

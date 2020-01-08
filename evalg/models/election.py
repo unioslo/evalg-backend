@@ -274,6 +274,14 @@ class Election(AbstractElection):
                   cls.start <= func.now()), True)],
                     else_=False)
 
+    @property
+    def has_votes(self):
+        """True if there are already cast votes in this election"""
+        for pollbook in self.pollbooks:
+            if pollbook.has_votes:
+                return True
+        return False
+
     @hybrid_property
     def is_ongoing(self):
         """ Check if an election is currently ongoing. """
