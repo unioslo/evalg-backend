@@ -64,10 +64,15 @@ class AddPrefElecCandidate(graphene.Mutation):
         if not can_manage_election_list(session, user, **args):
             return AddPrefElecCandidate(ok=False)
         meta = {'gender': args.get('gender')}
+        election_list = session.query(
+            evalg.models.election_list.ElectionList).get(args.get('list_id'))
+        if election_list.election.has_votes:
+            # There are already votes for this election
+            return AddPrefElecCandidate(ok=False)
         candidate = evalg.models.candidate.Candidate(
             name=args.get('name'),
             meta=meta,
-            list_id=args.get('list_id'),
+            list_id=election_list.id,
             information_url=args.get('information_url'))
         session.add(candidate)
         session.commit()
@@ -119,11 +124,15 @@ class AddTeamPrefElecCandidate(graphene.Mutation):
         user = get_current_user(info)
         if not can_manage_election_list(session, user, **args):
             return AddTeamPrefElecCandidate(ok=False)
+        election_list = session.query(
+            evalg.models.election_list.ElectionList).get(args.get('list_id'))
+        if election_list.election.has_votes:
+            return AddTeamPrefElecCandidate(ok=False)
         meta = {'co_candidates': args.get('co_candidates')}
         candidate = evalg.models.candidate.Candidate(
             name=args.get('name'),
             meta=meta,
-            list_id=args.get('list_id'),
+            list_id=election_list.id,
             information_url=args.get('information_url'))
         session.add(candidate)
         session.commit()
@@ -173,6 +182,8 @@ class DeleteCandidate(graphene.Mutation):
         )
         args['list_id'] = candidate.list_id
         if not can_manage_election_list(session, user, **args):
+            return DeleteCandidate(ok=False)
+        if candidate.list.election.has_votes:
             return DeleteCandidate(ok=False)
         session.delete(candidate)
         session.commit()

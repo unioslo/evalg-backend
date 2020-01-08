@@ -51,6 +51,12 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
     is_ongoing = graphene.Boolean()
     pollbooks = graphene.List(pollbook.Pollbook)
     vote_count = graphene.Field(lambda: ElectionVoteCounts)
+    has_votes = graphene.Boolean()
+
+    @permission_controller
+    def resolve_has_votes(self, info):
+        """Resolve the has_votes Election-property"""
+        return self.has_votes
 
     @permission_controller
     def resolve_vote_count(self, info):

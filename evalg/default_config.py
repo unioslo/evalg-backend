@@ -113,6 +113,7 @@ PERMISSIONS = {
         'status': 'allow',
         'pollbooks': 'allow',
         'lists': 'allow',
+        'has_votes': 'can_manage_election',
         'election_results': 'can_manage_election'
     },
     'ElectionGroupCount': {
@@ -211,6 +212,7 @@ PERMISSIONS = {
         'census_file_imports': 'can_manage_pollbook',
         'nr_of_voters': 'can_manage_pollbook',
         'voter_dump': 'can_manage_pollbook',
+        'voter_objects': None
     },
     'CensusFileImport': {
         'pollbook_id': 'can_manage_census_file_upload',
