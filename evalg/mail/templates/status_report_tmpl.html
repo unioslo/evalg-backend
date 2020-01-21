@@ -1,0 +1,117 @@
+<html>
+    <head></head>
+
+    <body>
+
+        <h1>Valgstatus Evalg 3</h1>
+
+        <h2>Pågående valg</h2>
+        {% if active_elections|length > 0 %}
+        <ul>
+            {% for election in active_elections -%}
+            <li>{{ election.name['nb'] }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>Ingen pågående valg</p>
+        {% endif %}
+
+        <h2>Kommende valg</h2>
+        {% if upcoming_elections|length > 0 %}
+        <ul>
+            {% for election in upcoming_elections -%}
+            <li>{{ election.name['nb'] }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>Ingen kommende valg</p>
+        {% endif %}
+
+        <br/>
+
+
+        {% for election_group in active_elections_info -%}
+        <hr/>
+        <h2>Detaljer om valggruppe {{election_group.name }}</h2>
+        <table style="width:100%" cellpadding="0" border="0" cellspacing="0">
+            <tr>
+                <td>Valggruppe</td>
+                <td>{{ election_group.name }}</td>
+            </tr>
+            <tr>
+                <td>Valggruppe id</td>
+                <td>{{ election_group.id }}</td>
+            </tr>
+            <tr>
+                <td>Stemmeberettigede</td>
+                <td>{{ election_group.voter_count }} </td>
+            </tr>
+        </table>
+
+        {% for election in election_group.elections -%}
+        <h3>Detaljer om valg {{ election.name }}</h3>
+        <table style="width:100%" cellpadding="0">
+            <tr>
+                <td>Valg id</td>
+                <td>{{ election.id }}</td>
+            </tr>
+            <tr>
+                <td>Start</td>
+                <td>{{ election.start }}</td>
+            </tr>
+            <tr>
+                <td>Slutt</td>
+                <td>{{ election.end }}</td>
+            </tr>
+            <tr>
+                <td>Totalt antall stemmer:</td>
+                <td>{{ election.votes_total}}</td>
+            </tr>
+            <tr>
+                <td>Stemmer fra manntall:</td>
+                <td>{{ election.votes_in_census}}</td>
+            </tr>
+            <tr>
+                <td>Stemmeberettigede</td>
+                <td>{{ election.voter_count }}</td>
+            </tr>
+            <tr>
+                <td>Valgoppslutning</td>
+                <td>{{ election.turnout }}%</td>
+            </tr>
+            <tr>
+                <td>Stemmer avvist av valgadmin</td>
+                <td>{{ election.votes_rejected}}</td>
+            </tr>
+            <tr>
+                <td>Stemmer utenfor manntallet</td>
+                <td>{{ election.votes_not_reviewed}}</td>
+            </tr>
+        </table>
+
+        {% if election.pollbooks_info|length > 1 %}
+        <h4>Detaljer om manntall</h4>
+        <table style="width:100%" cellpadding="0">
+            <tr>
+                <th align="left">Stemmer</th>
+                <th align="left">Berettigede</th>
+                <th align="left">Valgoppslutning</th>
+                <th align="left">Vekt</th>
+                <th align="left">Navn</th>
+            </tr>
+            {% for pollbook in election.pollbooks_info %}
+            <tr>
+                <td>{{ pollbook.valid_votes }}</td>
+                <td>{{ pollbook.valid_voters }}</td>
+                <td>{{ pollbook.turnout }}%</td>
+                <td>{{ pollbook.weight }}</td>
+                <td>{{ pollbook.name['nb'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+    </body>
+</html>
+
