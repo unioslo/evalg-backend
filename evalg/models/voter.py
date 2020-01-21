@@ -107,6 +107,18 @@ class Voter(ModelBase):
         doc='reason why this voter should be included in the pollbook',
         nullable=True)
 
+    def is_valid_voter(self):
+        """
+        Checks if the voter is a valid one.
+
+        Valid voters have the status ADMIN_ADDED_AUTO_VERIFIED or
+        SELF_ADDED_VERIFIED
+        """
+        if (self.verified_status == VerifiedStatus.ADMIN_ADDED_AUTO_VERIFIED or
+                self.verified_status == VerifiedStatus.SELF_ADDED_VERIFIED):
+            return True
+        return False
+
     def undo_review(self):
         if self.verified_status in (VerifiedStatus.SELF_ADDED_VERIFIED,
                                     VerifiedStatus.SELF_ADDED_REJECTED):
