@@ -18,7 +18,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
     def parse(self):
         """Parse the current file and create a generator."""
         if not self.id_type:
-            return None
+            return
 
         if self.id_type == 'nin':
             for fnr in self.fields:
@@ -40,11 +40,11 @@ class CensusFileParser(metaclass=abc.ABCMeta):
                 else:
                     yield field.lower()
         else:
-            return None
+            return
 
     @classmethod
     @abc.abstractmethod
-    def get_mime_type(cls):
+    def get_mime_types(cls):
         """Get the mimetype supported by the parser."""
 
     @property
@@ -144,14 +144,21 @@ class CensusFileParser(metaclass=abc.ABCMeta):
     @classmethod
     def get_supported_mime_types(cls):
         """Get the mime types of all implemented subclasses."""
-        return [x.get_mime_type() for x in CensusFileParser.__subclasses__()]
+        supported_mime_typs = []
+        return (supported_mime_typs.extend(x.get_mime_types()) for x in
+                CensusFileParser.__subclasses__())
 
     @classmethod
     def factory(cls, census_file, mime_type, feide_postfix='uio.no'):
         """Return the correct file parser if supported."""
-        supported_mime_types = {
-            x.get_mime_type(): x for x in CensusFileParser.__subclasses__()
-        }
+
+        supported_mime_types = {}
+
+        for parser in CensusFileParser.__subclasses__():
+            for mt in parser.get_mime_types():
+                if mt in supported_mime_types:
+                    raise ValueError('Multiple parsers defiend for MIME type')
+                supported_mime_types[mt] = parser
 
         if mime_type in supported_mime_types:
             parser = supported_mime_types[mime_type](
@@ -187,9 +194,9 @@ class PlainTextParser(CensusFileParser):
         self.id_type = self.find_identifier_type(self.fields)
 
     @classmethod
-    def get_mime_type(cls):
+    def get_mime_types(cls):
         """File mime type."""
-        return 'text/plain'
+        return ['text/plain']
 
 
 class CsvParser(CensusFileParser):
@@ -209,6 +216,15 @@ class CsvParser(CensusFileParser):
         self.id_type = self.find_identifier_type(self.fields)
 
     @classmethod
-    def get_mime_type(cls):
+    def get_mime_types(cls):
         """File mime type."""
-        return 'text/csv'
+        return [
+            'text/x-csv',
+            'application/vnd.ms-excel',
+            'application/csv',
+            'application/x-csv',
+            'text/csv',
+            'text/comma-separated-values',
+            'text/x-comma-separated-values',
+            'text/tab-separated-values',
+            ]
