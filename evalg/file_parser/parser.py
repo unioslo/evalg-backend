@@ -145,8 +145,9 @@ class CensusFileParser(metaclass=abc.ABCMeta):
     def get_supported_mime_types(cls):
         """Get the mime types of all implemented subclasses."""
         supported_mime_typs = []
-        return (supported_mime_typs.extend(x.get_mime_types()) for x in
-                CensusFileParser.__subclasses__())
+        for x in CensusFileParser.__subclasses__():
+            supported_mime_typs.extend(x.get_mime_types())
+        return supported_mime_typs
 
     @classmethod
     def factory(cls, census_file, mime_type, feide_postfix='uio.no'):
@@ -227,4 +228,4 @@ class CsvParser(CensusFileParser):
             'text/comma-separated-values',
             'text/x-comma-separated-values',
             'text/tab-separated-values',
-            ]
+        ]
