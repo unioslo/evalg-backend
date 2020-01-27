@@ -1,0 +1,37 @@
+Pågående valg:
+{% for election in active_elections -%}{{ election.name['nb'] }}
+{% else %}Ingen pågående valg{% endfor %}
+Kommende valg:
+{% for election in upcoming_elections -%}{{ election.name['nb'] }}
+{% else %}Ingen kommende valg{% endfor %}
+
+{% for election_group in active_elections_info -%}
+-------------------------------------------------------------------------------
+Valggruppe:                     {{ election_group.name }}
+Valggruppe id:                  {{ election_group.id }}
+Stemmeberettigede:              {{ election_group.voter_count }}
+
+{% for election in election_group.elections -%}
+Valg:                           {{ election.name }}
+Valgid:                         {{ election.id }}
+Start:                          {{ election.start }}
+Slutt:                          {{ election.end }}
+Totalt antall stemmer:          {{ election.votes_total}}
+Stemmer fra manntall:           {{ election.votes_in_census}}
+Stemmeberettigede:              {{ election.voter_count }}
+Valgoppslutning:                {{ election.turnout }}%
+Stemmer avvist av valgadmin:    {{ election.votes_rejected}}
+Stemmer utenfor manntall:       {{ election.votes_not_reviewed}}
+
+{% if election.pollbooks_info|length > 1 %}
+Stemmer fordelt på manntall:
+{% for pollbook in election.pollbooks_info %}
+Navn: {{ pollbook.name['nb'] }}
+Stemmer:                        {{ pollbook.valid_votes }}
+Berettigede:                    {{ pollbook.valid_voters }}
+Valgoppslutning:                {{ pollbook.turnout }}%
+Vekt:                           {{ pollbook.weight }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endfor %}

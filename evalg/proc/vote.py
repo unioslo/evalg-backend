@@ -164,6 +164,40 @@ def get_election_vote_counts(session, election):
     return count
 
 
+def get_pollbook_vote_counts(session, pollbook):
+    """
+    Get a dict of vote counts for the pollbook.
+
+    The votes are grouped by the voters' ``verified_status``
+    """
+    voters_subq = select([Voter.id]).where(
+        Voter.pollbook_id == pollbook.id)
+    query = session.query(
+        Voter.self_added,
+        Voter.reviewed,
+        Voter.verified,
+        func.count(Vote.ballot_id)
+    ).join(
+        Vote
+    ).filter(
+        Voter.id.in_(voters_subq)
+    ).group_by(
+        Voter.self_added,
+        Voter.reviewed,
+        Voter.verified,
+    )
+
+    count = collections.Counter()
+    for self_added, reviewed, verified, votes in query.all():
+        name = VERIFIED_STATUS_MAP[(self_added, reviewed, verified)].name
+        count[name.lower()] += votes
+    total = 0
+    for votes in count.values():
+        total += votes
+    count['total'] = total
+    return count
+
+
 def get_votes_for_person(session, person):
     """
     Get all voters for a person, in prioritized order.

@@ -66,3 +66,6 @@ class Pollbook(ModelBase):
         """True if there are already cast votes in this pollbook"""
         return bool(self.voter_objects.filter(
             Voter.votes.__ne__(None)).count())
+
+    def get_valid_voters(self):
+        return [x for x in self.voters if x.is_valid_voter()]

@@ -97,7 +97,7 @@ def send_vote_confirmation_mail_task(self, email_addr, election_group_name):
     subject = 'Bekreftet mottatt stemme'
 
     evalg.mail.mailer.send_mail(
-        'vote_confirmation.tmpl',
+        template_name='vote_confirmation.tmpl',
         to_addr=email_addr,
         electiongroup_name=election_group_name,
         subject=subject
