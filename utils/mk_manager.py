@@ -81,6 +81,12 @@ def main(args=None):
         description='The following options are available')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
+        '-D', '--derive-pub-key',
+        action='store_true',
+        dest='derive_pub_key',
+        default=False,
+        help='Derives a public key from a provided private key (will prompt)')
+    group.add_argument(
         '-d', '--decrypt',
         action='store_true',
         dest='decrypt',
@@ -140,6 +146,23 @@ def main(args=None):
                                '{pubkey}').format(dstring=dstring,
                                                   sep=os.linesep,
                                                   pubkey=args.pubkey))
+    elif args.derive_pub_key:
+        print('Enter master key (private key): ', end='', flush=True)
+        privkey_str = sys.stdin.readline().strip()
+        pubkey_str = nacl.public.PrivateKey(
+            privkey_str,
+            encoder=nacl.encoding.Base64Encoder).public_key.encode(
+                encoder=nacl.encoding.Base64Encoder).decode()
+        print(f'Public key: {pubkey_str}', flush=True)
+        if args.output:
+            with io.open(args.output,
+                         'w',
+                         encoding='utf-8',
+                         newline='\r\n') as keyfile:
+                keyfile.write(('{privkey}{sep}Offentlig nøkkel / Public key: '
+                               '{pubkey}').format(privkey=privkey_str,
+                                                  sep=os.linesep,
+                                                  pubkey=pubkey_str))
 
 
 if __name__ == '__main__':
