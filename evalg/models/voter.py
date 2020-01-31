@@ -119,6 +119,11 @@ class Voter(ModelBase):
             return True
         return False
 
+    def ensure_rereview(self):
+        """Ensure that the admin need to make a new review of the voter."""
+        if self.verified_status is VerifiedStatus.SELF_ADDED_REJECTED:
+            self.reviewed = False
+
     def undo_review(self):
         if self.verified_status in (VerifiedStatus.SELF_ADDED_VERIFIED,
                                     VerifiedStatus.SELF_ADDED_REJECTED):
