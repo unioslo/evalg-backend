@@ -250,6 +250,8 @@ class UpdateVoterReason(graphene.Mutation):
         if not can_vote(session, user, voter):
             return UpdateVoterReason(ok=False)
         voter.reason = kwargs.get('reason')
+        # A new review is needed if the reason is updated
+        voter.ensure_rereview()
         session.add(voter)
         session.commit()
         return UpdateVoterReason(ok=True)
