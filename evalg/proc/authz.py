@@ -54,7 +54,6 @@ def get_principals_for_group(session, group):
 
 @flask_request_memoize
 def get_principals_for_person(session, person):
-    # TODO: could and should cache here
     principals = []
     if person.principal:
         principals.append(person.principal)
