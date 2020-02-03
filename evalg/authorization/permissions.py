@@ -10,7 +10,7 @@ from flask_allows import Requirement as OriginalRequirement
 
 from evalg.proc.authz import (get_principals_for_person,
                               get_person_roles_matching)
-from evalg.proc.pollbook import get_voters_for_person
+from evalg.proc.pollbook import get_voters_for_person_as_list
 from evalg.proc.group import get_election_key_meta
 from evalg.utils import flask_request_memoize
 
@@ -87,10 +87,10 @@ class IsVoter(Requirement):
 
     def fulfill(self, user):
         return self.voter.id in [
-            v.id for v in get_voters_for_person(
+            v.id for v in get_voters_for_person_as_list(
                 self.session,
                 user.person
-            ).all()
+            )
         ]
 
 

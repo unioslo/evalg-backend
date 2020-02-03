@@ -14,6 +14,7 @@ from evalg.models.authorization import (ElectionGroupRole,
 from evalg.models.person import PersonExternalId
 from evalg.models.authorization import PersonIdentifierPrincipal
 from evalg.proc.group import get_user_groups
+from evalg.utils import flask_request_memoize
 
 
 def get_or_create_principal(session, principal_type, **kwargs):
@@ -51,6 +52,7 @@ def get_principals_for_group(session, group):
         GroupPrincipal.group_id == group.id).all()
 
 
+@flask_request_memoize
 def get_principals_for_person(session, person):
     # TODO: could and should cache here
     principals = []
