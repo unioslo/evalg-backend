@@ -157,11 +157,11 @@ def can_manage_voter(session, user, voter, **args):
 
 @all_permissions
 def can_view_voter(session, user, voter, **args):
-    if Permission(IsVoter(session, voter), identity=user):
-        return True
     if Permission(
             IsElectionGroupAdmin(session, voter.pollbook.election.group_id),
             identity=user):
+        return True
+    if Permission(IsVoter(session, voter), identity=user):
         return True
     return False
 

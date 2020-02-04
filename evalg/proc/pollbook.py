@@ -16,6 +16,7 @@ import evalg.database.query
 from evalg.models.election import Election, ElectionGroup
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import Pollbook
+from evalg.utils import flask_request_memoize
 from evalg.models.votes import Vote
 from evalg.models.voter import Voter
 
@@ -62,6 +63,16 @@ def get_voters_for_person(session, person, election=None):
         Pollbook.priority
     )
     return voter_query
+
+
+@flask_request_memoize
+def get_voters_for_person_as_list(session, person, election=None):
+    """
+    Return the query object from get_voter_for_person as a list.
+
+    We need to do this to be able to memoize this functions.
+    """
+    return get_voters_for_person(session, person, election).all()
 
 
 def get_voters_for_id(session, id_type, id_value, election=None):
