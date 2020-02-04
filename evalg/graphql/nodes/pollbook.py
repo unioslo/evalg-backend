@@ -130,7 +130,8 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
     @permission_controller
     def resolve_voter_dump(self, info):
         session = get_session(info)
-        return evalg.proc.pollbook.get_voter_dump(session, self.id)
+        pollbook = session.query(evalg.models.pollbook.Pollbook).get(self.id)
+        return [[x.id_type, x.id_value] for x in pollbook.voters]
 
 
 @permission_controller.control_object_type

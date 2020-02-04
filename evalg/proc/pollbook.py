@@ -23,11 +23,6 @@ from evalg.models.voter import Voter
 logger = logging.getLogger(__name__)
 
 
-def get_voter_dump(session, pollbook_id):
-    pollbook = session.query(Pollbook).get(pollbook_id)
-    return [[x.id_type, x.id_value] for x in pollbook.voters]
-
-
 def get_voters_for_person(session, person, election=None):
     """
     Get a query for fetching all voters for a person, in prioritized order.
