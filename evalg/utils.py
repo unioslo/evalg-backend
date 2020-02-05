@@ -129,12 +129,15 @@ def flask_request_memoize(f):
     """
     Flask memoize wrapper for a callable.
 
+    TODO: If we need to memoize class functions, we would need to add the
+    class name to the arg_string as well.
+
     Based on the same wrapper i Cerebrum.utils.funcwrap.
     Caching is done via flask.g and will be removed when the session ends.
     """
     @wraps(f)
     def wrapper(*args, **kwargs):
-        arg_string = f'{args}{kwargs}'
+        arg_string = f'{f.__name__}{args}{kwargs}'
         if arg_string not in g:
             setattr(g, arg_string, f(*args, **kwargs))
         return getattr(g, arg_string)
