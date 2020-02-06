@@ -98,9 +98,10 @@ def send_vote_confirmation_mail_task(self, email_addr, election_group_name):
 
     evalg.mail.mailer.send_mail(
         template_name='vote_confirmation.tmpl',
-        to_addr=email_addr,
+        to_addrs=[email_addr],
         electiongroup_name=election_group_name,
-        subject=subject
+        subject=subject,
+        voter_id=email_addr
     )
     logger.info('Send vote confirmation mail task done. '
                 'email: %s, election_name: %s',
