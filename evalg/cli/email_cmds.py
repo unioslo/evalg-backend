@@ -1,7 +1,6 @@
 """Commands for sending emails."""
 
 import logging
-import smtplib
 import pytz
 
 import click
@@ -51,8 +50,8 @@ def send_status_mail(to_addrs):
             election_count = evalg.proc.vote.get_election_vote_counts(
                 evalg.db.session, election)
             votes_in_census = (
-                    election_count.get('admin_added_auto_verified', 0) +
-                    election_count.get('self_added_verified', 0))
+                election_count.get('admin_added_auto_verified', 0) +
+                election_count.get('self_added_verified', 0))
             votes_rejected = (election_count.get('admin_added_rejected', 0) +
                               election_count.get('self_added_rejected', 0))
             votes_not_reviewed = election_count.get(
@@ -89,8 +88,8 @@ def send_status_mail(to_addrs):
 
                 valid_pollbook_voters = len(pollbook.get_valid_voters())
                 valid_pollbook_votes = (
-                        pollbook_count.get('admin_added_auto_verified', 0) +
-                        pollbook_count.get('self_added_verified', 0))
+                    pollbook_count.get('admin_added_auto_verified', 0) +
+                    pollbook_count.get('self_added_verified', 0))
 
                 if valid_pollbook_voters == 0:
                     pollbook_turnout = 0.0
@@ -112,20 +111,15 @@ def send_status_mail(to_addrs):
 
         active_elections_info.append(info)
 
-    for to_addr in to_addrs:
-        logger.info('Sending status mail to %s', to_addr)
-        try:
-            evalg.mail.mailer.send_mail(
-                template_name='status_report.tmpl',
-                html_template_name='status_report_tmpl.html',
-                to_addr=to_addr,
-                subject='Valgstatus - eValg 3',
-                active_elections=active_elections,
-                upcoming_elections=upcoming_elections,
-                active_elections_info=active_elections_info
-            )
-        except smtplib.SMTPRecipientsRefused:
-            logger.error('Could not send mail to addr %s', to_addr)
+    logger.info('Sending status mail to %s', ', '.join(to_addrs))
+    evalg.mail.mailer.send_mail(
+        template_name='status_report.tmpl',
+        html_template_name='status_report_tmpl.html',
+        to_addrs=to_addrs,
+        subject='Valgstatus - eValg 3',
+        active_elections=active_elections,
+        upcoming_elections=upcoming_elections,
+        active_elections_info=active_elections_info)
 
 
 commands = tuple((
