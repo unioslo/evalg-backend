@@ -39,7 +39,7 @@ def send_mail(
     """
     config = current_app.config
 
-    if not template_name or not html_template_name:
+    if not template_name and not html_template_name:
         current_app.logger.error('Could not send email, no template given')
         return
 
