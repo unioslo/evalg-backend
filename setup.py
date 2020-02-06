@@ -79,7 +79,7 @@ def run_setup():
         packages=get_packages(),
         package_data={
             'evalg.counting.templates': ['*.tmpl'],
-            'evalg.mail.templates': ['*.tmpl'],
+            'evalg.mail.templates': ['*.tmpl', '*.html'],
         },
         python_requires='~= 3.6',
         setup_requires=setup_requirements,
