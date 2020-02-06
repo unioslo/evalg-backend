@@ -95,6 +95,8 @@ def shell_context():
         'Pollbook': models.pollbook.Pollbook,
         'Principal': models.authorization.Principal,
         'PersonPrincipal': models.authorization.PersonPrincipal,
+        'PersonIdentifierPrincipal': (
+            models.authorization.PersonIdentifierPrincipal),
         'GroupPrincipal': models.authorization.GroupPrincipal,
         'Role': models.authorization.Role,
         'OU': models.ou.OrganizationalUnit,
