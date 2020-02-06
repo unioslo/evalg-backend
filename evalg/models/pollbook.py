@@ -25,6 +25,7 @@ from .voter import Voter
 
 
 class Pollbook(ModelBase):
+    """Pollbook model, stores one election census."""
 
     __versioned__ = {}
     __tablename__ = 'pollbook_meta'
@@ -58,14 +59,38 @@ class Pollbook(ModelBase):
 
     voters = db.relationship('Voter')
     voter_objects = db.relationship('Voter', lazy='dynamic')
-
     census_file_imports = db.relationship('CensusFileImport')
 
     @property
     def has_votes(self):
-        """True if there are already cast votes in this pollbook"""
+        """True if there are already cast votes in this pollbook."""
         return bool(self.voter_objects.filter(
             Voter.votes.__ne__(None)).count())
 
-    def get_valid_voters(self):
+    @property
+    def valid_voters(self):
+        """List of all valid voters."""
         return [x for x in self.voters if x.is_valid_voter()]
+
+    @property
+    def voters_admin_added(self):
+        """List of all voters added by the admins."""
+        return [x for x in self.voters if not x.self_added]
+
+    @property
+    def self_added_voters(self):
+        """List of all selv added voters."""
+        return [x for x in self.voters if x.self_added]
+
+    @property
+    def valid_voters_with_vote(self):
+        """List of all valid voters with a vote."""
+        voters = [x for x in self.voters if x.is_valid_voter and
+                  len(x.votes) > 0]
+        return voters
+
+    @property
+    def valid_voters_without_vote(self):
+        """List of all valid voters without a vote."""
+        voters = [x for x in self.voters if x.is_valid_voter and not x.votes]
+        return voters

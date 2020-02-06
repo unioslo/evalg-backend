@@ -42,11 +42,8 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
         default_resolver = permission_controlled_default_resolver
 
     verified_status = graphene.Enum.from_enum(
-        evalg.models.voter.VerifiedStatus
-    )()
-
+        evalg.models.voter.VerifiedStatus)()
     person = graphene.Field(Person)
-
     has_voted = graphene.Field(graphene.types.Boolean)
 
     @permission_controller
@@ -58,9 +55,7 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     @permission_controller
     def resolve_has_voted(self, info):
-        voter_id = self.id
-        session = get_session(info)
-        return evalg.proc.pollbook.has_voter_voted(session, voter_id)
+        return len(self.votes) > 0
 
 
 @permission_controller.control_object_type
@@ -73,65 +68,42 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
     admin_added_voters = graphene.List(lambda: Voter)
     verified_voters_count = graphene.Int()
     verified_voters_with_votes_count = graphene.Int()
-
     voters_with_vote = graphene.List(lambda: Voter)
     voters_without_vote = graphene.List(lambda: Voter)
-
     nr_of_voters = graphene.types.Int()
     voter_dump = graphene.Field(GenericScalar)
 
     @permission_controller
     def resolve_nr_of_voters(self, info):
-        session = get_session(info)
-        return evalg.proc.pollbook.get_nr_of_voters_in_pollbook(
-            session, self.id)
+        return len(self.voters)
 
     @permission_controller
     def resolve_self_added_voters(self, info):
-        session = get_session(info)
-        return evalg.proc.pollbook.get_voters_by_self_added(
-            session,
-            self.id,
-            self_added=True
-        ).all()
+        return self.self_added_voters
 
     @permission_controller
     def resolve_admin_added_voters(self, info):
-        session = get_session(info)
-        return evalg.proc.pollbook.get_voters_by_self_added(
-            session,
-            self.id,
-            self_added=False
-        ).all()
+        return self.voters_admin_added
 
     @permission_controller
     def resolve_verified_voters_count(self, info):
-        session = get_session(info)
-        return evalg.proc.pollbook.get_verified_voters_count(session, self.id)
+        return len(self.valid_voters)
 
     @permission_controller
     def resolve_verified_voters_with_votes_count(self, info):
-        session = get_session(info)
-        return evalg.proc.pollbook.get_verified_voters_with_votes_count(
-            session, self.id)
+        return len(self.valid_voters_with_vote)
 
     @permission_controller
     def resolve_voters_with_vote(self, info):
-        session = get_session(info)
-        return evalg.proc.pollbook.get_voters_with_vote_in_pollbook(
-            session, self.id)
+        return self.valid_voters_with_vote
 
     @permission_controller
     def resolve_voters_without_vote(self, info):
-        session = get_session(info)
-        return evalg.proc.pollbook.get_voters_without_vote_in_pollbook(
-            session, self.id)
+        return self.valid_voters_without_vote
 
     @permission_controller
     def resolve_voter_dump(self, info):
-        session = get_session(info)
-        pollbook = session.query(evalg.models.pollbook.Pollbook).get(self.id)
-        return [[x.id_type, x.id_value] for x in pollbook.voters]
+        return [[x.id_type, x.id_value] for x in self.voters]
 
 
 @permission_controller.control_object_type
@@ -200,6 +172,7 @@ class UpdateVoterPollbook(graphene.Mutation):
 
     The pollbook needs to be in the same election group as the source.
     """
+
     class Arguments:
         id = graphene.UUID(required=True)
         pollbook_id = graphene.UUID(required=True)
@@ -234,10 +207,8 @@ class UpdateVoterPollbook(graphene.Mutation):
 
 
 class UpdateVoterReason(graphene.Mutation):
-    """
-    Update the voters supplied reason for why they
-    should be able to vote in the election.
-    """
+    """Update the voters reason for why they should be able to vote."""
+
     class Arguments:
         id = graphene.UUID(required=True)
         reason = graphene.String(required=True)
@@ -298,9 +269,7 @@ class ReviewVoter(graphene.Mutation):
 
 
 class DeleteVotersInPollbook(graphene.Mutation):
-    """
-    Delete *all* voters in a given pollbook.
-    """
+    """Delete *all* voters in a given pollbook."""
 
     class Arguments:
         id = graphene.UUID(required=True)
@@ -322,9 +291,7 @@ class DeleteVotersInPollbook(graphene.Mutation):
 
 
 class AddVoterByIdentifier(graphene.Mutation):
-    """
-    Create a single voter object in a pollbook. Only available to admin.
-    """
+    """Create a single voter object in a pollbook."""
 
     class Arguments:
         id_type = PersonIdType(required=True)
@@ -368,7 +335,9 @@ class AddVoterByIdentifier(graphene.Mutation):
 
 class AddVoterByPersonId(graphene.Mutation):
     """
-    Create a single voter object in a pollbook. Used by person when voting.
+    Create a single voter object in a pollbook.
+
+    Used by person when voting.
     """
 
     class Arguments:
@@ -409,9 +378,7 @@ class AddVoterByPersonId(graphene.Mutation):
 
 
 class DeleteVoter(graphene.Mutation):
-    """
-    Delete a single voter object from a pollbook.
-    """
+    """Delete a single voter object from a pollbook."""
 
     class Arguments:
         id = graphene.UUID(required=True)

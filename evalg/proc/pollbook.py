@@ -105,37 +105,6 @@ def get_person_for_id(session, id_type, id_value):
     return person_query
 
 
-def get_voters_with_vote_in_pollbook(session, pollbook_id):
-    voters = session.query(
-        Voter
-    ).outerjoin(
-        Vote
-    ).filter(
-        and_(
-            ~ Vote.voter_id.is_(None),
-            Voter.verified.is_(True),
-            Voter.pollbook_id == pollbook_id
-        )
-    ).all()
-    return voters
-
-
-def get_voters_without_vote_in_pollbook(session, pollbook_id):
-    voters = session.query(
-        Voter
-    ).outerjoin(
-        Vote
-    ).filter(
-        and_(
-            Vote.voter_id.is_(None),
-            Voter.verified.is_(True),
-            Voter.pollbook_id == pollbook_id
-        )
-    ).all()
-
-    return voters
-
-
 class CachedPollbookVoterPolicy(object):
     """
     Version of ElectionVoterPolicy that's bound to one pollbook.
@@ -255,11 +224,6 @@ class ElectionVoterPolicy(object):
         return voter
 
 
-def get_nr_of_voters_in_pollbook(session, pollbook_id):
-    pollbook = session.query(Pollbook).get(pollbook_id)
-    return len(pollbook.voters)
-
-
 def get_first_n_voters_in_pollbook(session, pollbook_id, n):
     voters = session.query(
         Voter
@@ -343,28 +307,6 @@ def get_voters_in_election_group(
     return query
 
 
-def has_voter_voted(session, voter_id):
-    query = session.query(
-        func.count(Vote.voter_id)
-    ).filter(
-        Vote.voter_id == voter_id
-    ).scalar()
-
-    if query > 0:
-        return True
-    return False
-
-
-def get_voters_by_self_added(session, pollbook_id, self_added):
-    query = session.query(
-        Voter
-    ).filter(
-        Voter.self_added == self_added,
-        Voter.pollbook_id == pollbook_id
-    )
-    return query
-
-
 def get_verified_voters_count(session, pollbook_id):
     return session.query(
         func.count(Voter.id)
@@ -385,7 +327,8 @@ def get_verified_voters_with_votes_count(session, pollbook_id):
 
 
 def get_persons_with_multiple_verified_voters(session, election_group_id):
-    """Get persons who have more than one verified voter
+    """
+    Get persons who have more than one verified voter.
 
     :param election_group_id: the election group to look for voters in
     :return: a query object where each row consists of a person and one of the
