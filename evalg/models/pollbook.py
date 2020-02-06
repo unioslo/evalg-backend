@@ -68,6 +68,11 @@ class Pollbook(ModelBase):
             Voter.votes.__ne__(None)).count())
 
     @property
+    def self_added_voters(self):
+        """List of all selv added voters."""
+        return [x for x in self.voters if x.self_added]
+
+    @property
     def valid_voters(self):
         """List of all valid voters."""
         return [x for x in self.voters if x.is_valid_voter()]
@@ -76,11 +81,6 @@ class Pollbook(ModelBase):
     def voters_admin_added(self):
         """List of all voters added by the admins."""
         return [x for x in self.voters if not x.self_added]
-
-    @property
-    def self_added_voters(self):
-        """List of all selv added voters."""
-        return [x for x in self.voters if x.self_added]
 
     @property
     def valid_voters_with_vote(self):
