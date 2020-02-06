@@ -1,6 +1,7 @@
 """Commands for sending emails."""
 
 import logging
+import smtplib
 import pytz
 
 import click
@@ -14,13 +15,11 @@ logger = logging.getLogger(__name__)
 
 @click.command('send_status_mail',
                short_help='Send the election status report mail.')
-@click.argument('to_addr')
+@click.argument('to_addrs', nargs=-1)
 @flask.cli.with_appcontext
-def send_status_mail(to_addr):
+def send_status_mail(to_addrs):
     """Send a status mail for the active elections."""
     import evalg.models
-
-    logger.info('Sending status mail to %s', to_addr)
 
     election_groups = evalg.db.session.query(
         evalg.models.election.ElectionGroup).all()
@@ -113,15 +112,20 @@ def send_status_mail(to_addr):
 
         active_elections_info.append(info)
 
-    evalg.mail.mailer.send_mail(
-        template_name='status_report.tmpl',
-        html_template_name='status_report_tmpl.html',
-        to_addr=to_addr,
-        subject='Valgstatus - eValg 3',
-        active_elections=active_elections,
-        upcoming_elections=upcoming_elections,
-        active_elections_info=active_elections_info
-    )
+    for to_addr in to_addrs:
+        logger.info('Sending status mail to %s', to_addr)
+        try:
+            evalg.mail.mailer.send_mail(
+                template_name='status_report.tmpl',
+                html_template_name='status_report_tmpl.html',
+                to_addr=to_addr,
+                subject='Valgstatus - eValg 3',
+                active_elections=active_elections,
+                upcoming_elections=upcoming_elections,
+                active_elections_info=active_elections_info
+            )
+        except smtplib.SMTPRecipientsRefused:
+            logger.error('Could not send mail to addr %s', to_addr)
 
 
 commands = tuple((
