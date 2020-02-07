@@ -175,6 +175,25 @@ class ElectionGroup(AbstractElection):
                     blockers.append('start-must-be-before-end')
         return blockers
 
+    @property
+    def publication_blockers(self):
+        """Check whether the election group can be published."""
+        blockers = []
+        if self.published:
+            blockers.append('already-published')
+        if not self.public_key:
+            blockers.append('missing-key')
+        for election in self.elections:
+            if election.active:
+                if election.missing_start_or_end:
+                    blockers.append('missing-start-or-end')
+                if election.start_after_end:
+                    blockers.append('start-must-be-before-end')
+        if len([x for x in self.elections if x.active]) == 0:
+            blockers.append('no-active-election')
+        return blockers
+
+
 
 class Election(AbstractElection):
     """ Election. """

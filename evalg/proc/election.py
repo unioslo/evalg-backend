@@ -61,7 +61,7 @@ def set_counting_method(session, election):
 
 def publish_group(session, group, **fields):
     """Publish an election group."""
-    blockers = get_group_publication_blockers(group)
+    blockers = group.publication_blockers
     if blockers:
         # TODO: how to handle this in the above layer?
         raise Exception(blockers[0])
@@ -75,24 +75,6 @@ def unpublish_group(session, group, **fields):
     group.unpublish()
     session.commit()
     return group
-
-
-def get_group_publication_blockers(group):
-    """Check whether an election group can be published."""
-    blockers = []
-    if group.published:
-        blockers.append('already-published')
-    if not group.public_key:
-        blockers.append('missing-key')
-    for election in group.elections:
-        if election.active:
-            if election.missing_start_or_end:
-                blockers.append('missing-start-or-end')
-            if election.start_after_end:
-                blockers.append('start-must-be-before-end')
-    if len([x for x in group.elections if x.active]) == 0:
-        blockers.append('no-active-election')
-    return blockers
 
 
 def is_valid_public_key(key):
