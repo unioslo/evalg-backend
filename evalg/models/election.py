@@ -45,7 +45,7 @@ class QuotaGroup:
 
 
 class AbstractElection(ModelBase):
-    """ Base model for elections and election groups. """
+    """Base model for elections and election groups."""
 
     __abstract__ = True
 
@@ -161,6 +161,20 @@ class ElectionGroup(AbstractElection):
             return statuses.pop()
         return 'multipleStatuses'
 
+    @property
+    def announcement_blockers(self):
+        """Check whether the election group can be announced."""
+        blockers = []
+        if self.announced:
+            blockers.append('already-announced')
+        for election in self.elections:
+            if election.active:
+                if election.missing_start_or_end:
+                    blockers.append('missing-start-or-end')
+                if election.start_after_end:
+                    blockers.append('start-must-be-before-end')
+        return blockers
+
 
 class Election(AbstractElection):
     """ Election. """
@@ -273,6 +287,16 @@ class Election(AbstractElection):
             (and_(cls.start.isnot(None),
                   cls.start <= func.now()), True)],
                     else_=False)
+
+    @property
+    def missing_start_or_end(self):
+        return not self.start or not self.end
+
+    @property
+    def start_after_end(self):
+        if self.missing_start_or_end:
+            return False
+        return self.start > self.end
 
     @property
     def has_votes(self):

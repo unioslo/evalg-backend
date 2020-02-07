@@ -71,7 +71,7 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     @permission_controller
     def resolve_announcement_blockers(self, info):
-        return evalg.proc.election.get_group_announcement_blockers(self)
+        return self.announcement_blockers
 
     @permission_controller
     def resolve_publication_blockers(self, info):

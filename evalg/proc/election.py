@@ -31,7 +31,7 @@ def get_latest_election_group_count(session, group_id):
 
 def announce_group(session, group, **fields):
     """Announce an election group."""
-    blockers = get_group_announcement_blockers(group)
+    blockers = group.announcement_blockers
     if blockers:
         # TODO: how to handle this in the above layer?
         raise Exception(blockers[0])
@@ -45,20 +45,6 @@ def unannounce_group(session, group, **fields):
     group.unannounce()
     session.commit()
     return group
-
-
-def get_group_announcement_blockers(group):
-    """Check whether an election group can be announced."""
-    blockers = []
-    if group.announced:
-        blockers.append('already-announced')
-    for election in group.elections:
-        if election.active:
-            if missing_start_or_end(election):
-                blockers.append('missing-start-or-end')
-            if start_after_end(election):
-                blockers.append('start-must-be-before-end')
-    return blockers
 
 
 def set_counting_method(session, election):
@@ -100,25 +86,13 @@ def get_group_publication_blockers(group):
         blockers.append('missing-key')
     for election in group.elections:
         if election.active:
-            if missing_start_or_end(election):
+            if election.missing_start_or_end:
                 blockers.append('missing-start-or-end')
-            if start_after_end(election):
+            if election.start_after_end:
                 blockers.append('start-must-be-before-end')
     if len([x for x in group.elections if x.active]) == 0:
         blockers.append('no-active-election')
     return blockers
-
-
-def missing_start_or_end(election):
-    """Check if an election is missing a start or end."""
-    return not election.start or not election.end
-
-
-def start_after_end(election):
-    """Check if the election start time is after the end time."""
-    if missing_start_or_end(election):
-        return False
-    return election.start > election.end
 
 
 def is_valid_public_key(key):
