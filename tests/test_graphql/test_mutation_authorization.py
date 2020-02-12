@@ -167,84 +167,6 @@ def test_auth_unpublish_election_group(db_session,
         assert result['code'] == 'permission-denied'
 
 
-@reg.add_scenario('announceElectionGroup', 'allow')
-@reg.add_scenario('announceElectionGroup', 'deny')
-@pytest.mark.parametrize(
-    'is_owner, is_publisher, is_allowed',
-    [(True, True, True),
-     (True, False, False),
-     (False, True, False),
-     (False, False, False)])
-def test_auth_announce_election_group(db_session,
-                                      is_owner,
-                                      is_publisher,
-                                      is_allowed,
-                                      client,
-                                      logged_in_user,
-                                      simple_election_group,
-                                      owned_election_group,
-                                      make_person_publisher):
-    """Allowed and denied scenario of announceElectionGroup."""
-    election_group = (owned_election_group(db_session, logged_in_user.person)
-                      if is_owner else simple_election_group(db_session))
-    if is_publisher:
-        make_person_publisher(db_session, logged_in_user.person)
-    variables = {'id': str(election_group.id)}
-    mutation = """
-    mutation ($id: UUID!) {
-        announceElectionGroup(id: $id) {
-            success
-            code
-        }
-    }
-    """
-    execution = client.execute(
-        mutation, variables=variables, context=get_test_context(db_session))
-    result = execution['data']['announceElectionGroup']
-    assert result['success'] == is_allowed
-    if not is_allowed:
-        assert result['code'] == 'permission-denied'
-
-
-@reg.add_scenario('unannounceElectionGroup', 'allow')
-@reg.add_scenario('unannounceElectionGroup', 'deny')
-@pytest.mark.parametrize(
-    'is_owner, is_publisher, is_allowed',
-    [(True, True, True),
-     (True, False, False),
-     (False, True, False),
-     (False, False, False)])
-def test_auth_unannounce_election_group(db_session,
-                                        is_owner,
-                                        is_publisher,
-                                        is_allowed,
-                                        client,
-                                        logged_in_user,
-                                        simple_election_group,
-                                        owned_election_group,
-                                        make_person_publisher):
-    """Allowed and denied scenario of unannounceElectionGroup."""
-    election_group = (owned_election_group(db_session, logged_in_user.person)
-                      if is_owner else simple_election_group(db_session))
-    if is_publisher:
-        make_person_publisher(db_session, logged_in_user.person)
-    variables = {'id': str(election_group.id)}
-    mutation = """
-    mutation ($id: UUID!) {
-        unannounceElectionGroup(id: $id) {
-            success
-            code
-        }
-    }
-    """
-    execution = client.execute(
-        mutation, variables=variables, context=get_test_context(db_session))
-    result = execution['data']['unannounceElectionGroup']
-    assert result['success'] == is_allowed
-    if not is_allowed:
-        assert result['code'] == 'permission-denied'
-
-
 @reg.add_scenario('setElectionGroupKey', 'allow')
 @reg.add_scenario('setElectionGroupKey', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
@@ -327,7 +249,7 @@ def test_auth_update_voting_periods(db_session,
     """Allowed and denied scenario tests of updateVotingPeriods."""
     election_group = (owned_multiple_election_group(
         db_session, logged_in_user.person) if is_owner
-                      else multiple_election_group(db_session))
+        else multiple_election_group(db_session))
     elections = [{'id': str(e.id),
                   'start': str(e.start - datetime.timedelta(days=3)),
                   'end': str(e.end)}
@@ -954,12 +876,12 @@ def test_auth_vote(db_session,
     if as_logged_in_user:
         election_group = (owned_logged_in_votable_election_group(
             db_session, logged_in_user.person) if is_owner else
-                          logged_in_votable_election_group(
-                              db_session, logged_in_user.person))
+            logged_in_votable_election_group(
+            db_session, logged_in_user.person))
     else:
         election_group = (owned_votable_election_group(
             db_session, logged_in_user.person)
-                          if is_owner else votable_election_group(db_session))
+            if is_owner else votable_election_group(db_session))
     pollbook = election_group.elections[0].pollbooks[0]
     logged_in_feide_id = next(x.id_value for x in
                               logged_in_user.person.identifiers if

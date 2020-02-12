@@ -25,68 +25,6 @@ def test_query_electiongroup_by_id(make_election_group, client, logged_in_user):
     assert election_group.description == response['description']
 
 
-def test_announce_election_group(
-        db_session,
-        client,
-        logged_in_user,
-        make_election_group,
-        make_person_publisher):
-    election_group = make_election_group('Test announce EG', admin=True)
-    election_group.unpublish()
-    election_group.unannounce()
-    db_session.flush()
-    assert not election_group.announced
-
-    make_person_publisher(db_session, logged_in_user.person)
-    variables = {'id': str(election_group.id)}
-    mutation = """
-    mutation ($id: UUID!) {
-        announceElectionGroup(id: $id) {
-            success
-        }
-    }
-    """
-    execution = client.execute(
-        mutation,
-        variables=variables,
-        context=get_context())
-    assert not execution.get('errors')
-    response = execution['data']['announceElectionGroup']
-    assert response['success']
-    election_group_after_after = ElectionGroup.query.get(election_group.id)
-    assert election_group_after_after.announced
-
-
-def test_unannounce_election_group(
-        db_session,
-        client,
-        logged_in_user,
-        make_election_group,
-        make_person_publisher):
-    election_group = make_election_group('Test unannounce EG', admin=True)
-    db_session.flush()
-    assert election_group.announced
-
-    make_person_publisher(db_session, logged_in_user.person)
-    variables = {'id': str(election_group.id)}
-    mutation = """
-    mutation ($id: UUID!) {
-        unannounceElectionGroup(id: $id) {
-            success
-        }
-    }
-    """
-    execution = client.execute(
-        mutation,
-        variables=variables,
-        context=get_context())
-    assert not execution.get('errors')
-    response = execution['data']['unannounceElectionGroup']
-    assert response['success']
-    election_group_after_after = ElectionGroup.query.get(election_group.id)
-    assert not election_group_after_after.announced
-
-
 def test_publish_election_group(
         db_session,
         client,
