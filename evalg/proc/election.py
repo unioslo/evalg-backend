@@ -51,7 +51,7 @@ def set_counting_method(session, election):
     session.add(election)
 
 
-def publish_group(session, election_group, **fields):
+def publish_election_group(session, election_group):
     """Publish an election group."""
     blockers = election_group.publication_blockers
     if blockers:
@@ -72,7 +72,7 @@ def publish_group(session, election_group, **fields):
     return election_group
 
 
-def unpublish_group(session, election_group):
+def unpublish_election_group(session, election_group):
     """Unpublish an election group."""
     if election_group.status == 'closed':
         logger.info('Can\'t unpublish election group %s as it\'s closed.',
