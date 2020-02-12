@@ -4,6 +4,7 @@
 """This module implements election and election group maintenance."""
 import datetime
 import functools
+import logging
 
 import aniso8601
 import nacl.encoding
@@ -19,6 +20,8 @@ from evalg.models.election_list import ElectionList
 from evalg.models.election_group_count import ElectionGroupCount
 from evalg.utils import utcnow
 
+logger = logging.getLogger(__name__)
+
 
 def get_latest_election_group_count(session, group_id):
     """Get the latest count for an election group."""
@@ -29,52 +32,56 @@ def get_latest_election_group_count(session, group_id):
     return latest_count
 
 
-def announce_group(session, group, **fields):
-    """Announce an election group."""
-    blockers = group.announcement_blockers
-    if blockers:
-        # TODO: how to handle this in the above layer?
-        raise Exception(blockers[0])
-    group.announce()
-    session.commit()
-    return group
-
-
-def unannounce_group(session, group, **fields):
-    """Unannounce an election group."""
-    group.unannounce()
-    session.commit()
-    return group
-
-
 def set_counting_method(session, election):
     """Set the counting method for an election."""
+    # TODO: Make more dynamic... Remove hardcoded counting methods.
     if election.election_group.template_name in ('uio_principal',
                                                  'uio_dean',
                                                  'uio_department_leader'):
         if len(election.candidates) == 2:
             election.meta['counting_rules']['method'] = 'uio_mv'
+            logger.info('Setting counting method for election %s to %s',
+                        election.id,
+                        'uio_mv')
         else:
             election.meta['counting_rules']['method'] = 'uio_stv'
+            logger.info('Setting counting method for election %s to %s',
+                        election.id,
+                        'uio_stv')
     session.add(election)
 
 
-def publish_group(session, group, **fields):
+def publish_group(session, election_group, **fields):
     """Publish an election group."""
-    blockers = group.publication_blockers
+    blockers = election_group.publication_blockers
     if blockers:
+        logger.info('Can\'t publish election group %s , blocked by %s',
+                    election_group.id,
+                    ", ".join(blockers))
         # TODO: how to handle this in the above layer?
         raise Exception(blockers[0])
-    group.publish()
+
+    # Set the counting methods for each elections.
+    for election in election_group.elections:
+        if not election.meta['counting_rules']['method']:
+            set_counting_method(session, election)
+
+    election_group.publish()
     session.commit()
-    return group
+    logger.info('Election group %s published')
+    return election_group
 
 
-def unpublish_group(session, group, **fields):
+def unpublish_group(session, election_group):
     """Unpublish an election group."""
-    group.unpublish()
+    if election_group.status == 'closed':
+        logger.info('Can\'t unpublish election group %s as it\'s closed.',
+                    election_group.id)
+        return False
+    election_group.unpublish()
     session.commit()
-    return group
+    logger.info('Election group %s unpublished')
+    return True
 
 
 def is_valid_public_key(key):

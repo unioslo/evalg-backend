@@ -15,10 +15,6 @@ class ElectionMutations(graphene.ObjectType):
         nodes.election_group.PublishElectionGroup.Field()
     unpublish_election_group = \
         nodes.election_group.UnpublishElectionGroup.Field()
-    announce_election_group = \
-        nodes.election_group.AnnounceElectionGroup.Field()
-    unannounce_election_group = \
-        nodes.election_group.UnannounceElectionGroup.Field()
     set_election_group_key = \
         nodes.election_group.SetElectionGroupKey.Field()
     start_election_group_count = \
