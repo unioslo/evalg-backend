@@ -1,6 +1,8 @@
 """
 GraphQL ObjectTypes for votes and vote mutations.
 """
+import logging
+
 import graphene
 import graphene_sqlalchemy
 
@@ -19,6 +21,8 @@ from evalg.graphql.nodes.utils.permissions import (
     can_manage_election,
     can_vote,
 )
+
+logger = logging.getLogger(__name__)
 
 #
 # Query
@@ -108,9 +112,18 @@ class AddVote(graphene.Mutation):
             return AddVote(ok=False)
 
         if not vote_policy.verify_election_is_ongoing():
+            logger.error(('Can\'t add vote, election is not ongoing. user: '
+                          '%s, voter: %s election: %s'),
+                         user.id,
+                         voter_id,
+                         vote_policy.voter.pollbook.election.id)
             return AddVote(ok=False)
 
         if not vote_policy.verify_ballot_content(ballot_data):
+            logger.error('Invalid ballot! user %s, voter %s election %s',
+                         user.id,
+                         voter_id,
+                         vote_policy.voter.pollbook.election.id)
             return AddVote(ok=False)
 
         ballot_data.__delitem__('isBlankVote')
@@ -123,6 +136,10 @@ class AddVote(graphene.Mutation):
             election_id=vote_policy.voter.pollbook.election.id,
             ok=True)
         session.commit()
+        logger.info('Vote added. user: %s, voter: %s election: %s',
+                    user.id,
+                    voter_id,
+                    vote_policy.voter.pollbook.election.id)
 
         from evalg.tasks.celery_worker import send_vote_confirmation_mail_task
 
