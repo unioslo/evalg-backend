@@ -25,15 +25,15 @@ class Timer(object):
         return result_or_error
 
 
-def timing_middleware(next, root, info, **args):
+def timing_middleware(next, root, info, **kwargs):
     """
     Middleware component that logs the time it takes to resolve a promise.
     """
     if root is None:
         timer = Timer(info.operation.operation, info.field_name)
-        return next(root, info, **args).then(timer.log_time,
-                                             timer.log_time)
-    return next(root, info, **args)
+        return next(root, info, **kwargs).then(timer.log_time,
+                                               timer.log_time)
+    return next(root, info, **kwargs)
 
 
 class ResultLogger(object):
@@ -56,7 +56,7 @@ class ResultLogger(object):
         return error
 
 
-def logging_middleware(next, root, info, **args):
+def logging_middleware(next, root, info, **kwargs):
     """
     Middleware component that logs the result from resolving a promise.
     """
@@ -65,7 +65,7 @@ def logging_middleware(next, root, info, **args):
     else:
         log_promise, log_success, log_error = False, False, True
     handler = ResultLogger(info.operation.operation, info.field_name)
-    promise = next(root, info, **args).then(
+    promise = next(root, info, **kwargs).then(
         handler.log_success if log_success else None,
         handler.log_error if log_error else None)
     if log_promise:
@@ -73,7 +73,7 @@ def logging_middleware(next, root, info, **args):
     return promise
 
 
-def auth_middleware(next, root, info, **args):
+def auth_middleware(next, root, info, **kwargs):
     if root is None:
         # TBD: should we accept anonymous requests?
         # Logged in user available in info.context['user']
@@ -84,5 +84,5 @@ def auth_middleware(next, root, info, **args):
             current_app.logger.debug('Checking election authorization')
             # Plug in auth check for electionlist here, and stop middleware
             # chain if auth check fails.
-            return next(root, info, **args)
-    return next(root, info, **args)
+            return next(root, info, **kwargs)
+    return next(root, info, **kwargs)

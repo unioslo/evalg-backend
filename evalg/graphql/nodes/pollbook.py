@@ -134,8 +134,8 @@ def resolve_search_voters(_, info, **kwargs):
     ).all()
 
 
-def resolve_voters_by_person_id(_, info, **args):
-    person_id = args['id']
+def resolve_voters_by_person_id(_, info, **kwargs):
+    person_id = kwargs['id']
     session = get_session(info)
     person = session.query(evalg.models.person.Person).get(person_id)
     return evalg.proc.pollbook.get_voters_for_person(session, person).all()

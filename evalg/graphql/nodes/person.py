@@ -51,8 +51,8 @@ class Person(graphene_sqlalchemy.SQLAlchemyObjectType):
     identifiers = graphene.List(PersonIdentifier)
 
 
-def resolve_get_person_for_voter(_, info, **args):
-    voter_id = args['voter_id']
+def resolve_get_person_for_voter(_, info, **kwargs):
+    voter_id = kwargs['voter_id']
     session = get_session(info)
     voter = evalg.database.query.lookup(
         session,

@@ -38,7 +38,7 @@ def allow(*args, **kwargs):
 
 
 @all_permissions
-def can_manage_election_group(session, user, election_group, **args):
+def can_manage_election_group(session, user, election_group, **kwargs):
     return Permission(
         IsElectionGroupAdmin(session, election_group.id),
         identity=user)
@@ -52,7 +52,7 @@ def can_publish_election_groups(session, user, **kargs):
 
 
 @all_permissions
-def can_manage_election(session, user, election, **args):
+def can_manage_election(session, user, election, **kwargs):
     return Permission(
         IsElectionGroupAdmin(session, election.group_id),
         identity=user
@@ -60,7 +60,7 @@ def can_manage_election(session, user, election, **args):
 
 
 @all_permissions
-def can_manage_pollbook(session, user, pollbook, **args):
+def can_manage_pollbook(session, user, pollbook, **kwargs):
     return Permission(
         IsElectionGroupAdmin(session, pollbook.election.group_id),
         identity=user
@@ -68,7 +68,7 @@ def can_manage_pollbook(session, user, pollbook, **args):
 
 
 @all_permissions
-def can_manage_census_file_upload(session, user, census_file_upload, **args):
+def can_manage_census_file_upload(session, user, census_file_upload, **kwargs):
     return Permission(
         IsElectionGroupAdmin(
             session, census_file_upload.pollbook.election.group_id),
@@ -77,9 +77,9 @@ def can_manage_census_file_upload(session, user, census_file_upload, **args):
 
 
 @all_permissions
-def can_manage_election_list(session, user, **args):
-    if 'list_id' in args:
-        election_list = session.query(ElectionList).get(args.get('list_id'))
+def can_manage_election_list(session, user, **kwargs):
+    if 'list_id' in kwargs:
+        election_list = session.query(ElectionList).get(kwargs.get('list_id'))
         return Permission(
             IsElectionGroupAdmin(session, election_list.election.group_id),
             identity=user
@@ -88,7 +88,7 @@ def can_manage_election_list(session, user, **args):
 
 
 @all_permissions
-def can_access_election_result(session, user, election_result, **args):
+def can_access_election_result(session, user, election_result, **kwargs):
     return Permission(
         IsElectionGroupAdmin(session, election_result.election.group_id),
         identity=user)
@@ -98,7 +98,7 @@ def can_access_election_result(session, user, election_result, **args):
 def can_access_election_group_count(session,
                                     user,
                                     election_group_count,
-                                    **args):
+                                    **kwargs):
     return Permission(
         IsElectionGroupAdmin(session, election_group_count.group_id),
         identity=user
@@ -106,14 +106,17 @@ def can_access_election_group_count(session,
 
 
 @all_permissions
-def can_view_election_group_key_meta(session, user, election_key_meta, **args):
+def can_view_election_group_key_meta(session,
+                                     user,
+                                     election_key_meta,
+                                     **kwargs):
     return Permission(
         IsElectionGroupAdmin(session, election_key_meta.election_group_id),
         identity=user)
 
 
 @all_permissions
-def can_view_person(session, user, person, **args):
+def can_view_person(session, user, person, **kwargs):
     if Permission(IsPerson(person), identity=user):
         return True
     voters = get_voters_for_person(session, person).all()
@@ -130,7 +133,7 @@ def can_view_person(session, user, person, **args):
 
 
 @all_permissions
-def can_view_person_ids(session, user, person_ids, **args):
+def can_view_person_ids(session, user, person_ids, **kwargs):
     if Permission(IsPerson(person_ids.person), identity=user):
         return True
     voters = get_voters_for_person(session, person_ids.person).all()
@@ -147,7 +150,7 @@ def can_view_person_ids(session, user, person_ids, **args):
 
 
 @all_permissions
-def can_manage_voter(session, user, voter, **args):
+def can_manage_voter(session, user, voter, **kwargs):
     if Permission(
             IsElectionGroupAdmin(session, voter.pollbook.election.group_id),
             identity=user):
@@ -156,7 +159,7 @@ def can_manage_voter(session, user, voter, **args):
 
 
 @all_permissions
-def can_view_voter(session, user, voter, **args):
+def can_view_voter(session, user, voter, **kwargs):
     if Permission(
             IsElectionGroupAdmin(session, voter.pollbook.election.group_id),
             identity=user):
@@ -167,12 +170,12 @@ def can_view_voter(session, user, voter, **args):
 
 
 @all_permissions
-def can_vote(session, user, voter, **args):
+def can_vote(session, user, voter, **kwargs):
     return Permission(IsVoter(session, voter), identity=user)
 
 
 @all_permissions
-def can_view_vote(session, user, vote, **args):
+def can_view_vote(session, user, vote, **kwargs):
     return Permission(IsVoter(session, vote.voter), identity=user)
 
 
@@ -181,7 +184,7 @@ def permissions_config():
     return current_app.config.get('PERMISSIONS')
 
 
-def can_access_field(source, info, **args):
+def can_access_field(source, info, **kwargs):
     """Checks if the requested field can be accessed by the user
 
     :type info: graphql.execution.base.ResolveInfo
@@ -194,7 +197,7 @@ def can_access_field(source, info, **args):
     field_name = camel_to_snake_case(info.field_name)
     permission = permissions.get(field_name)
     if all_permissions.get(permission, deny)(session, user, source,
-                                             path=info.path, **args):
+                                             path=info.path, **kwargs):
         return True
     return False
 
@@ -217,9 +220,9 @@ class PermissionController(object):
         self.fields_cache.append(resolver.__name__)
 
         @functools.wraps(resolver)
-        def wrapper(source, info, **args):
-            if can_access_field(source, info, **args):
-                return resolver(source, info, **args)
+        def wrapper(source, info, **kwargs):
+            if can_access_field(source, info, **kwargs):
+                return resolver(source, info, **kwargs)
             return None
 
         return wrapper
@@ -237,9 +240,15 @@ class PermissionController(object):
 permission_controller = PermissionController()
 
 
-def permission_controlled_default_resolver(attname, default_value, root, info,
-                                           **args):
-    if can_access_field(root, info, **args):
-        return get_default_resolver()(attname, default_value, root, info,
-                                      **args)
+def permission_controlled_default_resolver(attname,
+                                           default_value,
+                                           root,
+                                           info,
+                                           **kwargs):
+    if can_access_field(root, info, **kwargs):
+        return get_default_resolver()(attname,
+                                      default_value,
+                                      root,
+                                      info,
+                                      **kwargs)
     return None

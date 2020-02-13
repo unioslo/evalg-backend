@@ -54,11 +54,11 @@ class AddElectionGroupKeyBackup(graphene.Mutation):
 
     Output = AddElectionGroupKeyBackupResponse
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         """The mutation"""
-        election_group_id = args['election_group_id']
-        master_key_id = args['master_key_id']
-        encrypted_priv_key = args['encrypted_priv_key']
+        election_group_id = kwargs['election_group_id']
+        master_key_id = kwargs['master_key_id']
+        encrypted_priv_key = kwargs['encrypted_priv_key']
         session = get_session(info)
         user = get_current_user(info)
         election_group = session.query(

@@ -69,10 +69,10 @@ class ElectionVoteCounts(graphene.ObjectType):
     )
 
 
-def resolve_election_count_by_id(_, info, **args):
+def resolve_election_count_by_id(_, info, **kwargs):
     user = get_current_user(info)
     session = get_session(info)
-    elec_id = args['id']
+    elec_id = kwargs['id']
     election = evalg.database.query.lookup(
         session,
         evalg.models.election.Election,
@@ -98,10 +98,10 @@ class AddVote(graphene.Mutation):
     election_id = graphene.UUID()
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         user = get_current_user(info)
-        voter_id = args['voter_id']
-        ballot_data = args['ballot']
+        voter_id = kwargs['voter_id']
+        ballot_data = kwargs['ballot']
         session = get_session(info)
         vote_policy = evalg.proc.vote.ElectionVotePolicy(session, voter_id)
 

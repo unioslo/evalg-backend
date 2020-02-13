@@ -119,15 +119,15 @@ def resolve_election_groups(_, info):
     return ElectionGroup.get_query_visible_to_current_user(info).all()
 
 
-def resolve_election_group_by_id(_, info, **args):
+def resolve_election_group_by_id(_, info, **kwargs):
     """Get a single election group that's visible to the current user."""
     admin_roles = ElectionGroup.get_current_user_admin_roles(info)
     admin_for = [role.group_id for role in admin_roles]
-    election_group = ElectionGroup.get_query(info).get(args['id'])
+    election_group = ElectionGroup.get_query(info).get(kwargs['id'])
     if not election_group:
         return None
     if (
-            args['id'] in admin_for or
+            kwargs['id'] in admin_for or
             election_group.announced or
             election_group.published
     ):
@@ -151,8 +151,8 @@ class PersonWithVoters(graphene.ObjectType):
     voters = graphene.List(Voter)
 
 
-def resolve_persons_with_multiple_verified_voters(_, info, **args):
-    election_group_id = args.get('id')
+def resolve_persons_with_multiple_verified_voters(_, info, **kwargs):
+    election_group_id = kwargs.get('id')
     session = get_session(info)
     user = get_current_user(info)
     el_grp = session.query(evalg.models.election.ElectionGroup).get(
@@ -192,7 +192,7 @@ persons_with_multiple_verified_voters_query = graphene.List(
 #   Election templates should *probably* have more structured output.
 
 
-def resolve_election_template(_, info, **args):
+def resolve_election_template(_, info, **kwargs):
     template = election_template_builder()
     return convert_json(template)
 
@@ -230,8 +230,8 @@ class ElectionKeyMeta(graphene.ObjectType):
         return key_meta[0].transaction.user
 
 
-def resolve_election_key_meta(_, info, **args):
-    election_group_id = args['id']
+def resolve_election_key_meta(_, info, **kwargs):
+    election_group_id = kwargs['id']
     session = get_session(info)
     user = get_current_user(info)
     el_grp = session.query(evalg.models.election.ElectionGroup).get(
@@ -281,8 +281,8 @@ class ElectionGroupCount(graphene_sqlalchemy.SQLAlchemyObjectType):
             'Could not resolve initiated_by - change record not found')
 
 
-def resolve_election_group_count_by_id(_, info, **args):
-    return ElectionGroupCount.get_query(info).get(args['id'])
+def resolve_election_group_count_by_id(_, info, **kwargs):
+    return ElectionGroupCount.get_query(info).get(kwargs['id'])
 
 
 get_election_group_count_query = graphene.Field(
@@ -291,12 +291,12 @@ get_election_group_count_query = graphene.Field(
     resolver=resolve_election_group_count_by_id)
 
 
-def resolve_election_group_counting_results(_, info, **args):
+def resolve_election_group_counting_results(_, info, **kwargs):
     query = ElectionGroupCount.get_query(info)
 
     return query.filter(
         evalg.models.election_group_count.ElectionGroupCount.group_id ==
-        args['id'])
+        kwargs['id'])
 
 
 list_election_group_counting_results_query = graphene.List(
@@ -362,21 +362,21 @@ class UpdateBaseSettings(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         # TODO:
         #   Is there any particular reason why the ElectionGroup settings and
         #   Election settings are bound together in a single mutation?
         session = get_session(info)
         user = get_current_user(info)
-        election_group_id = args.get('id')
+        election_group_id = kwargs.get('id')
         el_grp = session.query(evalg.models.election.ElectionGroup).get(
             election_group_id)
         if not can_manage_election_group(session, user, el_grp):
             return UpdateBaseSettings(ok=False)
-        el_grp.meta['candidate_rules']['candidate_gender'] = args.get(
+        el_grp.meta['candidate_rules']['candidate_gender'] = kwargs.get(
             'has_gender_quota')
         session.add(el_grp)
-        for e in args.get('elections'):
+        for e in kwargs.get('elections'):
             election = session.query(
                 evalg.models.election.Election).get(e['id'])
             election.meta['candidate_rules']['seats'] = e.seats
@@ -400,9 +400,9 @@ class PublishElectionGroup(graphene.Mutation):
 
     Output = PublishElectionGroupResponse
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
-        election_group_id = args.get('id')
+        election_group_id = kwargs.get('id')
         election_group = session.query(
             evalg.models.election.ElectionGroup).get(election_group_id)
         user = get_current_user(info)
@@ -455,9 +455,9 @@ class UnpublishElectionGroup(graphene.Mutation):
 
     Output = UnpublishElectionGroupResponse
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
-        election_group_id = args.get('id')
+        election_group_id = kwargs.get('id')
         election_group = session.query(
             evalg.models.election.ElectionGroup).get(election_group_id)
         user = get_current_user(info)
@@ -519,10 +519,10 @@ class SetElectionGroupKey(graphene.Mutation):
 
     Output = SetElectionGroupKeyResponse
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         """The mutation function."""
-        election_group_id = args['id']
-        public_key = args['public_key']
+        election_group_id = kwargs['id']
+        public_key = kwargs['public_key']
         session = get_session(info)
         user = get_current_user(info)
         election_group = session.query(
@@ -582,11 +582,11 @@ class CountElectionGroup(graphene.Mutation):
 
     Output = CountElectionGroupResponse
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        election_group_id = args['id']
-        election_key = args['election_key']
+        election_group_id = kwargs['id']
+        election_key = kwargs['election_key']
 
         election_group_counter = evalg.proc.count.ElectionGroupCounter(
             session,

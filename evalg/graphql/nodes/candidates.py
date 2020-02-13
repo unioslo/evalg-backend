@@ -66,19 +66,19 @@ class AddPrefElecCandidate(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        if not can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **kwargs):
             return AddPrefElecCandidate(ok=False)
 
-        meta = {'gender': args.get('gender')}
+        meta = {'gender': kwargs.get('gender')}
         result = add_candidate(
             session=session,
-            name=args.get('name'),
+            name=kwargs.get('name'),
             meta=meta,
-            election_list_id=args.get('list_id'),
-            information_url=args.get('information_url'))
+            election_list_id=kwargs.get('list_id'),
+            information_url=kwargs.get('information_url'))
         return AddPrefElecCandidate(ok=result)
 
 
@@ -94,20 +94,20 @@ class UpdatePrefElecCandidate(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        if not can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **kwargs):
             return UpdatePrefElecCandidate(ok=False)
 
-        meta = {'gender': args.get('gender')}
+        meta = {'gender': kwargs.get('gender')}
         result = update_candidate(
             session=session,
-            name=args.get('name'),
+            name=kwargs.get('name'),
             meta=meta,
-            candidate_id=args.get('id'),
-            election_list_id=args.get('list_id'),
-            information_url=args.get('information_url')
+            candidate_id=kwargs.get('id'),
+            election_list_id=kwargs.get('list_id'),
+            information_url=kwargs.get('information_url')
         )
         return UpdatePrefElecCandidate(ok=result)
 
@@ -129,19 +129,19 @@ class AddTeamPrefElecCandidate(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        if not can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **kwargs):
             return AddTeamPrefElecCandidate(ok=False)
 
-        meta = {'co_candidates': args.get('co_candidates')}
+        meta = {'co_candidates': kwargs.get('co_candidates')}
         result = add_candidate(
             session=session,
-            name=args.get('name'),
+            name=kwargs.get('name'),
             meta=meta,
-            election_list_id=args.get('list_id'),
-            information_url=args.get('information_url'))
+            election_list_id=kwargs.get('list_id'),
+            information_url=kwargs.get('information_url'))
         return AddTeamPrefElecCandidate(ok=result)
 
 
@@ -157,20 +157,20 @@ class UpdateTeamPrefElecCandidate(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        if not can_manage_election_list(session, user, **args):
+        if not can_manage_election_list(session, user, **kwargs):
             return UpdateTeamPrefElecCandidate(ok=False)
 
-        meta = {'co_candidates': args.get('co_candidates')}
+        meta = {'co_candidates': kwargs.get('co_candidates')}
         result = update_candidate(
             session=session,
-            name=args.get('name'),
+            name=kwargs.get('name'),
             meta=meta,
-            candidate_id=args.get('id'),
-            election_list_id=args.get('list_id'),
-            information_url=args.get('information_url'))
+            candidate_id=kwargs.get('id'),
+            election_list_id=kwargs.get('list_id'),
+            information_url=kwargs.get('information_url'))
         return UpdateTeamPrefElecCandidate(ok=result)
 
 
@@ -182,13 +182,13 @@ class DeleteCandidate(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
         candidate = session.query(evalg.models.candidate.Candidate).get(
-            args.get('id'))
-        args['list_id'] = candidate.list_id
-        if not can_manage_election_list(session, user, **args):
+            kwargs.get('id'))
+        kwargs['list_id'] = candidate.list_id
+        if not can_manage_election_list(session, user, **kwargs):
             return DeleteCandidate(ok=False)
         result = delete_candidate(session, candidate.id)
         return DeleteCandidate(ok=result)

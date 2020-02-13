@@ -133,8 +133,8 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
         return self.election_protocol_text
 
 
-def resolve_election_result_by_id(_, info, **args):
-    return ElectionResult.get_query(info).get(args['id'])
+def resolve_election_result_by_id(_, info, **kwargs):
+    return ElectionResult.get_query(info).get(kwargs['id'])
 
 
 get_election_result_query = graphene.Field(
@@ -175,12 +175,12 @@ class UpdateVotingPeriods(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
 
         session = get_session(info)
         user = get_current_user(info)
-        elections = args.get('elections')
-        if not args.get('has_multiple_times'):
+        elections = kwargs.get('elections')
+        if not kwargs.get('has_multiple_times'):
             # TODO: Do we need this? Could we not just send a datetime input
             # for each election?
             for e in elections:
@@ -223,10 +223,10 @@ class UpdateVoterInfo(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        elections = args.get('elections')
+        elections = kwargs.get('elections')
 
         for e in elections:
             election = session.query(
