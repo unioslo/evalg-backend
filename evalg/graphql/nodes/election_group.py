@@ -534,16 +534,18 @@ class SetElectionGroupKey(graphene.Mutation):
                 message='Not allowed to set election group key for election '
                         'group {}'.format(election_group_id)
             )
+
+        if election_group.public_key and election_group.published:
+            return SetElectionGroupKeyResponse(
+                success=False,
+                code='cannot-change-key-if-published',
+                message=('The public key cannot be changed if '
+                         'an election is published'))
+
         for election in election_group.elections:
-            if election_group.public_key and election_group.published:
-                return SetElectionGroupKeyResponse(
-                    success=False,
-                    code='cannot-change-key-if-published',
-                    message=('The public key cannot be changed if '
-                             'an election is published'))
-            elif (election_group.public_key and
-                  election.active and
-                  election.has_started):
+            if (election_group.public_key and
+                    election.active and
+                    election.has_started):
                 return SetElectionGroupKeyResponse(
                     success=False,
                     code='cannot-change-key-if-past-start',
