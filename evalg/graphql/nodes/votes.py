@@ -114,14 +114,14 @@ class AddVote(graphene.Mutation):
         if not vote_policy.verify_election_is_ongoing():
             logger.error(('Can\'t add vote, election is not ongoing. user: '
                           '%s, voter: %s election: %s'),
-                         user.id,
+                         user.person.id,
                          voter_id,
                          vote_policy.voter.pollbook.election.id)
             return AddVote(ok=False)
 
         if not vote_policy.verify_ballot_content(ballot_data):
             logger.error('Invalid ballot! user %s, voter %s election %s',
-                         user.id,
+                         user.person.id,
                          voter_id,
                          vote_policy.voter.pollbook.election.id)
             return AddVote(ok=False)
@@ -137,7 +137,7 @@ class AddVote(graphene.Mutation):
             ok=True)
         session.commit()
         logger.info('Vote added. user: %s, voter: %s election: %s',
-                    user.id,
+                    user.person.id,
                     voter_id,
                     vote_policy.voter.pollbook.election.id)
 
