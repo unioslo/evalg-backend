@@ -80,7 +80,7 @@ def unpublish_election_group(session, election_group):
         return False
     election_group.unpublish()
     session.commit()
-    logger.info('Election group %s unpublished')
+    logger.info('Election group %s unpublished', election_group.id)
     return True
 
 
