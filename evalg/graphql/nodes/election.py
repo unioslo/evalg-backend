@@ -159,18 +159,16 @@ get_election_result_query = graphene.Field(
 
 
 class ElectionVotingPeriodInput(graphene.InputObjectType):
-    """
-    Start and end datetime input for an election.
-    """
+    """Start and end datetime input for an election."""
+
     id = graphene.UUID(required=True)
     start = types.DateTime(required=True)
     end = types.DateTime(required=True)
 
 
 class UpdateVotingPeriods(graphene.Mutation):
-    """
-    Update the voting periods for an election.
-    """
+    """Update the voting periods for an election."""
+
     class Arguments:
         elections = graphene.List(ElectionVotingPeriodInput, required=True)
         has_multiple_times = graphene.Boolean(required=True)
@@ -208,9 +206,8 @@ class UpdateVotingPeriods(graphene.Mutation):
 
 
 class ElectionVoterInfoInput(graphene.InputObjectType):
-    """
-    Mandate period and contact info input for elections.
-    """
+    """Mandate period and contact info input for elections."""
+
     id = graphene.UUID(required=True)
     mandate_period_start = types.Date(required=True)
     mandate_period_end = types.Date(required=True)
@@ -219,9 +216,8 @@ class ElectionVoterInfoInput(graphene.InputObjectType):
 
 
 class UpdateVoterInfo(graphene.Mutation):
-    """
-    Update the mandate period and contact information for elections..
-    """
+    """Update the mandate period and contact information for elections."""
+
     class Arguments:
         elections = graphene.List(ElectionVoterInfoInput, required=True)
 
@@ -231,6 +227,7 @@ class UpdateVoterInfo(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         elections = args.get('elections')
+
         for e in elections:
             election = session.query(
                 evalg.models.election.Election).get(e['id'])
