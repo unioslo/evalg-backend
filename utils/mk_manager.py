@@ -131,8 +131,7 @@ def main(args=None):
             sep=os.linesep,
             pub=pub))
     elif args.decrypt:
-        print('Enter master key (private key): ', end='', flush=True)
-        privkey = sys.stdin.readline()
+        privkey = input('Enter master key (private key): ')
         dstring = get_decrypted_string(args.estring,
                                        privkey.strip(),
                                        args.pubkey)
@@ -147,8 +146,7 @@ def main(args=None):
                                                   sep=os.linesep,
                                                   pubkey=args.pubkey))
     elif args.derive_pub_key:
-        print('Enter master key (private key): ', end='', flush=True)
-        privkey_str = sys.stdin.readline().strip()
+        privkey_str = input('Enter master key (private key): ').strip()
         pubkey_str = nacl.public.PrivateKey(
             privkey_str,
             encoder=nacl.encoding.Base64Encoder).public_key.encode(
