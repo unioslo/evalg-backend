@@ -133,8 +133,8 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
         return self.election_protocol_text
 
 
-def resolve_election_result_by_id(_, info, **args):
-    return ElectionResult.get_query(info).get(args['id'])
+def resolve_election_result_by_id(_, info, **kwargs):
+    return ElectionResult.get_query(info).get(kwargs['id'])
 
 
 get_election_result_query = graphene.Field(
@@ -159,30 +159,28 @@ get_election_result_query = graphene.Field(
 
 
 class ElectionVotingPeriodInput(graphene.InputObjectType):
-    """
-    Start and end datetime input for an election.
-    """
+    """Start and end datetime input for an election."""
+
     id = graphene.UUID(required=True)
     start = types.DateTime(required=True)
     end = types.DateTime(required=True)
 
 
 class UpdateVotingPeriods(graphene.Mutation):
-    """
-    Update the voting periods for an election.
-    """
+    """Update the voting periods for an election."""
+
     class Arguments:
         elections = graphene.List(ElectionVotingPeriodInput, required=True)
         has_multiple_times = graphene.Boolean(required=True)
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
 
         session = get_session(info)
         user = get_current_user(info)
-        elections = args.get('elections')
-        if not args.get('has_multiple_times'):
+        elections = kwargs.get('elections')
+        if not kwargs.get('has_multiple_times'):
             # TODO: Do we need this? Could we not just send a datetime input
             # for each election?
             for e in elections:
@@ -208,9 +206,8 @@ class UpdateVotingPeriods(graphene.Mutation):
 
 
 class ElectionVoterInfoInput(graphene.InputObjectType):
-    """
-    Mandate period and contact info input for elections.
-    """
+    """Mandate period and contact info input for elections."""
+
     id = graphene.UUID(required=True)
     mandate_period_start = types.Date(required=True)
     mandate_period_end = types.Date(required=True)
@@ -219,18 +216,18 @@ class ElectionVoterInfoInput(graphene.InputObjectType):
 
 
 class UpdateVoterInfo(graphene.Mutation):
-    """
-    Update the mandate period and contact information for elections..
-    """
+    """Update the mandate period and contact information for elections."""
+
     class Arguments:
         elections = graphene.List(ElectionVoterInfoInput, required=True)
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        elections = args.get('elections')
+        elections = kwargs.get('elections')
+
         for e in elections:
             election = session.query(
                 evalg.models.election.Election).get(e['id'])

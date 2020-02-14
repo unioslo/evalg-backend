@@ -66,7 +66,6 @@ from sqlalchemy.orm.base import NEVER_SET, NO_VALUE
 import evalg.database.types
 from evalg.utils import utcnow
 from .base import ModelBase
-from .voter import Voter
 
 
 logger = logging.getLogger(__name__)

@@ -18,9 +18,7 @@ from evalg.utils import flask_request_memoize
 
 
 def get_or_create_principal(session, principal_type, **kwargs):
-    """
-    Ensure existence of a principal.
-    """
+    """Ensure existence of a principal."""
     lookup_opts = {
         'person': (PersonPrincipal, {
             'person_id': kwargs.get('person_id'),
@@ -87,9 +85,7 @@ def get_person_roles_matching(session, person, **match):
 
 
 def get_person_identifier_principals(session, person):
-    """
-    Get all `PersonIdentifierPrincipal`s matching the external IDs of a person.
-    """
+    """Get all `PersonIdentifierPrincipal`s matching the IDs of a person."""
     query = session.query(
         PersonIdentifierPrincipal
     ).join(
@@ -105,9 +101,7 @@ def get_person_identifier_principals(session, person):
 
 
 def get_role_by_grant_id(session, grant_id):
-    """
-    Get a role by its grant ID. Returns `None` if not found.
-    """
+    """Get a role by its grant ID. Returns `None` if not found."""
     return evalg.database.query.lookup_or_none(
         session,
         evalg.models.authorization.Role,
@@ -115,18 +109,14 @@ def get_role_by_grant_id(session, grant_id):
 
 
 def delete_role(session, role):
-    """
-    Delete a role.
-    """
+    """Delete a role."""
     session.delete(role)
     session.flush()
 
 
 def add_election_group_role(session, election_group, principal,
                             role_name, global_role=False):
-    """
-    Add an election group role.
-    """
+    """Add an election group role."""
     role = evalg.database.query.get_or_create(
         session,
         ElectionGroupRole,

@@ -11,6 +11,7 @@ entitled to vote in.
 import uuid
 
 import sqlalchemy.types
+from sqlalchemy import case, exists, select
 from sqlalchemy.sql import and_, or_, not_
 from sqlalchemy.orm import validates
 from sqlalchemy.schema import UniqueConstraint, CheckConstraint
@@ -18,6 +19,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from evalg import db
 from evalg.models.person import PersonIdType
+from evalg.models.votes import Vote
 from evalg.utils import make_descriptive_enum
 from evalg.database.types import UuidType
 from .base import ModelBase
@@ -132,6 +134,23 @@ class Voter(ModelBase):
         elif self.verified_status is VerifiedStatus.ADMIN_ADDED_REJECTED:
             self.reviewed = False
             self.verified = True
+
+    @hybrid_property
+    def has_voted(self):
+        """Has the voter voted."""
+        return len(self.votes) > 0
+
+    @has_voted.expression
+    def has_voted(cls):
+        """has_voted sqlalchemy expression."""
+        return (
+            select([
+                case([(exists().where(and_(
+                    Vote.voter_id == cls.id,
+                )).correlate(cls), True)],
+                    else_=False,
+                ).label("has_votes")
+            ]).label("number_has_votes"))
 
     @hybrid_property
     def verified_status(self):

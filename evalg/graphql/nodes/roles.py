@@ -80,14 +80,14 @@ class AddElectionGroupRoleByIdentifier(graphene.Mutation):
 
     Output = AddElectionGroupRoleByIdentifierResponse
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         valid_roles = ['admin']
         session = get_session(info)
         user = get_current_user(info)
-        election_group_id = args.get('election_group_id')
-        role_name = args.get('role')
-        id_type = args.get('id_type')
-        id_value = args.get('id_value')
+        election_group_id = kwargs.get('election_group_id')
+        role_name = kwargs.get('role')
+        id_type = kwargs.get('id_type')
+        id_value = kwargs.get('id_value')
         election_group = evalg.database.query.lookup_or_none(
             session,
             evalg.models.election.ElectionGroup,
@@ -146,10 +146,10 @@ class RemoveElectionGroupRoleByGrant(graphene.Mutation):
 
     Output = RemoveElectionGroupRoleByGrantResponse
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        grant_id = args.get('grant_id')
+        grant_id = kwargs.get('grant_id')
         role = evalg.proc.authz.get_role_by_grant_id(session, grant_id)
         if role is None:
             return RemoveElectionGroupRoleByGrantResponse(

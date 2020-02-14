@@ -1,6 +1,8 @@
 """
 GraphQL ObjectTypes for votes and vote mutations.
 """
+import logging
+
 import graphene
 import graphene_sqlalchemy
 
@@ -19,6 +21,8 @@ from evalg.graphql.nodes.utils.permissions import (
     can_manage_election,
     can_vote,
 )
+
+logger = logging.getLogger(__name__)
 
 #
 # Query
@@ -65,10 +69,10 @@ class ElectionVoteCounts(graphene.ObjectType):
     )
 
 
-def resolve_election_count_by_id(_, info, **args):
+def resolve_election_count_by_id(_, info, **kwargs):
     user = get_current_user(info)
     session = get_session(info)
-    elec_id = args['id']
+    elec_id = kwargs['id']
     election = evalg.database.query.lookup(
         session,
         evalg.models.election.Election,
@@ -94,10 +98,10 @@ class AddVote(graphene.Mutation):
     election_id = graphene.UUID()
     ok = graphene.Boolean()
 
-    def mutate(self, info, **args):
+    def mutate(self, info, **kwargs):
         user = get_current_user(info)
-        voter_id = args['voter_id']
-        ballot_data = args['ballot']
+        voter_id = kwargs['voter_id']
+        ballot_data = kwargs['ballot']
         session = get_session(info)
         vote_policy = evalg.proc.vote.ElectionVotePolicy(session, voter_id)
 
@@ -108,9 +112,18 @@ class AddVote(graphene.Mutation):
             return AddVote(ok=False)
 
         if not vote_policy.verify_election_is_ongoing():
+            logger.error(('Can\'t add vote, election is not ongoing. user: '
+                          '%s, voter: %s election: %s'),
+                         user.person.id,
+                         voter_id,
+                         vote_policy.voter.pollbook.election.id)
             return AddVote(ok=False)
 
         if not vote_policy.verify_ballot_content(ballot_data):
+            logger.error('Invalid ballot! user %s, voter %s election %s',
+                         user.person.id,
+                         voter_id,
+                         vote_policy.voter.pollbook.election.id)
             return AddVote(ok=False)
 
         ballot_data.__delitem__('isBlankVote')
@@ -123,6 +136,10 @@ class AddVote(graphene.Mutation):
             election_id=vote_policy.voter.pollbook.election.id,
             ok=True)
         session.commit()
+        logger.info('Vote added. user: %s, voter: %s election: %s',
+                    user.person.id,
+                    voter_id,
+                    vote_policy.voter.pollbook.election.id)
 
         from evalg.tasks.celery_worker import send_vote_confirmation_mail_task
 
