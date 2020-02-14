@@ -1,10 +1,12 @@
 from evalg.models.candidate import Candidate
 from evalg.models.election_list import ElectionList
-from evalg.models.election import ElectionGroup, Election
+from evalg.models.election import ElectionGroup
 from evalg.graphql import get_context
 
 
-def test_query_electiongroup_by_id(make_election_group, client, logged_in_user):
+def test_query_electiongroup_by_id(make_election_group,
+                                   client,
+                                   logged_in_user):
     election_group = make_election_group('Test query EG by id')
     variables = {'id': str(election_group.id)}
     query = """
@@ -95,10 +97,17 @@ def test_unpublish_election_group(
     assert not election_group_after_after.published
 
 
-def test_delete_candidate_mutation(pref_candidates_foo, election_list_pref_foo,
-                                   client, logged_in_user):
+def test_delete_candidate_mutation(owned_election_group,
+                                   db_session,
+                                   client,
+                                   logged_in_user):
     """Test the delete candidate mutation."""
-    candidate = pref_candidates_foo[0]
+    election_list = owned_election_group(
+        db_session,
+        logged_in_user.person).elections[0].lists[0]
+    candidates_before = {str(x.id): x for x in
+                         election_list.candidates}
+    candidate = election_list.candidates[0]
 
     variables = {'id': str(candidate.id)}
     mutation = """
@@ -115,22 +124,26 @@ def test_delete_candidate_mutation(pref_candidates_foo, election_list_pref_foo,
     assert response['ok']
     candidate_after = Candidate.query.get(candidate.id)
     assert candidate_after is None
-    election_list_after = ElectionList.query.get(election_list_pref_foo.id)
+    election_list_after = ElectionList.query.get(election_list.id)
     assert election_list_after is not None
-    assert len(election_list_after.candidates) == len(
-        pref_candidates_foo) - 1
+    assert len(election_list_after.candidates) == len(candidates_before) - 1
     assert candidate.id not in [x.id for x in election_list_after.candidates]
 
 
-def test_add_pref_elec_candidate_mutation(election_list_pref_foo, client,
+def test_add_pref_elec_candidate_mutation(owned_election_group,
+                                          db_session,
+                                          client,
                                           logged_in_user):
     """Test the add pref elec candidate mutation."""
+    election_list = owned_election_group(
+        db_session,
+        logged_in_user.person).elections[0].lists[0]
     candidates_before = {str(x.id): x for x in
-                         election_list_pref_foo.candidates}
+                         election_list.candidates}
     variables = {
         'name': 'Foo Bare',
         'gender': 'female',
-        'listId': str(election_list_pref_foo.id)
+        'listId': str(election_list.id)
     }
     mutation = """
     mutation (
@@ -154,7 +167,7 @@ def test_add_pref_elec_candidate_mutation(election_list_pref_foo, client,
     assert response['ok']
 
     # Get new election list
-    election_list_after = ElectionList.query.get(election_list_pref_foo.id)
+    election_list_after = ElectionList.query.get(election_list.id)
     assert election_list_after is not None
     assert len(election_list_after.candidates) == len(
         candidates_before) + 1
@@ -217,15 +230,20 @@ def test_update_pref_elec_candidate_mutation(pref_candidates_foo,
     assert candidate_after.meta['gender'] == variables['gender']
 
 
-def test_add_team_pref_elec_candidate_mutation(election_list_team_pref_foo,
-                                               client, logged_in_user):
+def test_add_team_pref_elec_candidate_mutation(owned_multiple_election_group,
+                                               db_session,
+                                               client,
+                                               logged_in_user):
     """Test the add pref elec candidate mutation."""
+    election_list = owned_multiple_election_group(
+        db_session,
+        logged_in_user.person).elections[0].lists[0]
     candidates_before = {str(x.id): x for x in
-                         election_list_team_pref_foo.candidates}
+                         election_list.candidates}
     variables = {
         'name': 'Foo Bar',
         'coCandidates': [{'name': 'Bar Baz'}, {'name': 'Jane Doe'}],
-        'listId': str(election_list_team_pref_foo.id)
+        'listId': str(election_list.id)
     }
 
     mutation = """
@@ -250,8 +268,7 @@ def test_add_team_pref_elec_candidate_mutation(election_list_team_pref_foo,
     response = execution['data']['addTeamPrefElecCandidate']
     assert response['ok']
     # Get new election list
-    election_list_after = ElectionList.query.get(
-        election_list_team_pref_foo.id)
+    election_list_after = ElectionList.query.get(election_list.id)
     assert election_list_after is not None
     assert len(election_list_after.candidates) == len(
         candidates_before) + 1
@@ -312,5 +329,6 @@ def test_update_team_pref_elec_candidate_mutation(
     assert candidate_after.list_id == candidate_before.list_id
     assert candidate_after.name != candidate_before.name
     assert candidate_after.name == variables['name']
-    assert candidate_after.meta['co_candidates'] != candidate_before.meta['coCandidates']
+    assert candidate_after.meta['co_candidates'] != (
+        candidate_before.meta['coCandidates'])
     assert candidate_after.meta['co_candidates'] == variables['coCandidates']

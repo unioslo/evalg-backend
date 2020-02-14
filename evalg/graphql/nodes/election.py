@@ -48,7 +48,7 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
             return None
         return convert_json(self.meta)
 
-    is_ongoing = graphene.Boolean()
+    is_locked = graphene.Boolean()
     pollbooks = graphene.List(pollbook.Pollbook)
     vote_count = graphene.Field(lambda: ElectionVoteCounts)
     has_votes = graphene.Boolean()
@@ -57,6 +57,11 @@ class Election(graphene_sqlalchemy.SQLAlchemyObjectType):
     def resolve_has_votes(self, info):
         """Resolve the has_votes Election-property"""
         return self.has_votes
+
+    @permission_controller
+    def resolve_is_locked(self, info):
+        """Resolve the is_locked Election-property"""
+        return self.is_locked
 
     @permission_controller
     def resolve_vote_count(self, info):
