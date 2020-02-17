@@ -10,11 +10,11 @@ def add_candidate(session, name, meta, election_list_id, information_url):
     """Add a candidate to a election list."""
     election_list = session.query(
         evalg.models.election_list.ElectionList).get(election_list_id)
-    if election_list.election.has_votes:
-        # There are already votes for this election
+    if election_list.election.is_locked:
+        # The election is ongoing or there are already votes
         logger.info(
-            'Could not add candidate to election list, there are votes in the '
-            'election. election_list %s', election_list_id)
+            'Could not add candidate to election list. '
+            'The election is locked. election_list %s', election_list_id)
         return False
     candidate = evalg.models.candidate.Candidate(
         name=name,
@@ -35,13 +35,13 @@ def delete_candidate(session, candidate_id):
 
     :param session: DB session
     :param candidate_id: candidate id
-    :return: True if candidate is deleted, false else.
+    :return: True if candidate is deleted, False else.
     """
     candidate = session.query(evalg.models.candidate.Candidate).get(
         candidate_id
     )
-    if candidate.list.election.has_votes:
-        logger.info('Can\'t delete candidate, election has votes.')
+    if candidate.list.election.is_locked:
+        logger.info('Can\'t delete candidate. The election is locked.')
         return False
     session.delete(candidate)
     session.commit()

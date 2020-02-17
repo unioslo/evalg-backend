@@ -196,9 +196,8 @@ class ElectionGroup(AbstractElection):
         return blockers
 
 
-
 class Election(AbstractElection):
-    """ Election. """
+    """Election."""
 
     __versioned__ = {}
 
@@ -327,9 +326,18 @@ class Election(AbstractElection):
                 return True
         return False
 
+    @property
+    def is_locked(self):
+        """
+        A wrapper property for several existing checks
+
+        True if self.has_votes OR self.is_ongoing
+        """
+        return self.is_ongoing or self.has_votes
+
     @hybrid_property
     def is_ongoing(self):
-        """ Check if an election is currently ongoing. """
+        """Check if an election is currently ongoing."""
         return bool(self.election_group.published_at and
                     self.start <= utcnow() and
                     self.end >= utcnow())

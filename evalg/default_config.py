@@ -114,6 +114,7 @@ PERMISSIONS = {
         'pollbooks': 'allow',
         'lists': 'allow',
         'has_votes': 'can_manage_election',
+        'is_locked': 'can_manage_election',
         'election_results': 'can_manage_election'
     },
     'ElectionGroupCount': {
