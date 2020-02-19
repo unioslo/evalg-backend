@@ -73,6 +73,21 @@ def update_candidate(session,
         logging.info('Can\'t update candidate. No candidate with ID %s found',
                      candidate_id)
         return False
+    if (
+            candidate.list.election.is_locked and
+            election_list_id != candidate.list_id
+    ):
+        logger.info('Can\'t update candidate list-ID. The election is locked.')
+        return False
+    election_list = session.query(evalg.models.election_list.ElectionList).get(
+        election_list_id)
+    if (
+            election_list_id != candidate.list_id and
+            election_list.election.is_locked
+    ):
+        logger.info('Can\'t update candidate list-ID. '
+                    'The target election is locked.')
+        return False
     candidate.name = name
     candidate.meta.update(meta)
     candidate.list_id = election_list_id
