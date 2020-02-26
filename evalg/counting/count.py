@@ -13,7 +13,7 @@ import sys
 
 import pytz
 
-from evalg.counting.algorithms import uiostv, uiomv
+from evalg.counting.algorithms import ntnucv, uiostv, uiomv
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -22,8 +22,12 @@ DEFAULT_LOG_LEVEL = logging.DEBUG
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
-PROTOCOL_MAPPINGS = {'uio_stv': uiostv.Protocol, 'uio_mv': uiomv.Protocol}
-RESULT_MAPPINGS = {'uio_stv': uiostv.Result, 'uio_mv': uiomv.Result}
+PROTOCOL_MAPPINGS = {'uio_stv': uiostv.Protocol,
+                     'uio_mv': uiomv.Protocol,
+                     'ntnu_cv': ntnucv.Protocol}
+RESULT_MAPPINGS = {'uio_stv': uiostv.Result,
+                   'uio_mv': uiomv.Result,
+                   'ntnu_cv': ntnucv.Result}
 
 
 class CountingFailure(Exception):
@@ -854,7 +858,7 @@ class Counter:
         election_count_tree.append_path(self._current_election_path)
         # Now check election type and select the proper counting class
         # This method (and class) should remain algorithm agnostic.
-        if self._election_obj.type_str not in ('uio_stv', 'uio_mv'):
+        if self._election_obj.type_str not in ('ntnu_cv', 'uio_stv', 'uio_mv'):
             # no other election algorithms implemented so far
             logger.warning("No algorithm implemented for election type: %s",
                            self._election_obj.type_str)
@@ -866,6 +870,8 @@ class Counter:
                 round_cls = uiostv.SubstituteRound
         elif self._election_obj.type_str == 'uio_mv':
             round_cls = uiomv.Round
+        elif self._election_obj.type_str == 'ntnu_cv':
+            round_cls = ntnucv.Round
         election_round = round_cls(self)
         election_round.count()
         if self._drawing_nodes:

@@ -6,6 +6,7 @@ python -m evalg.counting --count-legacy <path to decrypted vote-xxx.zip>
 python -m evalg.counting --count <path to .json ballot dump file>
 """
 import argparse
+import io
 import logging
 import os
 import sys
@@ -133,9 +134,16 @@ def main(args=None):
                     print(os.linesep)
             else:
                 path_protocol = election_count_tree.default_path.get_protocol()
+                if path_protocol is None:
+                    logger.warning(
+                        'Protocol not implemented for election-type: %s',
+                        election.type_str)
+                    sys.exit(0)
                 if args.protocol_file:
-                    with open(args.protocol_file, 'w', encoding='utf-8') as fp:
-                        fp.write(path_protocol.render())
+                    with io.open(args.protocol_file,
+                                 'w',
+                                 encoding='utf-8') as protocol_file:
+                        protocol_file.write(path_protocol.render())
                 else:
                     print(path_protocol.render())
     except (EvalgLegacyInvalidBallot, standalone.InvalidBallotException) as e:
