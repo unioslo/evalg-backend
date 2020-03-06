@@ -24,7 +24,7 @@ python-json-logger
 pytz
 sentry_sdk
 setuptools
-sqlalchemy==1.2.15
+sqlalchemy
 sqlalchemy-continuum
 sqlalchemy-json
 sqlalchemy-utils
