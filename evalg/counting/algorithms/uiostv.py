@@ -18,7 +18,6 @@ logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
 class NoMoreElectableCandidates(Exception):
     """Raised when §19.1 is detected"""
-    pass
 
 
 class NoMoreExcludableCandidates(Exception):
@@ -26,22 +25,18 @@ class NoMoreExcludableCandidates(Exception):
     Raised in a substitute round when all excludable candidates
     are protected by $21
     """
-    pass
 
 
 class NoMoreGloballyElectableCandidates(Exception):
     """Raised when §19.1 is detected (globally)"""
-    pass
 
 
 class RequiredCandidatesElected(Exception):
     """Raised when §19.2 is detected"""
-    pass
 
 
 class SubstituteCandidateElected(Exception):
     """Raised when a single substitute candidate is elected"""
-    pass
 
 
 class Result(base.Result):
@@ -109,33 +104,11 @@ class RoundState(base.RoundState):
         super().__init__(round_obj)
         self._substitute_final = False  # final for a particular substitute
         self._excluded = tuple()  # tuple of candidates excluded in this round
-        self._all_elected_candidates = tuple()  # all elected candidates so far
-        self._all_elected_substitutes = tuple()  # only the substitute cand.
         self._quota_excluded = tuple()  # tuple of quota-excluded candidates
         # ballots weight of all transfered ballots at the moment of transfer
         self._transferred_ballot_weights = collections.Counter()
         self._transferred_candidate_ballots = {}  # candidate: ballot-list dict
         self._paragraph_19_1 = False  # §19.1 in the corresponding round
-
-    @property
-    def all_elected_candidates(self):
-        """all_elected_candidates-property"""
-        return self._all_elected_candidates
-
-    @all_elected_candidates.setter
-    def all_elected_candidates(self, candidates):
-        """all_elected_candidates-property setter"""
-        self._all_elected_candidates = tuple(candidates)
-
-    @property
-    def all_elected_substitutes(self):
-        """all_elected_substitutes-property"""
-        return self._all_elected_substitutes
-
-    @all_elected_substitutes.setter
-    def all_elected_substitutes(self, candidates):
-        """all_elected_substitutes-property setter"""
-        self._all_elected_substitutes = tuple(candidates)
 
     @property
     def excluded(self):

@@ -116,6 +116,11 @@ def main(args=None):
                 results_list = ElectionCountTree.order_results_by(
                     election_count_tree.get_results(),
                     'probability')
+                if not results_list:
+                    logger.warning(
+                        'Results not implemented for election-type: %s',
+                        election.type_str)
+                    sys.exit(0)
                 print('Election tree: {paths} paths total'.format(paths=len(
                     election_count_tree.election_paths)))
                 for result_dict in results_list:
