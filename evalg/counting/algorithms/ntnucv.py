@@ -207,7 +207,7 @@ class Round:
             self._state.add_event(
                 count.CountingEvent(
                     count.CountingEventType.MAX_QUOTA_VALUE_EXCLUDED,
-                    {'candidate': str(excludable_candidate.id)}))
+                    {'candidate': str(candidate.id)}))
             return
         self._elected.append(candidate)
         self._state.all_elected_candidates = self._elected

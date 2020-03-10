@@ -106,7 +106,7 @@ def make_election(db_session, election_group_foo):
             'end': datetime.datetime.now(
                 datetime.timezone.utc) + datetime.timedelta(days=1)
         }
-        if election_type == 'uio_stv':
+        if election_type in ('uio_stv', 'ntnu_cv'):
             data['meta']['counting_rules']['affirmative_action'] = [
                 'gender_40']
         election = evalg.database.query.get_or_create(
