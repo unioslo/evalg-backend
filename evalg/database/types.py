@@ -9,10 +9,24 @@ import datetime
 import flask.json
 import sqlalchemy.types
 import sqlalchemy.util
+from sqlalchemy.ext.mutable import MutableDict as _MutableDict
+
 import sqlalchemy_utils
 import sqlalchemy_utils.types.json
-from sqlalchemy_json import MutableJson
-from sqlalchemy_json import NestedMutableJson
+
+from sqlalchemy_json import NestedMutable as _NestedMutable
+
+
+class MutableJson(sqlalchemy.types.JSON):
+    """JSON type for SQLAlchemy with change tracking at top level."""
+
+
+class NestedMutableJson(sqlalchemy.types.JSON):
+    """JSON type for SQLAlchemy with nested change tracking."""
+
+
+_MutableDict.associate_with(MutableJson)
+_NestedMutable.associate_with(NestedMutableJson)
 
 
 # Monkey patch sqlalchemy_utils serializer.  Note that sqlalchemy_json inherits
