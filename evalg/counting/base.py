@@ -17,6 +17,8 @@ class RoundState:
         :param round_obj: The round-counting object
         :type round_obj: object
         """
+        self._all_elected_candidates = tuple()  # all elected candidates so far
+        self._all_elected_substitutes = tuple()  # only the substitute cand.
         self._final = False
         self._round_obj = round_obj
         self._elected = tuple()  # tuple of candidates elected in this round
@@ -25,14 +27,22 @@ class RoundState:
     @property
     def all_elected_candidates(self):
         """all_elected_candidates-property"""
-        # should be probably overloaded
-        return self._elected
+        return self._all_elected_candidates
+
+    @all_elected_candidates.setter
+    def all_elected_candidates(self, candidates):
+        """all_elected_candidates-property setter"""
+        self._all_elected_candidates = tuple(candidates)
 
     @property
     def all_elected_substitutes(self):
         """all_elected_substitutes-property"""
-        # We want to please the ElectionPath API
-        return tuple()
+        return self._all_elected_substitutes
+
+    @all_elected_substitutes.setter
+    def all_elected_substitutes(self, candidates):
+        """all_elected_substitutes-property setter"""
+        self._all_elected_substitutes = tuple(candidates)
 
     @property
     def elected(self):
@@ -198,6 +208,7 @@ class Protocol:
         :rtype: str
         """
         tmpl = Environment(
+            autoescape=True,
             newline_sequence='\r\n',
             loader=PackageLoader('evalg.counting', 'templates')).get_template(
                 template)

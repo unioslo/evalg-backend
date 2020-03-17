@@ -7,9 +7,8 @@ import enum
 import logging
 import operator
 import os
-import random  # testing only
+import random
 import secrets
-import sys
 
 import pytz
 
@@ -32,7 +31,6 @@ RESULT_MAPPINGS = {'uio_stv': uiostv.Result,
 
 class CountingFailure(Exception):
     """General custom exception"""
-    pass
 
 
 class CountingEventType(enum.Enum):
@@ -222,6 +220,17 @@ class CountingEvent:
                             str(cand_id)]['percent_pollbook'] = str(
                                 items['percent_pollbook'])
                 self.event_data['count_result_stats'] = new_count_result_stats
+            if 'count_result_stats_ntnu' in event_data:
+                # pick up the NTNU-CV stats
+                new_count_result_stats = {}
+                for cand, val in event_data['count_result_stats_ntnu'].items():
+                    cand_id = str(cand.id)
+                    new_count_result_stats[cand_id] = []
+                    for factor, amount in val.items():
+                        new_count_result_stats[cand_id].append(
+                            [factor, amount])
+                self.event_data[
+                    'count_result_stats_ntnu'] = new_count_result_stats
 
     def to_dict(self):
         """
@@ -392,8 +401,7 @@ class DrawingNode:
                 for idx, open_branch in enumerate(open_branches, 1):
                     idx_list.append(idx)
                     print(f'{idx}: {open_branch.member}', flush=True)
-                print('Select members: ', end='', flush=True)
-                choice = int(sys.stdin.readline().strip())
+                choice = int(input('Select members: ').strip())
                 if choice not in idx_list:
                     print('Invalid choice', flush=True)
                     continue
@@ -592,6 +600,9 @@ class ElectionCountPath:
         """
         if self._current_drawing_branch is None:
             return decimal.Decimal(1)
+        if self._current_drawing_branch is True:
+            # drawing, but no tree (NTNU)
+            return decimal.Decimal(1)
         return self._current_drawing_branch.get_branch_probability()
 
     def get_result(self):
@@ -634,6 +645,14 @@ class ElectionCountPath:
                 meta=meta,
                 regular_candidates=[str(cand.id) for cand in
                                     self.get_elected_regular_candidates()])
+        if election.type_str == 'ntnu_cv':
+            return ntnucv.Result(
+                meta=meta,
+                regular_candidates=[str(cand.id) for cand in
+                                    self.get_elected_regular_candidates()],
+                substitute_candidates=[
+                    str(cand.id) for cand in
+                    self.get_elected_substitute_candidates()])
         return None
 
     def get_protocol(self):
@@ -715,6 +734,8 @@ class ElectionCountPath:
             return uiostv.Protocol(meta=meta, rounds=rounds)
         if election.type_str == 'uio_mv':
             return uiomv.Protocol(meta=meta, rounds=rounds)
+        if election.type_str == 'ntnu_cv':
+            return ntnucv.Protocol(meta=meta, rounds=rounds)
         return None
 
 
@@ -1010,3 +1031,20 @@ class Counter:
             # Should not happen if the election is set properly. Raise?
             return 0
         return max_substitutes
+
+    def shuffle_candidates(self, candidates):
+        """
+        Shuffles the any muntable sequence with random.shuffle *in place*
+        This should be used *only* by counting algorithms that do not keep
+        real election trees
+
+        :param candidates: The candidates list
+        :type candidates: list
+        """
+        if self._test_mode:
+            rnd = random.SystemRandom(0)
+        else:
+            rnd = random.SystemRandom()
+        rnd.shuffle(candidates)
+        # hack that marks the current (and only) election path as "drawing"
+        self._current_election_path.current_drawing_branch = True

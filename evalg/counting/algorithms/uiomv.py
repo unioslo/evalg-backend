@@ -205,6 +205,7 @@ class Round:
                 {'candidate': str(elected_candidate.id)}))
         self._elected.append(elected_candidate)
         self._state.add_elected_candidate(elected_candidate)
+        self._state.all_elected_candidates = self._elected
         logger.info("Candidate %s is elected", elected_candidate)
         self._state.add_event(
             count.CountingEvent(count.CountingEventType.CANDIDATE_ELECTED,
