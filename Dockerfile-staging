@@ -1,4 +1,4 @@
-FROM harbor.uio.no/library/python:3.6-alpine
+FROM harbor.uio.no/library/python:3.7-alpine
 
 MAINTAINER USITINT <bnt-int@usit.uio.no>
 LABEL no.uio.contact=bnt-int@usit.uio.no
@@ -11,8 +11,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
 COPY evalg/migrations /usr/src/evalg/evalg/migrations
 
 # Proxy for updates during build
-ENV http_proxy="http://updateproxy.uio.no:3128"
-ENV https_proxy="https://updateproxy.uio.no:3128"
+ENV http_proxy="http://software-proxy.uio.no:3128"
+ENV https_proxy="https://software-proxy.uio.no:3128"
 
 # Install build-deps, then install/build deps
 RUN set -ex \
