@@ -85,10 +85,42 @@ def list_administrated_groups():
         print(f"{election_group.id}: {election_group.name['nb']}")
 
 
-commands = (add_election_group_admin, list_administrated_groups)
+@click.command('rename-election-group',
+               short_help='Renames the elections in a given election group')
+@flask.cli.with_appcontext
+def rename_election_group():
+    """Prompts for election-group-ID and new name for that group"""
+    from evalg.models.election import ElectionGroup
+    election_group_id = input('Enter election-group UUID: ')
+    try:
+        election_group = evalg.db.session.query(ElectionGroup).get(
+            election_group_id)
+        if election_group is None:
+            print(f'Could not find election-group with UUID: '
+                  f'{election_group_id}')
+            return
+        print(f'Election-group: {election_group.name}')
+        new_name_nb, new_name_nn, new_name_en = input(
+            'Enter new name (nb,nn,en) separated by ",": ').split(',')
+        election_group.name = {'nb': new_name_nb.strip(),
+                               'nn': new_name_nn.strip(),
+                               'en': new_name_en.strip()}
+        evalg.db.session.commit()
+        print(f'Done: {election_group.name}')
+    except NoResultFound:
+        print(f'No election group with UUID: {election_group_id} found')
+        return
+    except Exception as exc:
+        print(f'Unable to rename election-group: {exc}')
+        return
+
+
+commands = (add_election_group_admin,
+            list_administrated_groups,
+            rename_election_group)
 
 
 def init_app(app):
-    """ Add commands to flask application cli. """
+    """Add commands to flask application cli."""
     for command in commands:
         app.cli.add_command(command)
