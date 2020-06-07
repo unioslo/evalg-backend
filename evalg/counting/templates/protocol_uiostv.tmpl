@@ -80,6 +80,12 @@ Vi velger kandidat som skal ekskluderes ved hjelp av loddtrekning i henhold til 
 {% elif event.event_type == 'DENY_ELECT_QUOTA_MAX' -%}
 {{ person_name(event.event_data['candidate']) }} kan ikke bli valgt for en av hennes / hans kvote-grupper er full. Ekskluderer i neste runde i henhold til §29.
 
+{% elif event.event_type == 'CANDIDATE_QUOTA_PROTECTED' -%}
+{{ person_name(event.event_data['candidate']) }} må velges for å oppfylle kvote-regler og kan dermed ikke ekskluderes.
+
+{% elif event.event_type == 'CANT_BE_EXCLUDED_TOGETHER' -%}
+{{ person_names_list(event.event_data['candidates']) }} kan ikke ekskluderes sammen fordi minst én av dem må velges for å oppfylle kvote-regler.
+
 {% elif event.event_type == 'DISPLAY_STATUS' -%}
 Status (oppsummering):
 {% for result in event.event_data['count_results'] -%}

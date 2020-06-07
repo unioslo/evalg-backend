@@ -229,6 +229,8 @@ class RegularRound:
         self._elected = []
         self._potentially_elected = []
         self._excluded = []
+        self._min_quota_protected = []
+        self._newly_protected_candidate = False
         # candidate: ballots-list - dict
         self._transferred_uncounted_ballots = {}
         # the vote count of the remaining candidates
@@ -263,6 +265,7 @@ class RegularRound:
             self._election_number = self._parent.election_number
             self._elected = list(self._parent.elected)
             self._excluded = list(self._parent.excluded)
+            self._min_quota_protected = list(self._parent.min_quota_protected)
             self._vcount_results_remaining = collections.Counter(
                 self._parent.vcount_results_remaining)
             self._surplus_per_elected_candidate = collections.Counter(
@@ -331,6 +334,11 @@ class RegularRound:
         return bool(
             self._surplus_per_elected_candidate and
             self._surplus_per_elected_candidate.most_common(1)[0][1] > 0)
+
+    @property
+    def min_quota_protected(self):
+        """min_quota_protected-property"""
+        return self._min_quota_protected
 
     @property
     def parent(self):
@@ -413,6 +421,8 @@ class RegularRound:
                 self._initiate_new_count()
                 new_round = RegularRound(self._counter_obj, self)
                 return new_round.count()
+            # anyone excluded by drawing during this round?
+            excluded_by_drawing = False
             # Checking if someone should be eliminated because of
             # max. value quota reached in previous round (§29). This is
             # done even before calculating the surplus.
@@ -423,8 +433,10 @@ class RegularRound:
                 if self._min_quota_required(excludable_candidate):
                     logger.info(
                         "Candidate %s must be elected in order to fulfill the "
-                        "quota-rules. Skipping elimination.",
+                        "quota-rules (count). Skipping elimination.",
                         excludable_candidate)
+                    if excludable_candidate not in self._min_quota_protected:
+                        self._min_quota_protected.append(excludable_candidate)
                     continue
                 self._state.add_quota_excluded_candidate(excludable_candidate)
                 self._exclude_candidate(excludable_candidate)
@@ -441,6 +453,11 @@ class RegularRound:
                         total_surplus)
             # §16.3 - check if someone can be excluded
             excludable_candidates = self._get_excludable_candidates()
+            # in case we just protected a "bottom" candidate, we have to re-run
+            # the exclusion procedures
+            if self._newly_protected_candidate and not excludable_candidates:
+                excludable_candidates = self._get_excludable_candidates()
+                self._newly_protected_candidate = False
             if not excludable_candidates:
                 logger.debug("No candidates for exclusion")
                 self._state.add_event(count.CountingEvent(
@@ -526,6 +543,7 @@ class RegularRound:
                                          bottom_candidates[0]])}))
                         drawn_candidate = self._counter_obj.draw_candidate(
                             bottom_candidates)
+                        excluded_by_drawing = True
                         logger.info("Candidate %s was drawn for exclusion.",
                                     drawn_candidate)
                         self._state.add_event(
@@ -540,7 +558,7 @@ class RegularRound:
             # check §19.1 again
             self._check_remaining_candidates()
             self._transfer_ballots_from_excluded_candidates()
-            if not excludable_candidates:
+            if not excludable_candidates and not excluded_by_drawing:
                 self._initiate_new_count()
             new_round = RegularRound(self._counter_obj, self)
             return new_round.count()
@@ -572,24 +590,6 @@ class RegularRound:
                     count.CountingEventType.TERMINATE_19_2, {}))
             return self._terminate_regular_count()
 
-    def get_candidate_election_state(self, candidate):
-        """
-        Returns the state where `candidate` was elected and 'None'
-        if the candidate is not elected.
-
-        :param candidate: The candidate-object
-        :type candidate: object
-
-        :return: The round-state or None
-        :rtype: RoundState, None
-        """
-        if candidate in self._state.elected:
-            return self._state
-        if not self._parent:
-            # this is the first round
-            return None
-        return self._parent.get_candidate_election_state(candidate)
-
     def _can_be_elected_together(self, candidates, elected=None):
         """
         Return True if all `candidates` can be elected together
@@ -601,6 +601,54 @@ class RegularRound:
         for candidate in candidates:
             if self._max_quota_full(candidate, pretend_elected):
                 return False
+        return True
+
+    def _can_be_excluded_together(self, candidates, excluded=None):
+        """
+        Returns True if candidates can be excluded together without breaking
+        the min. quota (§27)
+
+        :param candidates: Candidates to consider for exclusion
+        :type candidates: collections.abc.Sequence
+
+        :param excluded: Alternative list of excluded candidates
+                         than self._excluded, defaults to None
+        :type excluded: collections.abc.Sequence
+
+        :return: True if candidates can be excluded together, False otherwise
+        :rtype: bool
+        """
+        if self._quotas_disabled:
+            logger.debug("No quota-groups defined")
+            return True
+        if excluded is None:
+            excluded = self._excluded
+        candidates_set = set(candidates)
+        remaining_candidates = self._get_remaining_candidates()
+        for excludable in candidates:
+            quota_groups = self._get_candidate_quota_groups(excludable)
+            if not quota_groups:
+                logger.debug("%s is not member of any quota-group(s)",
+                             excludable)
+                continue
+            other_excludables = candidates_set.difference((excludable, ))
+            new_remaining_candidates = set(remaining_candidates).difference(
+                other_excludables.union(excluded))
+            for quota_group in quota_groups:
+                members = set(quota_group.members)
+                sum_remaining_members = len(members.intersection(
+                    new_remaining_candidates))
+                sum_elected_members = len(members.intersection(self._elected))
+                if (
+                        sum_remaining_members <=
+                        quota_group.min_value - sum_elected_members
+                ):
+                    self._state.add_event(
+                        count.CountingEvent(
+                            count.CountingEventType.CANT_BE_EXCLUDED_TOGETHER,
+                            {'candidates': [str(excludable.id) for
+                                            excludable in candidates]}))
+                    return False
         return True
 
     def _check_election_quota_reached(self):
@@ -707,12 +755,14 @@ class RegularRound:
             # extra safety doesn't harm.
             logger.warning(
                 "Candidate %s must be elected in order to fulfill the "
-                "quota-rules. Skipping exclusion.",
+                "quota-rules (exclude candidate). Skipping exclusion.",
                 candidate)
             self._state.add_event(
                 count.CountingEvent(
                     count.CountingEventType.CANDIDATE_QUOTA_PROTECTED,
                     {'candidate': str(candidate.id)}))
+            if candidate not in self._min_quota_protected:
+                self._min_quota_protected.append(candidate)
             return None
         if candidate in self._excluded:
             # in case of quota max. value reached exclusion
@@ -735,6 +785,15 @@ class RegularRound:
                 {'candidate': str(candidate.id)}))
         self._check_remaining_candidates()
         return None  # please pylint
+
+    def _get_amount_remaining_to_be_elected(self):
+        """
+        Amount of candidates to be elected
+
+        :return: Amount of candidates to be elected
+        :rtype: int
+        """
+        return self._counter_obj.election.num_choosable - len(self._elected)
 
     def _get_bottom_candidates(self):
         """
@@ -767,184 +826,23 @@ class RegularRound:
                            "Breaking §16.4-C assumptions")
         return tuple(bottom_candidates)
 
-    def _get_election_number(self):
+    def get_candidate_election_state(self, candidate):
         """
-        Calculates the election-number for this round according to §20
+        Returns the state where `candidate` was elected and 'None'
+        if the candidate is not elected.
 
-        :return: The election number calculated for this round
-        :rtype: decimal.Decimal
+        :param candidate: The candidate-object
+        :type candidate: object
+
+        :return: The round-state or None
+        :rtype: RoundState, None
         """
-        # §13
-        # Robert Hamer:
-        # §13 We can use a smaller epsilon than 0.01.
-        # Proposition:
-        #  * prec >= 2
-        #  * prec is at least 2 * math.log(counting-ballots, 10)
-        counting_ballot_pollbook = (
-            [ballot.pollbook.weight_per_pollbook for
-             ballot in self._counter_obj.counting_ballots])
-        if len(counting_ballot_pollbook) < 10:
-            # avoid log(0) and large epsilon when 1 <= ballots < 10
-            prec = 2
-        else:
-            prec = 2 * int(math.log(len(counting_ballot_pollbook), 10))
-        # the quotient should not have a greater precision than epsilon
-        quotient_precision = decimal.Decimal(10) ** -prec  # §18.3, §33
-        epsilon = decimal.Decimal((0, (1, ), -prec))
-        weight_counting_ballots = decimal.Decimal(
-            sum(counting_ballot_pollbook))
-        quotient = (
-            weight_counting_ballots /
-            decimal.Decimal(self._counter_obj.election.num_choosable + 1)
-        ).quantize(
-            quotient_precision,
-            decimal.ROUND_DOWN)
-        initial_e_number = quotient + epsilon
-        logger.info("Calculating initial election number:")
-        logger.info("Quotient (§18.3, §33): "
-                    "(%s (weight of counting ballots) / (%s to elect + 1) "
-                    "(with %d decimal precision) = %s",
-                    weight_counting_ballots,
-                    self._counter_obj.election.num_choosable,
-                    prec,
-                    quotient)
-        logger.info("%s (quotient) + %s (epsilon) = %s",
-                    quotient,
-                    epsilon,
-                    initial_e_number)
-        self._state.add_event(
-            count.CountingEvent(
-                count.CountingEventType.ELECTION_NUMBER,
-                {'weight_counting_ballots': str(weight_counting_ballots),
-                 'candidates_to_elect': (
-                     self._counter_obj.election.num_choosable),
-                 'substitute_number': 0,  # not a substitute round
-                 'precision': str(prec),
-                 'quotient': str(quotient),
-                 'epsilon': str(epsilon),
-                 'election_number': str(initial_e_number)}))
-        return initial_e_number
-
-    def _get_excludable_candidates(self):
-        """
-        Important implementation of §16.3
-
-        :return: Candidates that can be excluded based on a previous count
-        :rtype: tuple
-        """
-        if not self._parent or not self._vcount_results_remaining:
-            # first round or no counts in the previous round
-            return tuple()
-        results = self._vcount_results_remaining.most_common()
-        if len(results) < 2:
-            # paranoia: this should not happen because of §19
-            # that is always checked before exclusion
-            return tuple()
-        total_surplus = self._get_total_surplus()
-
-        # §16.3 - D dictates that §16.3 - B is checked first and then §16.3 - A
-        def sum_from(i):
-            return sum(map(operator.itemgetter(1), results[i:]))
-
-        largest_exclusion_group_size = 0
-        for index, count_result in enumerate(results[:-1]):  # not the last one
-            if sum_from(index + 1) + total_surplus < count_result[1]:
-                largest_exclusion_group_size = len(results) - (index + 1)
-                break
-        else:
-            # §16.3 - D
-            return tuple()
-        logger.info("§16.3 - D: Maximum to be excluded: %d",
-                    largest_exclusion_group_size)
-        # now check §16.3 - C
-        max_possible_to_exclude = (
-            len(self._get_remaining_candidates()) -
-            self._get_amount_remaining_to_be_elected())
-        remaining_candidates_after_exclusion = (
-            len(self._get_remaining_candidates()) -
-            largest_exclusion_group_size)
-        logger.info("§16.3 - C: Remaining candidates after exclusion: %d",
-                    remaining_candidates_after_exclusion)
-        if largest_exclusion_group_size <= max_possible_to_exclude:
-            # return the largest possible group
-            return self._get_filtered_excludables(
-                map(operator.itemgetter(0),
-                    results[-largest_exclusion_group_size:]))
-        # the candidates from exclusion are too many
-
-        # pick a smaller size and perform the §16.3 - A check again!
-        # Start with max_possible_to_exclude and if the test fails,
-        # decrement the size by 1 and do it again
-        # no candidates can be excluded if the size becomes 0
-        while max_possible_to_exclude:
-            if (
-                    sum_from(-max_possible_to_exclude) + total_surplus <
-                    results[-(max_possible_to_exclude + 1)][1]
-            ):
-                return self._get_filtered_excludables(
-                    map(operator.itemgetter(0),
-                        results[-max_possible_to_exclude:]))
-            max_possible_to_exclude -= 1
-        # §16.3 - A didn't pass for any subgroup (size)
-        # Nobody can be excluded here and now
-        return tuple()
-
-    def _get_filtered_excludables(self, excludables):
-        """
-        Implements §27, §28
-
-        :return: The excludables that actually can be excluded
-        :rtype: tuple
-        """
-        filtered_excludables = []
-        for excludable in excludables:
-            # check for quota conditions: §27, §28
-            if self._min_quota_required(excludable):
-                logger.info(
-                    "Candidate %s must be elected in order to fulfill the "
-                    "quota-rules. Skipping exclusion.",
-                    excludable)
-                continue
-            filtered_excludables.append(excludable)
-        return tuple(filtered_excludables)
-
-    def _get_greatest_surplus(self):
-        """
-        Implementation of §16.4 - A
-
-        :return: Largest remaining surplus, None if no available surplus,
-                 tuple of candidates with equal surpluses in accordance
-                 with §16.4 - A
-        :rtype: decimal.Decimal, None or tuple
-        """
-        if not self.has_remaining_surplus:
+        if candidate in self._state.elected:
+            return self._state
+        if not self._parent:
+            # this is the first round
             return None
-        ordered_surplus = (
-            self._surplus_per_elected_candidate.most_common())
-        if len(ordered_surplus) == 1:
-            return tuple(ordered_surplus)
-        # >= 2
-        if ordered_surplus[0][1] > ordered_surplus[1][1]:
-            # 1.candidate vcount > 2.candidate vcount == no relevant duplicates
-            return tuple([ordered_surplus[0]])
-        # at least 1 duplicate ... return the tuples with the highest vcount
-        highest_vcount = ordered_surplus[0][1]
-        duplicates = []
-        for item in ordered_surplus:
-            if item[1] >= highest_vcount:
-                duplicates.append(item)
-                continue
-            break
-        return tuple(duplicates)
-
-    def _get_amount_remaining_to_be_elected(self):
-        """
-        Amount of candidates to be elected
-
-        :return: Amount of candidates to be elected
-        :rtype: int
-        """
-        return self._counter_obj.election.num_choosable - len(self._elected)
+        return self._parent.get_candidate_election_state(candidate)
 
     def _get_candidate_quota_groups(self, candidate):
         """
@@ -1020,6 +918,198 @@ class RegularRound:
                 duplicates.append(can)
         return tuple(duplicates)
 
+    def _get_election_number(self):
+        """
+        Calculates the election-number for this round according to §20
+
+        :return: The election number calculated for this round
+        :rtype: decimal.Decimal
+        """
+        # §13
+        # Robert Hamer:
+        # §13 We can use a smaller epsilon than 0.01.
+        # Proposition:
+        #  * prec >= 2
+        #  * prec is at least 2 * math.log(counting-ballots, 10)
+        counting_ballot_pollbook = (
+            [ballot.pollbook.weight_per_pollbook for
+             ballot in self._counter_obj.counting_ballots])
+        if len(counting_ballot_pollbook) < 10:
+            # avoid log(0) and large epsilon when 1 <= ballots < 10
+            prec = 2
+        else:
+            prec = 2 * int(math.log(len(counting_ballot_pollbook), 10))
+        # the quotient should not have a greater precision than epsilon
+        quotient_precision = decimal.Decimal(10) ** -prec  # §18.3, §33
+        epsilon = decimal.Decimal((0, (1, ), -prec))
+        weight_counting_ballots = decimal.Decimal(
+            sum(counting_ballot_pollbook))
+        quotient = (
+            weight_counting_ballots /
+            decimal.Decimal(self._counter_obj.election.num_choosable + 1)
+        ).quantize(
+            quotient_precision,
+            decimal.ROUND_DOWN)
+        initial_e_number = quotient + epsilon
+        logger.info("Calculating initial election number:")
+        logger.info("Quotient (§18.3, §33): "
+                    "(%s (weight of counting ballots) / (%s to elect + 1) "
+                    "(with %d decimal precision) = %s",
+                    weight_counting_ballots,
+                    self._counter_obj.election.num_choosable,
+                    prec,
+                    quotient)
+        logger.info("%s (quotient) + %s (epsilon) = %s",
+                    quotient,
+                    epsilon,
+                    initial_e_number)
+        self._state.add_event(
+            count.CountingEvent(
+                count.CountingEventType.ELECTION_NUMBER,
+                {'weight_counting_ballots': str(weight_counting_ballots),
+                 'candidates_to_elect': (
+                     self._counter_obj.election.num_choosable),
+                 'substitute_number': 0,  # not a substitute round
+                 'precision': str(prec),
+                 'quotient': str(quotient),
+                 'epsilon': str(epsilon),
+                 'election_number': str(initial_e_number)}))
+        return initial_e_number
+
+    def _get_excludable_candidates(self):
+        """
+        Important implementation of §16.3
+
+        :return: Candidates that can be excluded based on a previous count
+        :rtype: tuple
+        """
+        if not self._parent or not self._vcount_results_remaining:
+            # first round or no counts in the previous round
+            return tuple()
+        vcount_results = collections.Counter(self._vcount_results_remaining)
+        # save quota protected candidates from exclusion
+        for protected_candidate in self._min_quota_protected:
+            vcount_results.pop(protected_candidate, None)
+        results = vcount_results.most_common()
+        if len(results) < 2:
+            # paranoia: this should not happen because of §19
+            # that is always checked before exclusion
+            return tuple()
+        total_surplus = self._get_total_surplus()
+
+        # §16.3 - D dictates that §16.3 - B is checked first and then §16.3 - A
+        def sum_from(i):
+            return sum(map(operator.itemgetter(1), results[i:]))
+
+        largest_exclusion_group_size = 0
+        for index, count_result in enumerate(results[:-1]):  # not the last one
+            if sum_from(index + 1) + total_surplus < count_result[1]:
+                largest_exclusion_group_size = len(results) - (index + 1)
+                break
+        else:
+            # §16.3 - D
+            return tuple()
+        logger.info("§16.3 - D: Maximum to be excluded: %d",
+                    largest_exclusion_group_size)
+        # now check §16.3 - C
+        max_possible_to_exclude = (
+            len(self._get_remaining_candidates()) -
+            self._get_amount_remaining_to_be_elected())
+        remaining_candidates_after_exclusion = (
+            len(self._get_remaining_candidates()) -
+            largest_exclusion_group_size)
+        logger.info("§16.3 - C: Remaining candidates after exclusion: %d",
+                    remaining_candidates_after_exclusion)
+        if largest_exclusion_group_size <= max_possible_to_exclude:
+            # return the largest possible group
+            if largest_exclusion_group_size > 1:
+                # now we have to check if excluding *all* breaks the min-quota
+                # and not only one and one as we do later... starting with the
+                # lowest
+                remaining_excl = self._get_quota_filtered_excludables(
+                    results[-largest_exclusion_group_size:])
+                return self._get_filtered_excludables(remaining_excl)
+            return self._get_filtered_excludables(
+                map(operator.itemgetter(0),
+                    results[-largest_exclusion_group_size:]))
+        # the candidates from exclusion are too many
+
+        # pick a smaller size and perform the §16.3 - A check again!
+        # Start with max_possible_to_exclude and if the test fails,
+        # decrement the size by 1 and do it again
+        # no candidates can be excluded if the size becomes 0
+        while max_possible_to_exclude:
+            if (
+                    sum_from(-max_possible_to_exclude) + total_surplus <
+                    results[-(max_possible_to_exclude + 1)][1]
+            ):
+                if max_possible_to_exclude > 1:
+                    remaining_excl = self._get_quota_filtered_excludables(
+                        results[-max_possible_to_exclude:])
+                    return self._get_filtered_excludables(remaining_excl)
+                return self._get_filtered_excludables(
+                    map(operator.itemgetter(0),
+                        results[-max_possible_to_exclude:]))
+            max_possible_to_exclude -= 1
+        # §16.3 - A didn't pass for any subgroup (size)
+        # Nobody can be excluded here and now
+        return tuple()
+
+    def _get_filtered_excludables(self, excludables):
+        """
+        Implements §27, §28
+
+        :return: The excludables that actually can be excluded
+        :rtype: tuple
+        """
+        filtered_excludables = []
+        for excludable in excludables:
+            # check for quota conditions: §27, §28
+            if self._min_quota_required(excludable):
+                logger.info(
+                    "Candidate %s must be elected in order to fulfill the "
+                    "quota-rules. Skipping exclusion.",
+                    excludable)
+                self._state.add_event(
+                    count.CountingEvent(
+                        count.CountingEventType.CANDIDATE_QUOTA_PROTECTED,
+                        {'candidate': str(excludable.id)}))
+                if excludable not in self._min_quota_protected:
+                    self._min_quota_protected.append(excludable)
+                    self._newly_protected_candidate = True
+                continue
+            filtered_excludables.append(excludable)
+        return tuple(filtered_excludables)
+
+    def _get_greatest_surplus(self):
+        """
+        Implementation of §16.4 - A
+
+        :return: Largest remaining surplus, None if no available surplus,
+                 tuple of candidates with equal surpluses in accordance
+                 with §16.4 - A
+        :rtype: decimal.Decimal, None or tuple
+        """
+        if not self.has_remaining_surplus:
+            return None
+        ordered_surplus = (
+            self._surplus_per_elected_candidate.most_common())
+        if len(ordered_surplus) == 1:
+            return tuple(ordered_surplus)
+        # >= 2
+        if ordered_surplus[0][1] > ordered_surplus[1][1]:
+            # 1.candidate vcount > 2.candidate vcount == no relevant duplicates
+            return tuple([ordered_surplus[0]])
+        # at least 1 duplicate ... return the tuples with the highest vcount
+        highest_vcount = ordered_surplus[0][1]
+        duplicates = []
+        for item in ordered_surplus:
+            if item[1] >= highest_vcount:
+                duplicates.append(item)
+                continue
+            break
+        return tuple(duplicates)
+
     def _get_new_owners(self, ballots):
         """
         Retuns a new ballot: owner dict for all ballots containing
@@ -1063,6 +1153,45 @@ class RegularRound:
                     members.difference(elected.union(excluded)))
         return tuple(excludable_candidates)
 
+    def _get_quota_filtered_excludables(self, results):
+        """
+        Returns a tuple of candidates that can be excluded together
+
+        :param results: A sequence of results [(candidate, score), ...]
+        :type results: collections.abc.Sequence
+
+        :return: A tuple of candidates
+        :rtype: tuple
+        """
+        score_groups = {}
+        distinct_scores = []
+        for count_result in results:
+            if count_result[1] not in score_groups:
+                score_groups[count_result[1]] = [count_result[0]]
+                distinct_scores.append(count_result[1])
+            else:
+                score_groups[count_result[1]].append(count_result[0])
+        remaining_excludables = []
+        distinct_scores.sort()
+        for score in distinct_scores:
+            logger.debug("Attempting to exclude selected candidate(s) "
+                         "with score: %s",
+                         score)
+            if len(score_groups[score]) == 1:
+                # only one candidate in this group
+                remaining_excludables.append(score_groups[score][0])
+                continue
+            if (
+                    self._can_be_excluded_together(score_groups[score],
+                                                   remaining_excludables)
+            ):
+                remaining_excludables.extend(score_groups[score])
+                continue
+            logger.info("Candidates (%s) can not be excluded together",
+                        str(score_groups[score]))
+            break
+        return tuple(remaining_excludables)
+
     def _get_remaining_candidates(self):
         """
         A tuple of remaining candidates
@@ -1072,8 +1201,7 @@ class RegularRound:
         """
         total = set(self._counter_obj.candidates)
         elected = set(self._elected)
-        excluded = set(self._excluded)
-        return tuple(total.difference(elected.union(excluded)))
+        return tuple(total.difference(elected.union(self._excluded)))
 
     def _get_total_surplus(self):
         """

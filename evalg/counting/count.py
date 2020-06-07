@@ -53,6 +53,9 @@ class CountingEventType(enum.Enum):
     # the candidate must be elected in order to fulfill the quota-rules
     CANDIDATE_QUOTA_PROTECTED = enum.auto()
 
+    # two or more candidates can not be excluded together because of min. quota
+    CANT_BE_EXCLUDED_TOGETHER = enum.auto()
+
     # candidate can not be elected because one of her groups has reached max.v.
     DENY_ELECT_QUOTA_MAX = enum.auto()
 
