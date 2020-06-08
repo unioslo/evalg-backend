@@ -1771,6 +1771,8 @@ class SubstituteRound(RegularRound):
         # because of surplus
         self._elected_earlier = []
         self._excluded = []
+        self._min_quota_protected = []
+        self._newly_protected_candidate = False
         self._first_substitute_count = False  # first substitute count
         # candidate: ballots-list - dict
         self._transferred_uncounted_ballots = {}
@@ -1870,6 +1872,7 @@ class SubstituteRound(RegularRound):
             self._excluded = list(self._parent.excluded)
             self._election_number = self._parent.election_number
             self._quotas_disabled = self._parent.quotas_disabled
+            self._min_quota_protected = list(self._parent.min_quota_protected)
             self._vcount_results_remaining = collections.Counter(
                 self._parent.vcount_results_remaining)
             self._surplus_per_elected_candidate = collections.Counter(
@@ -1965,6 +1968,9 @@ class SubstituteRound(RegularRound):
             # but §21 comes into play here as well.
             results_remaining = collections.Counter(
                 self._vcount_results_remaining)
+            # save quota protected candidates from exclusion
+            for protected_candidate in self._min_quota_protected:
+                results_remaining.pop(protected_candidate, None)
             while True:
                 # avoid infinite loop in case some miracle happens
                 if not results_remaining:
@@ -1973,6 +1979,14 @@ class SubstituteRound(RegularRound):
                 try:
                     excludable_candidates = self._get_excludable_candidates(
                         results_remaining.most_common())
+                    # in case we just protected a "bottom" candidate, we have
+                    # to re-run the exclusion procedures
+                    if (
+                            self._newly_protected_candidate and
+                            not excludable_candidates
+                    ):
+                        self._newly_protected_candidate = False
+                        continue
                     break
                 except NoMoreExcludableCandidates:
                     # pop the bottom candidate and try again
@@ -2151,6 +2165,68 @@ class SubstituteRound(RegularRound):
                     substitute_nr=self._substitute_nr,
                     id=self._round_id,
                     total_count=self._round_cnt))
+
+    def _can_be_excluded_together(self, candidates, excluded=None):
+        """
+        Returns True if candidates can be excluded together without breaking
+        the min. quota (§27)
+
+        :param candidates: Candidates to consider for exclusion
+        :type candidates: collections.abc.Sequence
+
+        :param excluded: Alternative list of excluded candidates
+                         than self._excluded, defaults to None
+        :type excluded: collections.abc.Sequence
+
+        :return: True if candidates can be excluded together, False otherwise
+        :rtype: bool
+        """
+        if self._quotas_disabled:
+            logger.debug("No quota-groups defined")
+            return True
+        if excluded is None:
+            excluded = self._excluded
+        candidates_set = set(candidates)
+        # remaining candidates to elect = remaining elections
+        remaining_elections = (self._counter_obj.election.num_substitutes -
+                               self._substitute_nr +
+                               1)
+        remaining_candidates = set(
+            self._get_remaining_candidates()).difference(self._elected)
+        for excludable in candidates:
+            quota_groups = self._get_candidate_quota_groups(excludable)
+            if not quota_groups:
+                logger.debug("%s is not member of any quota-group(s)",
+                             excludable)
+                continue
+            other_excludables = candidates_set.difference((excludable, ))
+            new_remaining_candidates = remaining_candidates.difference(
+                other_excludables.union(excluded))
+            for quota_group in quota_groups:
+                members = set(quota_group.members)
+                sum_remaining_members = len(members.intersection(
+                    new_remaining_candidates))
+                sum_elected_substitutes = len(members.intersection(
+                    self._elected_substitutes))
+                if not sum_remaining_members:
+                    # should not happen
+                    logger.debug(
+                        "Quota group %s has no more remaining members",
+                        quota_group)
+                    continue
+                diff = (quota_group.min_value_substitutes -
+                        sum_elected_substitutes)
+                if (
+                        sum_remaining_members == 1 and
+                        diff >= remaining_elections
+                ):
+                    self._state.add_event(
+                        count.CountingEvent(
+                            count.CountingEventType.CANT_BE_EXCLUDED_TOGETHER,
+                            {'candidates': [str(excludable.id) for
+                                            excludable in candidates]}))
+                    return False
+        return True
 
     def _check_election_quota_reached(self):
         """§19.2"""
@@ -2346,8 +2422,12 @@ class SubstituteRound(RegularRound):
         if self._first_substitute_count or not self._vcount_results_remaining:
             # first round or no counts in the previous round
             return tuple()
+        vcount_results = collections.Counter(self._vcount_results_remaining)
+        # save quota protected candidates from exclusion
+        for protected_candidate in self._min_quota_protected:
+            vcount_results.pop(protected_candidate, None)
         if results is None:
-            results = self._vcount_results_remaining.most_common()
+            results = vcount_results.most_common()
         if len(results) < 2:
             # paranoia: this should not happen because of §19
             # that is always checked before exclusion
@@ -2378,9 +2458,14 @@ class SubstituteRound(RegularRound):
         if largest_exclusion_group_size <= max_possible_to_exclude:
             # return the largest possible group
             # make it look ugly because of debugging
+            if largest_exclusion_group_size > 1:
+                remaining_excl = self._get_quota_filtered_excludables(
+                    results[-largest_exclusion_group_size:])
+            else:
+                remaining_excl = map(operator.itemgetter(0),
+                                     results[-largest_exclusion_group_size:])
             filtered_excludables = self._get_filtered_excludables(
-                map(operator.itemgetter(0),
-                    results[-largest_exclusion_group_size:]))
+                remaining_excl)
             if largest_exclusion_group_size and not filtered_excludables:
                 logger.info("No candidates left to exclude after filtering "
                             "(§21 or §27)")
@@ -2401,9 +2486,14 @@ class SubstituteRound(RegularRound):
                     sum_from(-max_possible_to_exclude) + total_surplus <
                     results[-(max_possible_to_exclude + 1)][1]
             ):
+                if max_possible_to_exclude > 1:
+                    remaining_excl = self._get_quota_filtered_excludables(
+                        results[-max_possible_to_exclude:])
+                else:
+                    remaining_excl = map(operator.itemgetter(0),
+                                         results[-max_possible_to_exclude:])
                 filtered_excludables = self._get_filtered_excludables(
-                    map(operator.itemgetter(0),
-                        results[-max_possible_to_exclude:]))
+                    remaining_excl)
                 if not filtered_excludables:
                     logger.info("No candidates left to exclude after "
                                 "filtering (§21 or §27)")
@@ -2458,8 +2548,7 @@ class SubstituteRound(RegularRound):
         """
         total = set(self._counter_obj.candidates)
         elected = set(self._elected_earlier)
-        excluded = set(self._excluded)
-        return tuple(total.difference(elected.union(excluded)))
+        return tuple(total.difference(elected.union(self._excluded)))
 
     def _initiate_new_count(self):
         """Performes a new count, elects, triggers quota-rules... etc."""
@@ -2603,16 +2692,15 @@ class SubstituteRound(RegularRound):
         if not quota_groups:
             logger.debug("%s is not member of any quota-group(s)", candidate)
             return False
+        # remaining candidates to elect = remaining elections
+        remaining_elections = (self._counter_obj.election.num_substitutes -
+                               self._substitute_nr +
+                               1)
+        # for §27 purposes we do not count previously elected quota members
+        remaining_candidates = set(
+            self._get_remaining_candidates()).difference(self._elected)
         for quota_group in quota_groups:
-            # remaining candidates to elect = remaining elections
-            remaining_elections = (self._counter_obj.election.num_substitutes -
-                                   self._substitute_nr +
-                                   1)
             members = set(quota_group.members)
-            # for §27 purposes we do not count previously elected quota members
-            remaining_candidates = set(
-                self._get_remaining_candidates()).difference(set(
-                    self._elected))
             sum_remaining_members = len(
                 members.intersection(remaining_candidates))
             sum_elected_substitutes = len(members.intersection(set(
