@@ -1958,6 +1958,8 @@ class SubstituteRound(RegularRound):
                 self._initiate_new_count()
                 new_round = SubstituteRound(self._counter_obj, self)
                 return new_round.count()
+            # anyone excluded by drawing during this round?
+            excluded_by_drawing = False
             # calculate surplus
             total_surplus = self._get_total_surplus()
             logger.info("Total surplus from %d elected candidate(s) "
@@ -2080,6 +2082,7 @@ class SubstituteRound(RegularRound):
                                          bottom_candidates[0]])}))
                         drawn_candidate = self._counter_obj.draw_candidate(
                             bottom_candidates)
+                        excluded_by_drawing = True
                         logger.info("Candidate %s was drawn for exclusion.",
                                     drawn_candidate)
                         self._state.add_event(
@@ -2095,7 +2098,7 @@ class SubstituteRound(RegularRound):
             self._check_total_remaining_candidates()
             self._check_remaining_candidates()
             self._transfer_ballots_from_excluded_candidates()
-            if not excludable_candidates:
+            if not excludable_candidates and not excluded_by_drawing:
                 self._initiate_new_count()
             new_round = SubstituteRound(self._counter_obj, self)
             return new_round.count()
