@@ -85,12 +85,12 @@ class Pollbook(ModelBase):
     @property
     def valid_voters_with_vote(self):
         """List of all valid voters with a vote."""
-        voters = [x for x in self.voters if x.is_valid_voter and
+        voters = [x for x in self.voters if x.is_valid_voter() and
                   len(x.votes) > 0]
         return voters
 
     @property
     def valid_voters_without_vote(self):
         """List of all valid voters without a vote."""
-        voters = [x for x in self.voters if x.is_valid_voter and not x.votes]
+        voters = [x for x in self.voters if x.is_valid_voter() and not x.votes]
         return voters
