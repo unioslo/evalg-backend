@@ -103,7 +103,7 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     @permission_controller
     def resolve_voter_dump(self, info):
-        return [[x.id_type, x.id_value, x.has_voted] for x in self.voters]
+        return [[x.id_type, x.id_value, x.has_voted, x.verified_status.value] for x in self.voters]
 
 
 @permission_controller.control_object_type
