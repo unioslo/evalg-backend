@@ -58,7 +58,7 @@ def send_status_mail(to_addrs):
                 'self_added_not_reviewed',
                 0)
             votes_total = votes_in_census + votes_rejected + votes_not_reviewed
-            election_voter_count = sum([len(x.get_valid_voters()) for x in
+            election_voter_count = sum([len(x.valid_voters) for x in
                                         election.pollbooks])
 
             if election_voter_count == 0:
@@ -82,14 +82,8 @@ def send_status_mail(to_addrs):
             }
 
             for pollbook in election.pollbooks:
-                pollbook_count = evalg.proc.vote.get_pollbook_vote_counts(
-                    evalg.db.session,
-                    pollbook)
-
-                valid_pollbook_voters = len(pollbook.get_valid_voters())
-                valid_pollbook_votes = (
-                    pollbook_count.get('admin_added_auto_verified', 0) +
-                    pollbook_count.get('self_added_verified', 0))
+                valid_pollbook_voters = len(pollbook.valid_voters)
+                valid_pollbook_votes = len(pollbook.valid_voters_with_vote)
 
                 if valid_pollbook_voters == 0:
                     pollbook_turnout = 0.0
