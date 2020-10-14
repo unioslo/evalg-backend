@@ -61,6 +61,7 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
         return convert_json(self.meta)
 
     announcement_blockers = graphene.List(graphene.String)
+    deleted = graphene.Boolean()
     publication_blockers = graphene.List(graphene.String)
     published = graphene.Boolean()
     announced = graphene.Boolean()
@@ -106,12 +107,12 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
         admin_roles = cls.get_current_user_admin_roles(info)
         admin_for = [role.group_id for role in admin_roles]
         return cls.get_query(info).filter(
-            or_(
-                evalg.models.election.ElectionGroup.announced,
-                evalg.models.election.ElectionGroup.published,
-                evalg.models.election.ElectionGroup.id.in_(admin_for)
-            )
-        )
+            evalg.models.election.ElectionGroup.deleted.is_(False)).filter(
+                or_(
+                    evalg.models.election.ElectionGroup.announced,
+                    evalg.models.election.ElectionGroup.published,
+                    evalg.models.election.ElectionGroup.id.in_(admin_for)
+                ))
 
 
 def resolve_election_groups(_, info):
@@ -125,6 +126,8 @@ def resolve_election_group_by_id(_, info, **kwargs):
     admin_for = [role.group_id for role in admin_roles]
     election_group = ElectionGroup.get_query(info).get(kwargs['id'])
     if not election_group:
+        return None
+    if election_group.deleted:
         return None
     if (
             kwargs['id'] in admin_for or

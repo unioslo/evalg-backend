@@ -149,6 +149,10 @@ class ElectionGroup(AbstractElection):
     def deleted(self):
         return self.deleted_at is not None
 
+    @deleted.expression
+    def deleted(cls):
+        return cls.deleted_at.isnot(None)
+
     @hybrid_property
     def status(self):
         statuses = set(list(map(lambda x: x.status, self.elections)))
