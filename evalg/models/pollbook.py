@@ -57,7 +57,7 @@ class Pollbook(ModelBase):
         back_populates='pollbooks',
         lazy='joined')
 
-    voters = db.relationship('Voter')
+    voters = db.relationship('Voter', cascade='all, delete-orphan')
     voter_objects = db.relationship('Voter', lazy='dynamic')
     census_file_imports = db.relationship('CensusFileImport')
 

@@ -54,6 +54,38 @@ def add_election_group_admin():
     print(f'{admin_feide_id} -> {election_group_id}', flush=True)
 
 
+@click.command('delete-election-group',
+               short_help=('Deletes the election group with its elections, '
+                           'pollbooks and all other relations'))
+@flask.cli.with_appcontext
+def delete_election_group():
+    """Prompts for election-group-ID and then for confirmation"""
+    from evalg.models.election import ElectionGroup
+    election_group_id = input('Enter election-group UUID: ')
+    try:
+        election_group = evalg.db.session.query(ElectionGroup).get(
+            election_group_id)
+        if election_group is None:
+            print(f'Could not find election-group with UUID: '
+                  f'{election_group_id}')
+            return
+        print(f'Election-group: {election_group.name} - '
+              f'Status: {election_group.status}')
+        confirmation = input('Really delete? (Type all uppercase "yes" to '
+                             'confirm and ENTER to abort!): ').strip()
+        if confirmation != 'YES':
+            return
+        # perhaps election_group.delete() can be enough
+        evalg.db.session.delete(election_group)
+        evalg.db.session.commit()
+    except NoResultFound:
+        print(f'No election group with UUID: {election_group_id} found')
+        return
+    except Exception as exc:
+        print(f'Unable to delete election-group: {exc}')
+        return
+
+
 @click.command('list-administrated-groups',
                short_help='Lists all election-groups where Feide-ID is admin')
 @flask.cli.with_appcontext
@@ -116,6 +148,7 @@ def rename_election_group():
 
 
 commands = (add_election_group_admin,
+            delete_election_group,
             list_administrated_groups,
             rename_election_group)
 

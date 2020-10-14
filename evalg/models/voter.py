@@ -102,7 +102,7 @@ class Voter(ModelBase):
         doc='voter is verified, and any vote should be counted',
         nullable=False)
 
-    votes = db.relationship('Vote')
+    votes = db.relationship('Vote', cascade='all, delete-orphan')
 
     reason = sqlalchemy.schema.Column(
         sqlalchemy.types.UnicodeText,

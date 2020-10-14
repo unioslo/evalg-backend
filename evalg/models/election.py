@@ -225,11 +225,12 @@ class Election(AbstractElection):
         back_populates='elections',
         lazy='joined')
 
-    election_results = db.relationship('ElectionResult')
+    election_results = db.relationship('ElectionResult',
+                                       cascade='all, delete-orphan')
 
-    lists = db.relationship('ElectionList')
+    lists = db.relationship('ElectionList', cascade='all, delete-orphan')
 
-    pollbooks = db.relationship('Pollbook')
+    pollbooks = db.relationship('Pollbook', cascade='all, delete-orphan')
 
     # Whether election is active.
     # We usually create more elections than needed to make templates consistent

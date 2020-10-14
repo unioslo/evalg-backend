@@ -36,7 +36,7 @@ class ElectionList(ModelBase):
         back_populates='lists',
         lazy='joined')
 
-    candidates = db.relationship('Candidate')
+    candidates = db.relationship('Candidate', cascade='all, delete-orphan')
 
     @property
     def election_status(self):
