@@ -107,7 +107,7 @@ class ElectionGroup(graphene_sqlalchemy.SQLAlchemyObjectType):
         admin_roles = cls.get_current_user_admin_roles(info)
         admin_for = [role.group_id for role in admin_roles]
         return cls.get_query(info).filter(
-            evalg.models.election.ElectionGroup.deleted.is_(False)).filter(
+            evalg.models.election.ElectionGroup.deleted_at.is_(None)).filter(
                 or_(
                     evalg.models.election.ElectionGroup.announced,
                     evalg.models.election.ElectionGroup.published,
