@@ -147,10 +147,42 @@ def rename_election_group():
         return
 
 
+@click.command('soft-delete-election-group',
+               short_help=('Sets deleted = True for a given election-group'))
+@flask.cli.with_appcontext
+def soft_delete_election_group():
+    """Prompts for election-group-ID and then for confirmation"""
+    from evalg.models.election import ElectionGroup
+    election_group_id = input('Enter election-group UUID: ')
+    try:
+        election_group = evalg.db.session.query(ElectionGroup).get(
+            election_group_id)
+        if election_group is None:
+            print(f'Could not find election-group with UUID: '
+                  f'{election_group_id}')
+            return
+        print(f'Election-group: {election_group.name} - '
+              f'Status: {election_group.status}')
+        confirmation = input(
+            'Really mark as deleted? (Type all uppercase "yes" '
+            'to confirm and ENTER to abort!): ').strip()
+        if confirmation != 'YES':
+            return
+        election_group.delete()
+        evalg.db.session.commit()
+    except NoResultFound:
+        print(f'No election group with UUID: {election_group_id} found')
+        return
+    except Exception as exc:
+        print(f'Unable to mark election-group as deleted: {exc}')
+        return
+
+
 commands = (add_election_group_admin,
             delete_election_group,
             list_administrated_groups,
-            rename_election_group)
+            rename_election_group,
+            soft_delete_election_group)
 
 
 def init_app(app):

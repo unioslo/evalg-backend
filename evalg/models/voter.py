@@ -56,7 +56,7 @@ VERIFIED_STATUS_NO_MAP = (
 
 
 class Voter(ModelBase):
-    """ Voter / census member model."""
+    """Voter / census member model."""
 
     __versioned__ = {}
     __tablename__ = 'pollbook_voters'
@@ -103,6 +103,7 @@ class Voter(ModelBase):
         nullable=False)
 
     votes = db.relationship('Vote', cascade='all, delete-orphan')
+    records = db.relationship('VoteRecord', cascade='all, delete-orphan')
 
     reason = sqlalchemy.schema.Column(
         sqlalchemy.types.UnicodeText,
