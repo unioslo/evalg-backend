@@ -58,8 +58,7 @@ import logging
 import reprlib
 
 import sqlalchemy.event
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.sql import exists, and_, schema, sqltypes
+from sqlalchemy.sql import schema, sqltypes
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.base import NEVER_SET, NO_VALUE
 
@@ -176,9 +175,7 @@ class Vote(ModelBase):
 
 
 class VoteRecord(ModelBase):
-    """
-    The VoteRecord represents *all* votes left by a given voter.
-    """
+    """The VoteRecord represents *all* votes left by a given voter."""
 
     __versioned__ = {}
     __tablename__ = 'vote_log'

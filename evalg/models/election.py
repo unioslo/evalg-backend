@@ -76,7 +76,7 @@ class ElectionGroup(AbstractElection):
     ou = db.relationship('OrganizationalUnit')
 
     # Organizational unit
-    elections = db.relationship('Election')
+    elections = db.relationship('Election', cascade='all, delete-orphan')
 
     election_group_counts = db.relationship('ElectionGroupCount')
 
