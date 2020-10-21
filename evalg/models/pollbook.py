@@ -59,7 +59,8 @@ class Pollbook(ModelBase):
 
     voters = db.relationship('Voter', cascade='all, delete-orphan')
     voter_objects = db.relationship('Voter', lazy='dynamic')
-    census_file_imports = db.relationship('CensusFileImport')
+    census_file_imports = db.relationship('CensusFileImport',
+                                          cascade='all, delete-orphan')
 
     @property
     def has_votes(self):
