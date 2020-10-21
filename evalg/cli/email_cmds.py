@@ -21,7 +21,8 @@ def send_status_mail(to_addrs):
     import evalg.models
 
     election_groups = evalg.db.session.query(
-        evalg.models.election.ElectionGroup).all()
+        evalg.models.election.ElectionGroup).filter(
+            evalg.models.election.ElectionGroup.deleted_at.is_(None)).all()
 
     active_elections = [x for x in election_groups if x.status == 'ongoing']
     upcoming_elections = [x for x in election_groups if x.status ==
