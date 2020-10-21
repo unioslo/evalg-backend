@@ -78,7 +78,11 @@ class ElectionGroup(AbstractElection):
     # Organizational unit
     elections = db.relationship('Election', cascade='all, delete-orphan')
 
-    election_group_counts = db.relationship('ElectionGroupCount')
+    election_group_counts = db.relationship('ElectionGroupCount',
+                                            cascade='all, delete-orphan')
+
+    election_group_key_backups = db.relationship('ElectionGroupKeyBackup',
+                                                 cascade='all, delete-orphan')
 
     # Public election key
     public_key = db.Column(db.Text)
