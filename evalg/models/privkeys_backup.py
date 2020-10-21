@@ -59,7 +59,7 @@ class ElectionGroupKeyBackup(ModelBase):
                                   nullable=False)
     election_group = db.relationship(
         ElectionGroup,
-        backref='election_group_key_backups')
+        back_populates='election_group_key_backups')
 
     master_key_id = db.Column(evalg.database.types.UuidType,
                               db.ForeignKey('master_key.id'),
