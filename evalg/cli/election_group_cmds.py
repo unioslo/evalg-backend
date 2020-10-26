@@ -54,6 +54,49 @@ def add_election_group_admin():
     print(f'{admin_feide_id} -> {election_group_id}', flush=True)
 
 
+@click.command('convert-to-lamu-election',
+               short_help='Converts regular election to LAMU election')
+@flask.cli.with_appcontext
+def convert_to_lamu_election():
+    """Prompts for election-group-ID and new name for the new LAMU group"""
+    from evalg.models.election import ElectionGroup
+    election_group_id = input('Enter election-group UUID: ')
+    try:
+        election_group = evalg.db.session.query(ElectionGroup).get(
+            election_group_id)
+        print(f'Election-group: {election_group.name}')
+        new_name_nb, new_name_nn, new_name_en = input(
+            'Enter new name (nb,nn,en) separated by ",": ').split(',')
+        election_group.name = {'nb': new_name_nb.strip(),
+                               'nn': new_name_nn.strip(),
+                               'en': new_name_en.strip()}
+        print(type(election_group.elections))
+        active_elections = [e for e in election_group.elections if e.active]
+        if len(active_elections) != 1:
+            print('Not only one active election, aborting')
+            db.session.rollback()
+            return
+        election = active_elections[0]
+        election.name = {'nb': 'Ansatte',
+                         'nn': 'Tilsette',
+                         'en': 'Staff'}
+        poolbooks = election.pollbooks
+        if len(pollbooks) != 1:
+            print('Not only one pollbook, aborting')
+            db.session.rollback()
+        pollbooks[0].name = {'nb': 'Ansatte',
+                             'nn': 'Tilsette',
+                             'en': 'Staff'}
+        evalg.db.session.commit()
+        print(f'Done: {election_group.name}')
+    except NoResultFound:
+        print(f'No election group with UUID: {election_group_id} found')
+        return
+    except Exception as exc:
+        print(f'Unable to rename election-group: {exc}')
+        return
+
+
 @click.command('delete-election-group',
                short_help=('Deletes the election group with its elections, '
                            'pollbooks and all other relations'))
@@ -179,6 +222,7 @@ def soft_delete_election_group():
 
 
 commands = (add_election_group_admin,
+            convert_to_lamu_election,
             delete_election_group,
             list_administrated_groups,
             rename_election_group,
