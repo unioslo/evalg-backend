@@ -70,20 +70,19 @@ def convert_to_lamu_election():
         election_group.name = {'nb': new_name_nb.strip(),
                                'nn': new_name_nn.strip(),
                                'en': new_name_en.strip()}
-        print(type(election_group.elections))
         active_elections = [e for e in election_group.elections if e.active]
         if len(active_elections) != 1:
             print('Not only one active election, aborting')
-            db.session.rollback()
+            evalg.db.session.rollback()
             return
         election = active_elections[0]
         election.name = {'nb': 'Ansatte',
                          'nn': 'Tilsette',
                          'en': 'Staff'}
-        poolbooks = election.pollbooks
+        pollbooks = election.pollbooks
         if len(pollbooks) != 1:
             print('Not only one pollbook, aborting')
-            db.session.rollback()
+            evalg.db.session.rollback()
         pollbooks[0].name = {'nb': 'Ansatte',
                              'nn': 'Tilsette',
                              'en': 'Staff'}
