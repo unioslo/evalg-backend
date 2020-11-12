@@ -1,53 +1,45 @@
 # JSON-Format:
 ```
 {
-    "personstemmer":
+    "voteType": "SPListElecVote",
+    "chosenListId": "listId",
+    "personalVotesOtherParty":
+    [
+        {
+            "person": "personId",
+            "list": "listId"
+        }
+    ]
+    "personalVotesSameParty":
     [
         "personId"
     ]
 }
 ```
 
-# Hvordan håndterer dette alt?
-
 ## Hovedtanke
 
-I dag er hvilken liste man velger egentlig helt uviktig for stemmeseddelen. 
-Det eneste man ser på i opptellingen er personstemmene som gis.
-Derfor holder det at stemmeseddelene inneholder hvilke personer man ønsker å stemme på.
-
-Når man velger en valgliste fylles stemmeseddelen ut slik som valglista ser ut.
-Ønsker man å gjøre endringer er det bare å endre på denne lista. 
+Man velger en liste, for så å gjøre kumuleringer på kandidater i den lista og legge til slengere fra andre lister.
 
 ## Kumulering
 
-Kumulering tilsvarer at en person dukker opp en ekstra gang i listen over personstemmer.
-Hvis du stemmer på 3 personer P1, P2 og P3, i denne rekkefølgen med kumulering på P1 og P2
-vil stemmeseddelen se slik ut:
-```
-{
-    "personstemmer":
-    [
-        "P1_id",
-        "P1_id",
-        "P2_id",
-        "P2_id",
-        "P3_id"
-    ]
-}
-```
+Kumulering finnes i to varianter, forhåndskumulering og vanlig kumulering gjort av den som stemmer.
+Forhåndskumulering vil være definert i lista man velger, og er ikke noe personen som stemmer kan endre på.
+Når man kumulerer vil det være tilsvarende å gi en personstemme og derfor være synlig i stemmeseddelen i
+attributtet "personalVotesSameParty"
 
 ## Stryking
 
-Stryking gjøres enkelt ved at man bare fjernes en person fra listen over personstemmer man vil gi.
+Stryking ser ikke ut til å være mulig, men har sendt mail for å være sikker. I så fall må nok et ekstra felt til.
 
 ## Føre opp kandidater fra andre lister
 
-Dette er også enkelt med denne modellen ettersom det ikke er noen tilknytting til liste i stemmeseddelen.
-Det er altså bare å legge til en person fra en annen valgliste i stemmeseddelen
+Personstemmer til kandidater fra andre lister, såkalte slengere, vil være tilgjengelig i "personalVotesOtherParty".
 
-# Tekniske begrensninger etter stemming er påbegynt
+## Tekniske begrensninger etter stemming er påbegynt
 
-Personer som er stemt på må finnes, hvis ikke vil det være problemer med å koble stemmene mot personer 
-i opptellinga. Ellers er det ingen tekniske hindringer mot å endre på f.eks lister
-etter at valget er startet. Men man kan argumentere for at det er noen demokratiske problemer ved dette.
+Ettersom en stemme er knyttet mot en liste vil det være problematisk å endre lista senere.
+Det gjør at en person sin stemme blir endret etter den er avlagt.
+Valgreglementet til Studentparlamentet sier at valglister skal være inne på forhånd.
+Dette bør ikke være et realistisk ønske. 
+Hvis man har gjort feil i valget og stemming er påbegynt bør valget startes på nytt.
