@@ -52,7 +52,7 @@ def import_census_file_task(self, pollbook_id, census_file_id):
         try:
             voter = voter_policy.create_voter(
                 id_type, id_value, self_added=False)
-            if voter:
+            if voter and voter not in voters:
                 results['added_nr'] += 1
                 logger.info('Entry #%d: Added voter to pollbook: %s',
                             i, pollbook_id)
