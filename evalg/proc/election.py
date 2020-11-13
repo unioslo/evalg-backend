@@ -101,7 +101,8 @@ DEFAULT_END_TIME = datetime.time(11, 0)
 DEFAULT_DURATION = datetime.timedelta(days=7)
 
 
-def make_group_from_template(session, template_name, ou, principals=()):
+def make_group_from_template(session, template_name, ou, principals=(),
+                             name_dict={}):
     """Create election with elections from template."""
     current_app.logger.info('Make election group %s for %s',
                             template_name,
@@ -109,7 +110,7 @@ def make_group_from_template(session, template_name, ou, principals=()):
     election_templates = current_app.config.get('ELECTION_GROUP_TEMPLATES')
 
     template = election_templates[template_name]
-    name = template['name']
+    name = name_dict if name_dict else template['name']
     group_type = template['settings']['group_type']
     elections = template['settings']['elections']
     metadata = template['settings']['rule_set']
