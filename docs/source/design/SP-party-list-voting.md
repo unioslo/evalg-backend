@@ -12,7 +12,11 @@
     ]
     "personalVotesSameParty":
     [
-        "personId"
+        {
+            "person": "personId",
+            "cumulated": bool,
+            "precumulated": bool
+        }
     ]
 }
 ```
@@ -25,12 +29,12 @@ Man velger en liste, for så å gjøre kumuleringer på kandidater i den lista o
 
 Kumulering finnes i to varianter, forhåndskumulering og vanlig kumulering gjort av den som stemmer.
 Forhåndskumulering vil være definert i lista man velger, og er ikke noe personen som stemmer kan endre på.
-Når man kumulerer vil det være tilsvarende å gi en personstemme og derfor være synlig i stemmeseddelen i
-attributtet "personalVotesSameParty"
+Kumulering gjøres av stemmer. Begge markeres i listen over de man gir stemmer til som tilhører samme liste man 
+valgte.
 
 ## Stryking
 
-Stryking ser ikke ut til å være mulig, men har sendt mail for å være sikker. I så fall må nok et ekstra felt til.
+Når en person strykes vil den fjernes fra listen "personalVotesSameParty".
 
 ## Føre opp kandidater fra andre lister
 
