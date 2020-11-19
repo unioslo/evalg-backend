@@ -65,6 +65,25 @@ election_rule_sets = {
             'other_list_candidate_votes': True
         }
     },
+    'uio_vb_lamu_stv': {
+        # Candidate is person, no co candidate
+        'candidate_type': 'single',
+        # which metadata to collect:
+        # number of seats, number of subs, and gender for affirmative action
+        'candidate_rules': {'seats': 1,
+                            'substitutes': 1,
+                            'candidate_gender': True},
+        'ballot_rules': {
+            # should rank the candidates
+            'voting': 'rank_candidates',
+            # no constraints in number of votes
+            'votes': 'all',
+        },
+        'counting_rules': {
+            'method': 'uio_stv',
+            'affirmative_action': ['gender_40'],
+        },
+    },
 }
 ###
 # GROUP NAMES
@@ -75,6 +94,11 @@ election_rule_sets = {
 # carry separate weights.
 ###
 grp_names = {
+    'staff': {
+        'nb': 'Ansatte',
+        'nn': 'Tilsette',
+        'en': 'Staff',
+    },
     'tech_adm_staff': {
         'nb': 'Teknisk/administrativt ansatte',
         'nn': 'Teknisk/administrativt tilsette',
@@ -203,6 +227,25 @@ election_group_types = {
             ],
         }]
     },
+    'safety_representative': {
+        'group_type': 'multiple_elections',
+        'rule_set': election_rule_sets['uio_vb_lamu_stv'],
+        'elections': [{
+            'sequence': 'all',
+            'name': grp_names['staff'],
+            'active': True,
+            'mandate_period': {
+                'start': '--01-01',
+                'duration': 'P4Y',
+            },
+            'voter_groups': [
+                {
+                    'name': grp_names['staff'],
+                    'weight': 100,
+                },
+            ],
+        }]
+    },
 }
 
 ###
@@ -269,6 +312,14 @@ ELECTION_GROUP_TEMPLATES = {
         },
         'settings': election_group_types['parliament'],
     },
+    'uio_vb_lamu': {
+        'name': {
+            'en': '',
+            'nb': '',
+            'nn': ''
+        },
+        'settings': election_group_types['safety_representative'],
+    },
 }
 
 
@@ -286,11 +337,37 @@ ELECTION_GROUP_TEMPLATES = {
 select_ou_node = {
     'name': {
         'nb': 'Valgkrets',
-        'nn': 'Valgkrets',
+        'nn': 'Valkrins',
         'en': 'Constituency'
     },
     'search_in_ou_tree': True
 }
+
+
+other_election_group_name = {
+    'name': {
+        'nb': {
+            'nb': 'Navn på valg, bokmål',
+            'nn': 'Navn på valg, nynorsk',
+            'en': 'Navn på valg, engelsk'
+        },
+        'nn': {
+            'nb': 'Namn på val, bokmål',
+            'nn': 'Namn på val, nynorsk',
+            'en': 'Namn på val, engelsk'
+        },
+        'en': {
+            'nb': 'Election name, bokmål',
+            'nn': 'Election name, nynorsk',
+            'en': 'Election name, english'
+        }
+    },
+    'settings': {
+        'name': '',
+    },
+    'set_election_name': True
+}
+
 
 board_leader_node = {
     'name': {
@@ -424,6 +501,24 @@ ROOT_NODE = {
                 'ou_tag': 'root',
                 'template_name': 'uio_student_parliament'
             }
+        },
+        {
+            'name': {
+                'nb': 'Verneombud/Lokalt arbeidsmiljøutvalg (LAMU)',
+                'nn': 'Verneombod/Lokalt arbeidsmiljøutval (LAMU)',
+                'en': 'Safety representative/Local working environment committee (LAMU)'
+            },
+            'settings': {
+                'ou_tag': 'root',
+                'template': True,
+                'template_manual_fields': [
+                    'name'
+                ],
+                'template_name': 'uio_vb_lamu'
+            },
+            'next_nodes': [
+                other_election_group_name,
+            ]
         },
     ]
 }
