@@ -1,0 +1,68 @@
+FROM harbor.uio.no/library/python:3.7-alpine
+
+MAINTAINER USITINT <bnt-int@usit.uio.no>
+LABEL no.uio.contact=bnt-int@usit.uio.no
+
+# Add docker entrypoint
+# COPY docker-entrypoint.sh /usr/local/bin/
+# RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
+#    ln -s /usr/local/bin/docker-entrypoint.sh /
+
+COPY evalg/migrations /usr/src/evalg/evalg/migrations
+
+COPY instance/evalg_config_skh.py /usr/local/var/evalg-instance/evalg_config.py
+COPY instance/evalg_config_skh_template.py /usr/local/var/evalg-instance/evalg_template_config.py
+COPY evalg/migrations /evalg/migrations
+
+
+# Install build-deps, then install/build deps
+RUN set -ex \
+    && apk update \
+    && apk add --no-cache --virtual .evalg-build-deps \
+            gcc \
+            make \
+            libc-dev \
+            musl-dev \
+            linux-headers \
+            libffi-dev \
+    && apk add --no-cache --virtual .evalg-deps \
+            bash \
+            git \
+            libc-dev \
+            logrotate \
+            postgresql-dev \
+            postgresql-libs
+
+
+# Add rsyslog and logrotate config
+# ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evalg.conf
+# ADD instance/evalg_logrotate.conf /etc/logrotate.d/evalg
+
+WORKDIR /workdir
+ADD ./ /workdir/
+
+
+#RUN mkdir /var/log/evalg \
+#    && chmod 644 /etc/logrotate.d/evalg \
+#    && rm /etc/logrotate.d/acpid \
+#    && rm /etc/logrotate.d/rsyslog
+
+# Disable kernel logs
+# RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf
+
+RUN pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
+ && pip3 config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
+ && pip3 install setuptools_scm 
+
+RUN pip3 install evalg --no-cache-dir \
+ && apk del .evalg-build-deps
+
+# Set instance path
+ENV EVALG_CONFIG="/usr/local/var/evalg-instance/evalg_config.py"
+ENV FLASK_APP="evalg.wsgi"
+
+EXPOSE 8000
+
+RUN apk del rsyslog
+
+CMD ["celery", "-A", "evalg.tasks.celery_worker.celery", "worker", "-l", "info", "--concurrency", "2"]
