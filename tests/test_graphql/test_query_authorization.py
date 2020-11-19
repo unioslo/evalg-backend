@@ -42,7 +42,6 @@ def validate_person_return_data(response, is_allowed):
         assert not response['identifiers']
 
 
-@pytest.mark.test
 @reg.add_scenario('personForVoter', 'allow')
 def test_auth_person_for_voter_in_my_election(
         client,
@@ -64,7 +63,6 @@ def test_auth_person_for_voter_in_my_election(
     validate_person_return_data(response, True)
 
 
-@pytest.mark.test
 @reg.add_scenario('personForVoter', 'deny')
 def test_auth_person_for_voter_not_in_my_election(
         client,
@@ -99,7 +97,6 @@ def validate_voter_return_data(response, is_allowed):
         assert not response['idValue']
 
 
-@pytest.mark.test
 @reg.add_scenario('votersForPerson', 'allow')
 def test_auth_voters_for_person_in_my_election(
         client,
@@ -123,7 +120,6 @@ def test_auth_voters_for_person_in_my_election(
     validate_voter_return_data(response[0], True)
 
 
-@pytest.mark.test
 @reg.add_scenario('votersForPerson', 'deny')
 def test_auth_voters_for_person_in_my_election(
         client,
@@ -147,7 +143,6 @@ def test_auth_voters_for_person_in_my_election(
     validate_voter_return_data(response[0], True)
 
 
-@pytest.mark.test
 @reg.add_scenario('viewer', 'allow')
 def test_auth_viewer_logged_in(
         client,
@@ -160,7 +155,6 @@ def test_auth_viewer_logged_in(
     validate_person_return_data(response['person'], True)
 
 
-@pytest.mark.test
 @reg.add_scenario('viewer', 'deny')
 def test_auth_viewer_not_logged_in(
         client,
@@ -184,7 +178,6 @@ def validate_election_group_info(response, is_owner):
         assert not response['publicKey']
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroup', 'allow')
 def test_auth_election_group_owned(
         db_session,
@@ -201,7 +194,6 @@ def test_auth_election_group_owned(
     validate_election_group_info(response, True)
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroup', 'deny')
 def test_auth_election_group_no_owned_not_published(
         db_session,
@@ -217,7 +209,6 @@ def test_auth_election_group_no_owned_not_published(
     assert not execution['data']['electionGroup']
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroup', 'deny')
 def test_auth_election_group_no_owned_published(
         db_session,
@@ -234,7 +225,6 @@ def test_auth_election_group_no_owned_published(
     validate_election_group_info(response, False)
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroupKeyMeta', 'allow')
 def test_auth_election_group_key_meta_owned(
         db_session,
@@ -254,7 +244,6 @@ def test_auth_election_group_key_meta_owned(
     validate_person_return_data(response['generatedBy'], True)
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroupKeyMeta', 'deny')
 def test_auth_election_group_key_meta_not_owned(
         db_session,
@@ -270,7 +259,6 @@ def test_auth_election_group_key_meta_not_owned(
     assert not execution['data']['electionGroupKeyMeta']
 
 
-@pytest.mark.test
 @reg.add_scenario('electionTemplate', 'allow')
 @reg.add_scenario('electionTemplate', 'deny')
 def test_auth_election_template(db_session, client):
@@ -285,7 +273,6 @@ def test_auth_election_template(db_session, client):
     assert response
 
 
-@pytest.mark.test
 @reg.add_scenario('masterKeys', 'allow')
 @reg.add_scenario('masterKeys', 'deny')
 def test_auth_master_keys(db_session, client, master_key):
@@ -302,7 +289,6 @@ def test_auth_master_keys(db_session, client, master_key):
     assert response[0]['publicKey'] == master_key.public_key
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroupCountingResults', 'allow')
 def test_auth_election_group_counting_results_owned(
         db_session,
@@ -326,7 +312,6 @@ def test_auth_election_group_counting_results_owned(
     assert response[0]['status']
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroupCountingResults', 'deny')
 def test_auth_election_group_counting_results_not_owned(
         db_session,
@@ -348,7 +333,6 @@ def test_auth_election_group_counting_results_not_owned(
     assert not response[0]['status']
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroupCount', 'allow')
 def test_auth_election_group_count_owned(
         db_session,
@@ -373,7 +357,6 @@ def test_auth_election_group_count_owned(
     assert response['status']
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroupCount', 'deny')
 def test_auth_election_group_count_not_owned(
         db_session,
@@ -396,7 +379,6 @@ def test_auth_election_group_count_not_owned(
     assert not response['status']
 
 
-@pytest.mark.test
 @reg.add_scenario('searchVoters', 'allow')
 def test_auth_search_voters_owned(
         db_session,
@@ -421,7 +403,6 @@ def test_auth_search_voters_owned(
     assert response[0]['idType'] == voter.id_type
 
 
-@pytest.mark.test
 @reg.add_scenario('searchVoters', 'deny')
 def test_auth_search_voters_not_owned(
         db_session,
@@ -442,7 +423,6 @@ def test_auth_search_voters_not_owned(
     assert execution['data']['searchVoters'] == [None]
 
 
-@pytest.mark.test
 @reg.add_scenario('electionResult', 'allow')
 def test_auth_election_result_owned(
         db_session,
@@ -471,7 +451,6 @@ def test_auth_election_result_owned(
     assert response['ballotsWithMetadata']
 
 
-@pytest.mark.test
 @reg.add_scenario('electionResult', 'deny')
 def test_auth_election_result_not_owned(
         db_session,
@@ -498,7 +477,6 @@ def test_auth_election_result_not_owned(
     assert not response['ballotsWithMetadata']
 
 
-@pytest.mark.test
 @reg.add_scenario('personsWithMultipleVerifiedVoters', 'allow')
 def test_auth_person_with_multiple_verified_voters_owned(
         db_session,
@@ -516,7 +494,6 @@ def test_auth_person_with_multiple_verified_voters_owned(
     assert len(response) == 0
 
 
-@pytest.mark.test
 @reg.add_scenario('personsWithMultipleVerifiedVoters', 'deny')
 def test_auth_person_with_multiple_verified_voters_deny(
         db_session,
@@ -533,7 +510,6 @@ def test_auth_person_with_multiple_verified_voters_deny(
     assert not response
 
 
-@pytest.mark.test
 @reg.add_scenario('electionGroups', 'allow')
 @reg.add_scenario('electionGroups', 'deny')
 def test_auth_election_groups_votable(
