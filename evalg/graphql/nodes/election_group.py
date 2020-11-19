@@ -313,6 +313,13 @@ list_election_group_counting_results_query = graphene.List(
 # Mutation
 #
 
+# TODO: lage noe typ dette, endre noe?
+class ElectionName(graphene.InputObjectType):
+    """Tuple of name and language"""
+
+    language = graphene.String(required=True)
+    name = graphene.String(required=True)
+
 
 class CreateNewElectionGroup(graphene.Mutation):
     """Create an ElectionGroup from a template."""
@@ -321,15 +328,17 @@ class CreateNewElectionGroup(graphene.Mutation):
         ou_id = graphene.UUID(required=True)
         template = graphene.Boolean()
         template_name = graphene.String(required=True)
+        name_list = graphene.List(ElectionName)
 
     ok = graphene.Boolean()
     election_group = graphene.Field(lambda: ElectionGroup)
 
-    def mutate(self, info, ou_id, template, template_name):
+    def mutate(self, info, ou_id, template, template_name, name_list):
         session = get_session(info)
         ou = session.query(evalg.models.ou.OrganizationalUnit).get(ou_id)
+        name_dict = {el.language: el.name for el in name_list}
         election_group = evalg.proc.election.make_group_from_template(
-            session, template_name, ou)
+            session, template_name, ou, name_dict=name_dict)
         current_user = get_current_user(info)
         current_user_principal = evalg.proc.authz.get_or_create_principal(
             session,
