@@ -3,17 +3,8 @@ FROM harbor.uio.no/library/python:3.7-alpine
 MAINTAINER USITINT <bnt-int@usit.uio.no>
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
-# Add docker entrypoint
-# COPY docker-entrypoint.sh /usr/local/bin/
-# RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
-#    ln -s /usr/local/bin/docker-entrypoint.sh /
-
 COPY evalg/migrations /usr/src/evalg/evalg/migrations
-
-# COPY instance/evalg_config_skh.py /usr/local/var/evalg-instance/evalg_config.py
-COPY instance/evalg_config_skh_template.py /usr/local/var/evalg-instance/evalg_template_config.py
 COPY evalg/migrations /evalg/migrations
-
 
 # Install build-deps, then install/build deps
 RUN set -ex \
@@ -40,12 +31,6 @@ RUN set -ex \
 
 WORKDIR /workdir
 ADD ./ /workdir/
-
-
-#RUN mkdir /var/log/evalg \
-#    && chmod 644 /etc/logrotate.d/evalg \
-#    && rm /etc/logrotate.d/acpid \
-#    && rm /etc/logrotate.d/rsyslog
 
 # Disable kernel logs
 # RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf
