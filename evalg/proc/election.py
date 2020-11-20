@@ -178,6 +178,12 @@ def make_group_from_template(session, template_name, ou, principals=(),
             name = group.name
         else:
             name = e['name']
+
+        if 'active' in e:
+            active = e['active']
+        else:
+            active = group_type == 'single_election'
+
         election = Election(name=name,
                             sequence=e['sequence'],
                             election_group=group,
@@ -186,7 +192,8 @@ def make_group_from_template(session, template_name, ou, principals=(),
                             mandate_period_start=mandate_period_start(e),
                             mandate_period_end=mandate_period_end(e),
                             meta=metadata,
-                            active=group_type == 'single_election', )
+                            active=active,
+                            )
         if candidate_type(e) == 'party_list':
             election.lists = []
         else:

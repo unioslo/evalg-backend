@@ -29,13 +29,18 @@ def test_allow_create_new_election_group(db_session,
     variables = {
         'ouId': str(ou.id),
         'template': True,
-        'templateName': 'uio_dean'
+        'templateName': 'uio_dean',
+        'name': []
     }
     mutation = """
-    mutation ($ouId: UUID!, $template: Boolean!, $templateName: String!) {
+    mutation ($ouId: UUID!,
+              $template: Boolean!,
+              $templateName: String!,
+              $name: [ElectionName]) {
         createNewElectionGroup(ouId: $ouId,
                                template: $template,
-                               templateName: $templateName) {
+                               templateName: $templateName,
+                               nameList: $name) {
             ok
         }
     }

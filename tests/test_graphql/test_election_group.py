@@ -8,19 +8,26 @@ from evalg.graphql import get_context
 
 
 @pytest.mark.parametrize(
-    'template_name, expected_election_nr, election_type',
-    [('uio_principal', 1, 'single_election'),
-     ('uio_dean', 1, 'single_election'),
-     ('uio_department_leader', 1, 'single_election'),
-     ('uio_university_board', 4, 'multiple_elections'),
-     ('uio_faculty_board', 4, 'multiple_elections'),
-     ('uio_department_board', 4, 'multiple_elections'),
-     ('uio_student_parliament', 1, 'single_election')]
+    'template_name, expected_election_nr, election_type, name',
+    [('uio_principal', 1, 'single_election', []),
+     ('uio_dean', 1, 'single_election', []),
+     ('uio_department_leader', 1, 'single_election', []),
+     ('uio_university_board', 4, 'multiple_elections', []),
+     ('uio_faculty_board', 4, 'multiple_elections', []),
+     ('uio_department_board', 4, 'multiple_elections', []),
+     ('uio_student_parliament', 1, 'single_election', []),
+     ('uio_vb_lamu', 1, 'multiple_elections', [
+         {'language': 'en', 'name': 'en'},
+         {'language': 'nb', 'name': 'nb'},
+         {'language': 'nn', 'name': 'nn'},
+     ]),
+     ]
 )
 def test_create_election_group_mutation(
         template_name,
         expected_election_nr,
         election_type,
+        name,
         client,
         make_ou,
         logged_in_user):
@@ -29,13 +36,18 @@ def test_create_election_group_mutation(
     variables = {
         'ouId': str(ou.id),
         'template': True,
-        'templateName': template_name
+        'templateName': template_name,
+        'name': name
     }
     mutation = """
-    mutation ($ouId: UUID!, $template: Boolean!, $templateName: String!) {
+    mutation ($ouId: UUID!,
+              $template: Boolean!,
+              $templateName: String!,
+              $name: [ElectionName]) {
         createNewElectionGroup(ouId: $ouId,
                                template: $template,
-                               templateName: $templateName) {
+                               templateName: $templateName,
+                               nameList: $name) {
             ok
             electionGroup {
                 id
@@ -44,6 +56,7 @@ def test_create_election_group_mutation(
                     id
                     active
                 }
+                name
                 ouId
                 publicKey
                 published
@@ -70,9 +83,7 @@ def test_create_election_group_mutation(
 
     assert len(election_group['elections']) == expected_election_nr
     for election in election_group['elections']:
-        if election_type == 'multiple_elections':
-            assert not election['active']
-        else:
+        if election_type == 'single_election':
             assert election['active']
 
     election_group_db = ElectionGroup.query.get(election_group['id'])
@@ -80,6 +91,10 @@ def test_create_election_group_mutation(
     assert not election_group_db.announced
     assert election_group_db.ou_id == ou.id
     assert not election_group_db.published
+
+    if name:
+        internal_names = {n['language']: n['name'] for n in name}
+        assert internal_names == election_group['name']
 
 
 @pytest.mark.parametrize(
