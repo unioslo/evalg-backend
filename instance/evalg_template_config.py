@@ -227,7 +227,7 @@ election_group_types = {
             ],
         }]
     },
-    'safety_representative': {
+    'vb_lamu': {
         'group_type': 'multiple_elections',
         'rule_set': election_rule_sets['uio_vb_lamu_stv'],
         'elections': [{
@@ -318,7 +318,7 @@ ELECTION_GROUP_TEMPLATES = {
             'nb': '',
             'nn': ''
         },
-        'settings': election_group_types['safety_representative'],
+        'settings': election_group_types['vb_lamu'],
     },
 }
 
