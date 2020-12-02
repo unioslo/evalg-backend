@@ -283,3 +283,69 @@ class DeleteCandidate(graphene.Mutation):
             return DeleteCandidate(ok=False)
         result = delete_candidate(session, candidate.id)
         return DeleteCandidate(ok=result)
+
+
+class AddListElecCandidate(graphene.Mutation):
+    """Add a list election candidate."""
+
+    class Arguments:
+        name = graphene.String(required=True)
+        gender = graphene.String(required=True)
+        list_id = graphene.UUID(required=True)
+        priority = graphene.Int(required=True)
+        pre_cumulated = graphene.Boolean(required=True)
+        information_url = graphene.String()
+
+    ok = graphene.Boolean()
+
+    def mutate(self, info, **kwargs):
+        session = get_session(info)
+        user = get_current_user(info)
+        if not can_manage_election_list(session, user, **kwargs):
+            return AddPrefElecCandidate(ok=False)
+
+        meta = {'gender': kwargs.get('gender')}
+        result = add_candidate(
+            session=session,
+            name=kwargs.get('name'),
+            meta=meta,
+            election_list_id=kwargs.get('list_id'),
+            information_url=kwargs.get('information_url'),
+            priority=kwargs.get('priority'),
+            pre_cumulated=kwargs.get('pre_cumulated')
+        )
+        return AddPrefElecCandidate(ok=result)
+
+
+class UpdateListElecCandidate(graphene.Mutation):
+    """Update a list election candidate."""
+
+    class Arguments:
+        id = graphene.UUID(required=True)
+        name = graphene.String(required=True)
+        gender = graphene.String(required=True)
+        list_id = graphene.UUID(required=True)
+        priority = graphene.Int(required=True)
+        pre_cumulated = graphene.Boolean(required=True)
+        information_url = graphene.String()
+
+    ok = graphene.Boolean()
+
+    def mutate(self, info, **kwargs):
+        session = get_session(info)
+        user = get_current_user(info)
+        if not can_manage_election_list(session, user, **kwargs):
+            return UpdatePrefElecCandidate(ok=False)
+
+        meta = {'gender': kwargs.get('gender')}
+        result = update_candidate(
+            session=session,
+            name=kwargs.get('name'),
+            meta=meta,
+            candidate_id=kwargs.get('id'),
+            election_list_id=kwargs.get('list_id'),
+            information_url=kwargs.get('information_url'),
+            priority=kwargs.get('priority'),
+            pre_cumulated=kwargs.get('pre_cumulated')
+        )
+        return UpdatePrefElecCandidate(ok=result)

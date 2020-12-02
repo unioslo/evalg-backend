@@ -313,7 +313,6 @@ list_election_group_counting_results_query = graphene.List(
 # Mutation
 #
 
-# TODO: lage noe typ dette, endre noe?
 class ElectionName(graphene.InputObjectType):
     """Tuple of name and language"""
 
