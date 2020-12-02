@@ -26,6 +26,14 @@ class ElectionMutations(graphene.ObjectType):
     update_voter_info = \
         nodes.election.UpdateVoterInfo.Field()
 
+    # ElectionList
+    add_election_list = \
+        nodes.candidates.AddElectionList.Field()
+    update_election_list = \
+        nodes.candidates.UpdateElectionList.Field()
+    delete_election_list = \
+        nodes.candidates.DeleteElectionList.Field()
+
     # Candidates
     update_pref_elec_candidate = \
         nodes.candidates.UpdatePrefElecCandidate.Field()
