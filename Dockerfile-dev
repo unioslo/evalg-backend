@@ -1,6 +1,7 @@
-FROM library/python:3.6-alpine
+FROM library/python:3-alpine
 
-MAINTAINER USITINT <uav-int@usit.uio.no>
+MAINTAINER USITINT <bnt-int@usit.uio.no>
+LABEL no.uio.contact=bnt-int@usit.uio.no
 
 WORKDIR /usr/src/evalg
 
