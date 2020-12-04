@@ -38,6 +38,7 @@ def add_election_list(session,
     logger.info('Added election_list %s to election %s',
                 election_list.id,
                 election_id)
+    return True
 
 
 def delete_election_list(session, list_id):
@@ -78,7 +79,7 @@ def update_election_list(session,
     :return: True if update is successful, false else.
     """
     election_list = session.query(
-        em.election_list.Election_List).get(election_list_id)
+        em.election_list.ElectionList).get(election_list_id)
     if not election_list:
         logging.info(
             'Can\'t update election list. No election list with ID %s found',
@@ -95,7 +96,7 @@ def update_election_list(session,
         election_id)
     if (
             election_id != election_list.id and
-            election.election.is_locked
+            .election.is_locked
     ):
         logger.info('Can\'t update election-id for the list. '
                     'The target election is locked.')
