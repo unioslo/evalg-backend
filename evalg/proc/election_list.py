@@ -86,17 +86,16 @@ def update_election_list(session,
             election_list_id)
         return False
     if (
-            election_list.election.is_locked and
-            election_id != election_list.id
+            election_id != election_list.election.id
+            and election_list.election.is_locked
     ):
         logger.info(
             'Can\'t update election-id for the list. The election is locked.')
         return False
-    election = session.query(em.election.Election).get(
-        election_id)
+    election = session.query(em.election.Election).get(election_id)
     if (
-            election_id != election_list.id and
-            .election.is_locked
+            election_id != election_list.election.id
+            and election.is_locked
     ):
         logger.info('Can\'t update election-id for the list. '
                     'The target election is locked.')
