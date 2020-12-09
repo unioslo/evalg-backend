@@ -117,6 +117,9 @@ class CountingEventType(enum.Enum):
     # candidates <= regular candidates to be elected
     QUOTA_NOT_ENOUGH_CANDIDATES = enum.auto()
 
+    # special case for OsloMet (TODO: implement in the protocol)
+    QUOTA_OSLOMET = enum.auto()
+
     # one of the gender groups is empty before starting a substitute count
     QUOTA_SUB_GROUP_EMPTY = enum.auto()
 
