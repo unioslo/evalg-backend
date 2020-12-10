@@ -389,6 +389,11 @@ class Election(AbstractElection):
         return self.lists[0].candidates
 
     @property
+    def oslomet_quotas(self):
+        """A special STV case for OsloMet set in the frontend"""
+        return bool(self.meta['counting_rules'].get('oslomet_quotas'))
+
+    @property
     def quotas(self):
         quotas = []
         if self.election_group.meta['candidate_rules'].get('candidate_gender'):
@@ -440,7 +445,6 @@ class Election(AbstractElection):
                             min_value_females,
                             min([min_value_substitutes,
                                  len(females) - min_value_females])))
-
         return quotas
 
     @property

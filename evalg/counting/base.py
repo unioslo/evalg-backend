@@ -9,7 +9,7 @@ class RoundState:
     """
     RoundState-class.
 
-    Represents the state of the round after a the count is performed.
+    Represents the state of the round after a count is performed.
     """
 
     def __init__(self, round_obj):

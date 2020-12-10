@@ -90,7 +90,7 @@ class RoundState(base.RoundState):
     """
     RoundState-class.
 
-    Represents the state of the round after a the count is performed.
+    Represents the state of the round after a count is performed.
 
     This class should inherit from abstract RoundState that is agnostic to
     counting method(s).
@@ -1284,7 +1284,7 @@ class RegularRound:
             candidate, candidate_count = vcount
             logger.info("Candidate %s: %s", candidate, candidate_count)
             if candidate_count >= self._election_number:
-                # don't elect immediately here, because of debugging jazz.
+                # don't elect immediately here.
                 self._potentially_elected.append(candidate)
         # count performed
         if not self._potentially_elected:
@@ -2784,6 +2784,14 @@ class SubstituteRound(RegularRound):
             return None
         # adjust the min_value_substitutes for quotas, in case not enough
         # candidates
+        # check:
+        # - self.counter_obj.election.oslomet_quotas
+        # - min_value_substitutes == 1
+        # - elected == 1
+        # ... and handle the special case:
+        # - adjust values if reasonable
+        # - extra log + extra event
+        # - test
         quota_unelected = {}
         empty_quota_group = False
         for quota_group in self._counter_obj.quotas:
