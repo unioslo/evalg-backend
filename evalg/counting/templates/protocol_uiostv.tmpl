@@ -114,7 +114,7 @@ Valgtallet er: {{ event.event_data['quotient'] }} (kvotient) + {{ event.event_da
 {{ person_name(event.event_data['candidate']) }} er allerede ekskludert.
 
 {% elif event.event_type == 'MAX_QUOTA_VALUE_REACHED' -%}
-Maksimumskvote for gruppa "{{ event.event_data['quota_group'] }}" ({%- if not event.event_data['members'] %}ingen medlemmer som ikke er valgt{% else %}{{ person_names_list(event.event_data['members']) }}{% endif -%}) er fylt.
+Maksimumskvote for gruppa "{{ nb(event.event_data['quota_group']) }}" ({%- if not event.event_data['members'] %}ingen medlemmer som ikke er valgt{% else %}{{ person_names_list(event.event_data['members']) }}{% endif -%}) er fylt.
 
 {% elif event.event_type == 'MAX_QUOTA_VALUE_EXCLUDED' -%}
 {{ person_name(event.event_data['candidate']) }} er medlem av en gruppe som har nådd sin maksimumskvote. Ekskluderer...
