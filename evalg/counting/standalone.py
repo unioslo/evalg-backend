@@ -316,6 +316,7 @@ class Election:
         self._election_type = None
         self._end = None
         self._start = None
+        self._oslomet_quotas = False
 
         with io.open(election_file, 'r', encoding='utf-8') as json_file:
             try:
@@ -346,6 +347,8 @@ class Election:
                 self._end = datetime.datetime.now()
             else:
                 self._end = datetime.datetime.fromisoformat(self._end)
+            self._oslomet_quotas = bool(self._json_dict['meta'].get(
+                'oslometQuotas'))
         if 'candidateNames' not in self._json_dict:
             raise Exception('Missing candidates')
         for candidate_id, name in self._json_dict['candidateNames'].items():
@@ -475,6 +478,11 @@ class Election:
         num_substitutes-property
         """
         return self._num_substitutes
+
+    @property
+    def oslomet_quotas(self):
+        """oslomet_quotas-property"""
+        return self._oslomet_quotas
 
     @property
     def quotas(self):

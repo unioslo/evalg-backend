@@ -92,6 +92,8 @@ class ElectionResult(graphene_sqlalchemy.SQLAlchemyObjectType):
         if self.election.type_str == 'uio_stv':
             meta['num_regular'] = self.election.num_choosable
             meta['num_substitutes'] = self.election.num_substitutes
+        if self.election.oslomet_quotas:
+            meta['oslomet_quotas'] = True
         ballots_with_metadata['meta'] = meta
 
         pollbook_names = {}
