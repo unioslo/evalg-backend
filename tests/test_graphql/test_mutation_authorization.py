@@ -307,6 +307,197 @@ def test_auth_update_voter_info(db_session,
     assert response['ok'] == is_allowed
 
 
+@reg.add_scenario('addElectionList', 'allow')
+@reg.add_scenario('addElectionList', 'deny')
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_add_election_list(db_session,
+                                is_owner,
+                                is_allowed,
+                                client,
+                                logged_in_user,
+                                multiple_election_group,
+                                owned_multiple_election_group):
+    """Allowed and denied scenario tests of addElectionList."""
+    election_group = (owned_multiple_election_group(db_session,
+                                                    logged_in_user.person)
+                      if is_owner else multiple_election_group(db_session))
+    election = election_group.elections[0]
+    variables = {
+        'name': {
+            'nb': 'test',
+            'nn': 'test',
+            'en': 'test'
+        },
+        'electionId': str(election.id)
+    }
+    mutation = """
+    mutation ($name: LangDict!, $electionId: UUID!) {
+        addElectionList(name: $name, electionId: $electionId) {
+            ok
+        }
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_test_context(db_session))
+    response = execution['data']['addElectionList']
+    assert response['ok'] == is_allowed
+
+
+@reg.add_scenario('updateElectionList', 'allow')
+@reg.add_scenario('updateElectionList', 'deny')
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_update_election_list(db_session,
+                                   is_owner,
+                                   is_allowed,
+                                   client,
+                                   logged_in_user,
+                                   multiple_election_group,
+                                   owned_multiple_election_group):
+    """Allowed and denied scenario tests of updateElectionList."""
+    election_group = (owned_multiple_election_group(db_session,
+                                                    logged_in_user.person)
+                      if is_owner else multiple_election_group(db_session))
+    election = election_group.elections[0]
+    election_list = election_group.elections[0].lists[0]
+    variables = {
+        'id': str(election_list.id),
+        'name': {
+            'nb': 'test',
+            'nn': 'test',
+            'en': 'test'
+        },
+        'electionId': str(election.id)
+    }
+    mutation = """
+    mutation ($id: UUID!, $name: LangDict!, $electionId: UUID!) {
+        updateElectionList(id: $id, name: $name, electionId: $electionId) {
+            ok
+        }
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_test_context(db_session))
+    response = execution['data']['updateElectionList']
+    assert response['ok'] == is_allowed
+
+
+@reg.add_scenario('deleteElectionList', 'allow')
+@reg.add_scenario('deleteElectionList', 'deny')
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_delete_election_list(db_session,
+                                   is_owner,
+                                   is_allowed,
+                                   client,
+                                   logged_in_user,
+                                   multiple_election_group,
+                                   owned_multiple_election_group):
+    """Allowed and denied scenario tests of updateElectionList."""
+    election_group = (owned_multiple_election_group(db_session,
+                                                    logged_in_user.person)
+                      if is_owner else multiple_election_group(db_session))
+    election_list = election_group.elections[0].lists[0]
+    variables = {
+        'id': str(election_list.id)
+    }
+    mutation = """
+    mutation ($id: UUID!) {
+        deleteElectionList(id: $id) {
+            ok
+        }
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_test_context(db_session))
+    response = execution['data']['deleteElectionList']
+    assert response['ok'] == is_allowed
+
+
+@reg.add_scenario('updateListElecCandidate', 'allow')
+@reg.add_scenario('updateListElecCandidate', 'deny')
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_update_list_elec_candidate(db_session,
+                                         is_owner,
+                                         is_allowed,
+                                         client,
+                                         logged_in_user,
+                                         multiple_election_group,
+                                         owned_multiple_election_group):
+    """Allowed and denied scenario tests of updatePrefElecCandidate."""
+    election_group = (owned_multiple_election_group(db_session,
+                                                    logged_in_user.person)
+                      if is_owner else multiple_election_group(db_session))
+    election_list = election_group.elections[0].lists[0]
+    candidate = election_group.elections[0].lists[0].candidates[0]
+    new_name = '{} Testesen'.format(candidate.name)
+    variables = {
+        'id': str(candidate.id),
+        'name': new_name,
+        'gender': candidate.meta['gender'],
+        'listId': str(election_list.id),
+        'priority': 0,
+        'preCumulated': True
+    }
+    mutation = """
+    mutation ($gender: String!, $listId: UUID!, $id: UUID!, $name: String!,
+              $priority: Int!, $preCumulated: Boolean!) {
+        updateListElecCandidate(gender: $gender,
+                                listId: $listId,
+                                id: $id,
+                                name: $name,
+                                preCumulated: $preCumulated,
+                                priority: $priority
+    ) {
+            ok
+        }
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_test_context(db_session))
+    response = execution['data']['updateListElecCandidate']
+    assert response['ok'] == is_allowed
+
+
+@reg.add_scenario('addListElecCandidate', 'allow')
+@reg.add_scenario('addListElecCandidate', 'deny')
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_add_list_elec_candidate(db_session,
+                                      is_owner,
+                                      is_allowed,
+                                      client,
+                                      logged_in_user,
+                                      multiple_election_group,
+                                      owned_multiple_election_group):
+    """Allowed and denied scenario tests of updatePrefElecCandidate."""
+    election_group = (owned_multiple_election_group(db_session,
+                                                    logged_in_user.person)
+                      if is_owner else multiple_election_group(db_session))
+    election_list = election_group.elections[0].lists[0]
+    variables = {
+        'name': "Test Testesen",
+        'gender': 'male',
+        'listId': str(election_list.id),
+        'priority': 1,
+        'preCumulated': False
+    }
+    mutation = """
+    mutation ($gender: String!, $listId: UUID!, $name: String!,
+              $priority: Int!, $preCumulated: Boolean!) {
+        addListElecCandidate(gender: $gender,
+                             listId: $listId,
+                             name: $name,
+                             preCumulated: $preCumulated,
+                             priority: $priority
+    ) {
+            ok
+        }
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_test_context(db_session))
+    response = execution['data']['addListElecCandidate']
+    assert response['ok'] == is_allowed
+
+
 @reg.add_scenario('updatePrefElecCandidate', 'allow')
 @reg.add_scenario('updatePrefElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])

@@ -6,7 +6,13 @@ import evalg.models.election_list
 logger = logging.getLogger(__name__)
 
 
-def add_candidate(session, name, meta, election_list_id, information_url):
+def add_candidate(session,
+                  name,
+                  meta,
+                  election_list_id,
+                  information_url,
+                  priority=0,
+                  pre_cumulated=False):
     """Add a candidate to a election list."""
     election_list = session.query(
         evalg.models.election_list.ElectionList).get(election_list_id)
@@ -20,7 +26,9 @@ def add_candidate(session, name, meta, election_list_id, information_url):
         name=name,
         meta=meta,
         list_id=election_list.id,
-        information_url=information_url)
+        information_url=information_url,
+        priority=priority,
+        pre_cumulated=pre_cumulated)
     session.add(candidate)
     session.commit()
     logger.info('Added candidate %s to election list %s',
@@ -54,6 +62,8 @@ def update_candidate(session,
                      meta,
                      candidate_id,
                      election_list_id,
+                     priority=0,
+                     pre_cumulated=False,
                      information_url=None):
     """
     Update a candidate.
@@ -92,6 +102,8 @@ def update_candidate(session,
     candidate.meta.update(meta)
     candidate.list_id = election_list_id
     candidate.information_url = information_url
+    candidate.priority = priority
+    candidate.pre_cumulated = pre_cumulated
     session.add(candidate)
     session.commit()
     logger.info('Candidate %s updated successfully', candidate_id)
