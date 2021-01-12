@@ -1,10 +1,18 @@
 """Provides general testing for different counting algorithms"""
 import decimal
 
+import pytest
+
 from evalg.counting.count import Counter
 
 
-def test_counting_algorithms_uiostv(make_full_election):
+@pytest.mark.parametrize("regular, substitutes, oslomet",
+                         [(2, 2, False),
+                          (1, 1, True)])
+def test_counting_algorithms_uiostv(make_full_election,
+                                    regular,
+                                    substitutes,
+                                    oslomet):
     """
     Tests for the UiO STV algorithm - case1
 
@@ -17,6 +25,9 @@ def test_counting_algorithms_uiostv(make_full_election):
         'test_counting_algorithms_uiostv election',
         nr_of_elections=1)
     election = election_data['elections'][0]
+    election.meta['counting_rules']['oslomet_quotas'] = oslomet
+    election.meta['candidate_rules']['seats'] = regular
+    election.meta['candidate_rules']['substitutes'] = substitutes
     # duplicate the process_for_count functionality
     for pollbook in election.pollbooks:
         pollbook.ballots_count = 0
@@ -47,10 +58,13 @@ def test_counting_algorithms_uiostv(make_full_election):
     # empty ballot election can only be decided by drawing
     assert result_dict['meta']['drawing']
     # 2 regular and 2 substitutes should have been elected
-    assert len(result_dict['regular_candidates']) == 2
-    assert len(result_dict['substitute_candidates']) == 2
-    # the only male candidate should have been elected as a regular candidate
-    assert str(males[0].id) in result_dict['regular_candidates']
+    assert len(result_dict['regular_candidates']) == regular
+    assert len(result_dict['substitute_candidates']) == substitutes
+    if oslomet:
+        assert (str(males[0].id) in result_dict['regular_candidates']
+                or str(males[0].id) in result_dict['substitute_candidates'])
+    else:
+        assert str(males[0].id) in result_dict['regular_candidates']
     # test the protocol #
     assert election_protocol_dict
     assert (''.join(result_dict['regular_candidates']) ==
@@ -66,8 +80,8 @@ def test_counting_algorithms_uiostv(make_full_election):
             assert event['event_type'] != 'CANDIDATE_ELECTED'
             if event['event_type'] == 'CANDIDATE_ELECTED_19_1':
                 elected_events_cnt += 1
-    # all four candidates (regular + substitutes) must be elected by §19.1
-    assert elected_events_cnt == 4
+    # all candidates (regular + substitutes) must be elected by §19.1
+    assert elected_events_cnt == regular + substitutes
     # test if protocol is JSON serializable #
     assert protocol.to_json()
     # cheap check to make sure that the protocol rendering is complete

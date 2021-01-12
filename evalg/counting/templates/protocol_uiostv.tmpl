@@ -177,6 +177,10 @@ I minst én av kvote-gruppene er det minimale antallet kandidater som må velges
 {% elif event.event_type == 'QUOTA_SUB_NOT_ENOUGH_CANDIDATES' -%}
 Antall kandidater som ikke er valgt er mindre eller lik antall vararepresentanter som skal velges. Fjerner kvote-regler for vararepresentanter.
 
+{% elif event.event_type == 'QUOTA_OSLOMET' -%}
+Fordi det kun velges én kandidat og én vara skal de ha forskjellig kjønn. Kandidaten er med i kvote-klassen "{{ nb(event.event_data['quota_group_name']) }}".
+Velger vara fra en annen kvote-klasse.
+
 {% elif event.event_type == 'QUOTA_SUB_UPDATED' -%}
 Kvotering (vara)
 ----------------
