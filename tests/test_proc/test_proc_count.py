@@ -10,12 +10,12 @@ def test_election_group_counter(
         pollbook_voter_bar,
         envelope_bar,
         vote_bar,
-        election_keys_foo,
+        election_keys,
         db_session
 ):
     election_group_counter = ElectionGroupCounter(db_session,
                                                   election_group_bar.id,
-                                                  election_keys_foo['private'],
+                                                  election_keys['private'],
                                                   test_mode=True)
 
     count = election_group_counter.log_start_count()

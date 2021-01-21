@@ -31,13 +31,19 @@ def test_query_election_group_count_by_id(client, election_group_count_foo,
     assert str(election_group_count_foo.group_id) == response['groupId']
 
 
-def test_mutation_start_election_group_count(
-        client, db_session, logged_in_user, pref_candidates_bar,
-        pollbook_voter_bar, election_group_bar, election_bar, pollbook_bar,
-        election_list_pref_bar, election_keys_foo):
+def test_mutation_start_election_group_count(client,
+                                             db_session,
+                                             logged_in_user,
+                                             pref_candidates_bar,
+                                             pollbook_voter_bar,
+                                             election_group_bar,
+                                             election_bar,
+                                             pollbook_bar,
+                                             election_list_pref_bar,
+                                             election_keys):
     variables = {
         'id': str(election_group_bar.id),
-        'electionKey': election_keys_foo['private']
+        'electionKey': election_keys['private']
     }
     mutation = """
         mutation startElectionGroupCount($id: UUID!, $electionKey: String!) {
@@ -61,7 +67,7 @@ def test_mutation_start_election_group_count_responses(
         db_session,
         logged_in_user,
         election_group_generator,
-        election_keys_foo):
+        election_keys):
     """Verify that the mutation gives correct responses when the count fails"""
     election_group = election_group_generator(
         owner=logged_in_user.person,
@@ -69,7 +75,7 @@ def test_mutation_start_election_group_count_responses(
     )
     variables = {
         'id': str(election_group.id),
-        'electionKey': election_keys_foo['private']
+        'electionKey': election_keys['private']
     }
     mutation = """
     mutation startElectionGroupCount($id: UUID!, $electionKey: String!) {
@@ -90,7 +96,7 @@ def test_mutation_start_election_group_count_responses(
 
     variables = {
         'id': str(election_group.id),
-        'electionKey': election_keys_foo['public']
+        'electionKey': election_keys['public']
     }
     execution = client.execute(mutation, variables=variables,
                                context=context)

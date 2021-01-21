@@ -187,7 +187,7 @@ def test_auth_set_election_group_key(db_session,
                                      is_allowed,
                                      client,
                                      logged_in_user,
-                                     election_keys_foo,
+                                     election_keys,
                                      election_group_generator):
     """Allowed and denied scenario tests of setElectionGroupKey."""
     if is_owner:
@@ -197,7 +197,7 @@ def test_auth_set_election_group_key(db_session,
         election_group = election_group_generator()
     variables = {
         'id': str(election_group.id),
-        'publicKey': election_keys_foo['public']
+        'publicKey': election_keys['public']
     }
     mutation = """
     mutation ($id: UUID!, $publicKey: String!) {
@@ -223,7 +223,7 @@ def test_auth_start_election_group_count(db_session,
                                          is_allowed,
                                          client,
                                          logged_in_user,
-                                         election_keys_foo,
+                                         election_keys,
                                          election_group_generator):
     """Allowed and denied scenario tests of startElectionGroupCount."""
     if is_owner:
@@ -237,7 +237,7 @@ def test_auth_start_election_group_count(db_session,
             countable=True)
     variables = {
         'id': str(election_group.id),
-        'electionKey': election_keys_foo['private']
+        'electionKey': election_keys['private']
     }
     mutation = """
         mutation startElectionGroupCount($id: UUID!, $electionKey: String!) {

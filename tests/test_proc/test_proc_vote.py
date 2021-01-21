@@ -10,7 +10,7 @@ def test_election_vote_policy(
         pollbook_voter_foo,
         make_election_vote_policy,
         election_pref_vote,
-        election_keys_foo):
+        election_keys):
     """
     Test the election vote policy flow.
 
@@ -34,7 +34,7 @@ def test_election_vote_policy(
     # Deserialize and decrypt the ballot
     serializer = Base64NaClSerializer(
         backend_public_key=config.BACKEND_PUBLIC_KEY,
-        election_private_key=election_keys_foo['private'],
+        election_private_key=election_keys['private'],
     )
 
     assert serializer

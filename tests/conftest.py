@@ -113,16 +113,12 @@ def celery_config():
     }
 
 
+@pytest.fixture
 def election_keys():
     return {
         'public': 'bO1pw6/Bslji0XvXveSuVbe4vp93K1DcpqYgIxRhYAs=',
         'private': 'FTVBa1ThHyKfE/LRYkRZ+79NyQw17PuD7gcD/ViJzYE=',
     }
-
-
-@pytest.fixture
-def election_keys_foo():
-    return election_keys()
 
 
 @pytest.fixture
@@ -155,7 +151,7 @@ def make_ou(db_session):
 
 
 @pytest.fixture
-def make_election_group(db_session, election_keys_foo, make_person_principal,
+def make_election_group(db_session, election_keys, make_person_principal,
                         logged_in_user, make_role):
     """Election group fixture."""
 
@@ -175,7 +171,7 @@ def make_election_group(db_session, election_keys_foo, make_person_principal,
             },
             'announced_at': announced_at,
             'published_at': published_at,
-            'public_key': election_keys_foo['public'],
+            'public_key': election_keys['public'],
             'meta': {
                 'candidate_rules': {'seats': 1,
                                     'substitutes': 2,
@@ -235,7 +231,7 @@ def election_group_foo(make_election_group):
 
 
 @pytest.fixture
-def election_group_new(db_session, election_keys_foo):
+def election_group_new(db_session, election_keys):
     data = {
         'name': {
             'nb': 'Test',
@@ -246,7 +242,7 @@ def election_group_new(db_session, election_keys_foo):
             'nb': 'Description foo',
             'en': 'Description foo',
         },
-        'public_key': election_keys_foo['public'],
+        'public_key': election_keys['public'],
     }
 
     election_group = evalg.database.query.get_or_create(
@@ -874,10 +870,10 @@ def pollbook_voter_bar(db_session, person_foo, pollbook_bar):
 
 
 @pytest.fixture
-def envelope_bar(db_session, config, pref_candidates_bar, election_keys_foo,
+def envelope_bar(db_session, config, pref_candidates_bar, election_keys,
                  pollbook_bar):
     ballot_serializer = Base64NaClSerializer(
-        election_public_key=election_keys_foo['public'],
+        election_public_key=election_keys['public'],
         backend_private_key=getattr(config, 'BACKEND_PRIVATE_KEY'),
         envelope_padded_len=getattr(config, 'ENVELOPE_PADDED_LEN'),
     )
@@ -972,8 +968,9 @@ def make_full_election(make_election_group,
 #
 # TODO: convert the rest of the tests to use the fixture bellow.
 
+
 @pytest.fixture
-def master_key(election_keys_foo):
+def master_key():
     def master_key(db_session):
         """Master key fixture."""
         private_key = nacl.public.PrivateKey.generate()
@@ -1246,7 +1243,7 @@ def new_elections_generator(db_session,
 
 
 @pytest.fixture
-def election_group_generator(db_session, logged_in_user):
+def election_group_generator(db_session, logged_in_user, election_keys):
 
     def election_group_generator(multiple=False,
                                  owner=None,
@@ -1340,7 +1337,7 @@ def election_group_generator(db_session, logged_in_user):
                 role_name='admin')
 
         if with_key:
-            election_group.public_key = election_keys()['public']
+            election_group.public_key = election_keys['public']
             db_session.add(election_group)
 
         if published:
@@ -1357,7 +1354,7 @@ def election_group_generator(db_session, logged_in_user):
             election_group_counter = evalg.proc.count.ElectionGroupCounter(
                 db_session,
                 election_group.id,
-                election_keys()['private']
+                election_keys['private']
             )
 
             count = election_group_counter.log_start_count()
