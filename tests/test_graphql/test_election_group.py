@@ -29,10 +29,10 @@ def test_create_election_group_mutation(
         election_type,
         name,
         client,
-        make_ou,
+        ou_generator,
         logged_in_user):
     """Test the CreateNewElectionGroup mutation."""
-    ou = make_ou(name='Test enhet')
+    ou = ou_generator()
     variables = {
         'ouId': str(ou.id),
         'template': True,
@@ -121,7 +121,7 @@ def test_set_election_group_key_mutation(
     """Test the SetElectionGroupKey mutation."""
 
     election_group = make_election_group_from_template(
-        'set_key_test', 'uio_dean', logged_in_user)
+        'uio_dean', logged_in_user)
 
     variables = {
         'id': str(election_group.id),

@@ -129,31 +129,10 @@ def make_election_vote_policy(db_session):
 
 
 @pytest.fixture
-def make_ou(db_session):
-
-    def make_ou(name):
-        data = {
-            'name': {
-                'nb': 'nb: {0}'.format(name),
-                'nn': 'nn: {0}'.format(name),
-                'en': 'en: {0}'.format(name),
-            },
-            'external_id': '{0}'.format(name)
-        }
-
-        ou = evalg.database.query.get_or_create(
-            db_session, OrganizationalUnit, **data)
-        db_session.add(ou)
-        db_session.flush()
-        return ou
-
-    return make_ou
-
-
-@pytest.fixture
 def make_election_group(db_session, election_keys, make_person_principal,
                         logged_in_user, make_role):
     """Election group fixture."""
+    # TODO, REMOVE
 
     def make_election_group(name,
                             announced_at=None,
@@ -195,12 +174,10 @@ def make_election_group(db_session, election_keys, make_person_principal,
 
 
 @pytest.fixture
-def make_election_group_from_template(db_session, make_ou):
-    def make_election_group_from_template(ou_name, template_name,
+def make_election_group_from_template(db_session, ou_generator):
+    def make_election_group_from_template(template_name,
                                           owner=None):
-
-        ou = make_ou(name=ou_name)
-
+        ou = ou_generator()
         election_group = evalg.proc.election.make_group_from_template(
             db_session, template_name, ou)
 
@@ -983,28 +960,28 @@ def master_key():
     return master_key
 
 
-def unit_name():
-    """Unit name used by fixtures."""
-    return 'Enhet for enhetlige enheter'
-
-
 @pytest.fixture
-def ou(db_session):
-    """OU test fixture."""
-    name = unit_name()
-    data = {
-        'name': {
-            'nb': 'nb: {0}'.format(name),
-            'nn': 'nn: {0}'.format(name),
-            'en': 'en: {0}'.format(name),
-        },
-        'external_id': '{0}'.format(name)
-    }
-    ou = evalg.database.query.get_or_create(
-        db_session, OrganizationalUnit, **data)
-    db_session.add(ou)
-    db_session.flush()
-    return ou
+def ou_generator(db_session):
+    """Generate test OUs."""
+    def ou_generator():
+        """OU test fixture."""
+        name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
+        name = 'unit-{}'.format(name_rand)
+
+        data = {
+            'name': {
+                'nb': 'nb: {0}'.format(name),
+                'nn': 'nn: {0}'.format(name),
+                'en': 'en: {0}'.format(name),
+            },
+            'external_id': '{0}'.format(name)
+        }
+        ou = evalg.database.query.get_or_create(
+            db_session, OrganizationalUnit, **data)
+        db_session.add(ou)
+        db_session.flush()
+        return ou
+    return ou_generator
 
 
 def new_person_generator(db, display_name=None, email=None, ids=None):
@@ -1172,7 +1149,7 @@ def new_elections_generator(db_session,
     candidate_type = election_group.meta['candidate_type']
     for i in range(nr_of_elections):
         name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
-        election_name = '{}-{}'.format(unit_name(), name_rand)
+        election_name = 'election-{}'.format(name_rand)
 
         data = {
             'name': {
@@ -1246,7 +1223,7 @@ def new_elections_generator(db_session,
 def election_group_generator(db_session, logged_in_user, election_keys):
 
     def election_group_generator(multiple=False,
-                                 owner=None,
+                                 owner=False,
                                  running=False,
                                  with_self_added_voters=False,
                                  countable=False,
@@ -1275,7 +1252,7 @@ def election_group_generator(db_session, logged_in_user, election_keys):
             with_key = True
 
         name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
-        name = '{}-{}'.format(unit_name(), name_rand)
+        name = 'election_group-{}'.format(name_rand)
 
         if multiple:
             election_group_type = 'multiple_elections'
@@ -1329,7 +1306,7 @@ def election_group_generator(db_session, logged_in_user, election_keys):
             current_user_principal = evalg.proc.authz.get_or_create_principal(
                 db_session,
                 principal_type='person',
-                person_id=owner.id)
+                person_id=logged_in_user.person.id)
             evalg.proc.authz.add_election_group_role(
                 session=db_session,
                 election_group=election_group,

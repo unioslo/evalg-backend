@@ -70,7 +70,7 @@ def test_mutation_start_election_group_count_responses(
         election_keys):
     """Verify that the mutation gives correct responses when the count fails"""
     election_group = election_group_generator(
-        owner=logged_in_user.person,
+        owner=True,
         running=True
     )
     variables = {
