@@ -97,14 +97,14 @@ def test_unpublish_election_group(
     assert not election_group_after_after.published
 
 
-def test_delete_candidate_mutation(owned_election_group,
-                                   db_session,
+def test_delete_candidate_mutation(db_session,
                                    client,
-                                   logged_in_user):
+                                   logged_in_user,
+                                   election_group_generator):
     """Test the delete candidate mutation."""
-    election_list = owned_election_group(
-        db_session,
-        logged_in_user.person).elections[0].lists[0]
+    election_group = election_group_generator(
+        owner=logged_in_user.person)
+    election_list = election_group.elections[0].lists[0]
     candidates_before = {str(x.id): x for x in
                          election_list.candidates}
     candidate = election_list.candidates[0]
@@ -130,14 +130,14 @@ def test_delete_candidate_mutation(owned_election_group,
     assert candidate.id not in [x.id for x in election_list_after.candidates]
 
 
-def test_add_pref_elec_candidate_mutation(owned_election_group,
-                                          db_session,
+def test_add_pref_elec_candidate_mutation(db_session,
                                           client,
-                                          logged_in_user):
+                                          logged_in_user,
+                                          election_group_generator):
     """Test the add pref elec candidate mutation."""
-    election_list = owned_election_group(
-        db_session,
-        logged_in_user.person).elections[0].lists[0]
+    election_group = election_group_generator(
+        owner=logged_in_user.person)
+    election_list = election_group.elections[0].lists[0]
     candidates_before = {str(x.id): x for x in
                          election_list.candidates}
     variables = {
@@ -230,14 +230,16 @@ def test_update_pref_elec_candidate_mutation(pref_candidates_foo,
     assert candidate_after.meta['gender'] == variables['gender']
 
 
-def test_add_team_pref_elec_candidate_mutation(owned_multiple_election_group,
-                                               db_session,
+def test_add_team_pref_elec_candidate_mutation(db_session,
                                                client,
-                                               logged_in_user):
+                                               logged_in_user,
+                                               election_group_generator):
     """Test the add pref elec candidate mutation."""
-    election_list = owned_multiple_election_group(
-        db_session,
-        logged_in_user.person).elections[0].lists[0]
+    election_group = election_group_generator(
+        owner=logged_in_user.person,
+        multiple=True
+    )
+    election_list = election_group.elections[0].lists[0]
     candidates_before = {str(x.id): x for x in
                          election_list.candidates}
     variables = {

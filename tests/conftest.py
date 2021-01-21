@@ -155,11 +155,6 @@ def make_ou(db_session):
 
 
 @pytest.fixture
-def ou_foo(make_ou):
-    return make_ou('foo')
-
-
-@pytest.fixture
 def make_election_group(db_session, election_keys_foo, make_person_principal,
                         logged_in_user, make_role):
     """Election group fixture."""
@@ -1078,7 +1073,7 @@ def simple_person():
     return simple_person
 
 
-def pollbook_generator(db_session, election, name=None, countable=False):
+def pollbook_generator(db_session, election, name=None, with_self_added_voters=False):
     """Generate pollbooks used by fixtures."""
     if not name:
         name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
@@ -1100,10 +1095,11 @@ def pollbook_generator(db_session, election, name=None, countable=False):
     db_session.flush()
 
     # Add a voter to the pollbook.
-    if countable:
-        self_added_status = [False, False]
-    else:
+    # TODO fix
+    if with_self_added_voters:
         self_added_status = [False, True]
+    else:
+        self_added_status = [False, False]
 
     for self_added in self_added_status:
         person = new_person_generator(db_session)
@@ -1117,11 +1113,12 @@ def pollbook_generator(db_session, election, name=None, countable=False):
 
 def new_elections_generator(db_session,
                             election_group,
-                            running_election=False,
-                            countable_election=False,
+                            running=False,
+                            countable=False,
+                            with_self_added_voters=False,
                             multiple=False):
     """Generate an election."""
-    if running_election and countable_election:
+    if running and countable:
         raise ValueError('Election can\'t be running and countable at the '
                          'same time')
     if multiple:
@@ -1157,12 +1154,12 @@ def new_elections_generator(db_session,
             },
         }
     # In future, running, in past
-    if running_election:
+    if running:
         start = (datetime.datetime.now(datetime.timezone.utc) -
                  datetime.timedelta(days=1))
         end = (datetime.datetime.now(datetime.timezone.utc) +
                datetime.timedelta(days=1))
-    elif countable_election:
+    elif countable:
         start = (datetime.datetime.now(datetime.timezone.utc) -
                  datetime.timedelta(days=4))
         end = (datetime.datetime.now(datetime.timezone.utc) -
@@ -1238,261 +1235,152 @@ def new_elections_generator(db_session,
 
         if multiple:
             election.pollbooks = [pollbook_generator(
-                db_session, election, countable=countable_election)]
+                db_session, election, with_self_added_voters=with_self_added_voters)]
         else:
             election.pollbooks = [pollbook_generator(
-                db_session, election, countable=countable_election)
+                db_session, election, with_self_added_voters=with_self_added_voters)
                                   for _ in range(4)]
         db_session.flush()
         elections.append(election)
     return elections
 
 
-def new_election_group_generator(db_session,
-                                 multiple=False,
+@pytest.fixture
+def election_group_generator(db_session, logged_in_user):
+
+    def election_group_generator(multiple=False,
                                  owner=None,
-                                 running_election=False,
-                                 countable_election=False,
+                                 running=False,
+                                 with_self_added_voters=False,
+                                 countable=False,
                                  published=False,
+                                 counted=False,
+                                 logged_in_user_in_census=False,
                                  with_key=True):
-    """Generate different types of elections."""
-    if running_election and countable_election:
-        raise ValueError('Election can\'t be running and countable at the '
-                         'same time')
+        """Generate different types of elections."""
+        if running and countable:
+            raise ValueError('Election can\'t be running and countable at the '
+                             'same time')
 
-    if countable_election or running_election:
-        published = True
-        with_key = True
+        if countable and with_self_added_voters:
+            raise ValueError('Election can\'t have self added voters and be '
+                             'countable at the same time')
 
-    name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
-    name = '{}-{}'.format(unit_name(), name_rand)
+        if counted and running:
+            raise ValueError('Election can\'t be counted and running '
+                             'at the same time')
 
-    if multiple:
-        election_group_type = 'multiple_elections'
-        meta = {
-            "candidate_type": "single",
-            "candidate_rules": {
-                "seats": 1, "substitutes": 2,
-                "candidate_gender": True
-            },
-            "ballot_rules": {"voting": "rank_candidates", "votes": "all"},
-            "counting_rules": {
-                "method": "uio_stv", "affirmative_action": ["gender_40"]
+        if counted:
+            countable = True
+
+        if countable or running:
+            published = True
+            with_key = True
+
+        name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
+        name = '{}-{}'.format(unit_name(), name_rand)
+
+        if multiple:
+            election_group_type = 'multiple_elections'
+            meta = {
+                "candidate_type": "single",
+                "candidate_rules": {
+                    "seats": 1, "substitutes": 2,
+                    "candidate_gender": True
+                },
+                "ballot_rules": {"voting": "rank_candidates", "votes": "all"},
+                "counting_rules": {
+                    "method": "uio_stv", "affirmative_action": ["gender_40"]
+                }
             }
+        else:
+            election_group_type = 'single_election'
+            meta = {
+                "candidate_type": "single_team",
+                "candidate_rules": {"seats": 1},
+                "ballot_rules": {
+                    "voting": "rank_candidates",
+                    "votes": "all"},
+                "counting_rules": {"method": None}
+            }
+        data = {
+            'name': {
+                'nb': name,
+                'en': name,
+            },
+            'type': election_group_type,
+            'description': {
+                'nb': 'Description foo',
+                'en': 'Description foo',
+            },
+            'meta': meta,
         }
-    else:
-        election_group_type = 'single_election'
-        meta = {
-            "candidate_type": "single_team",
-            "candidate_rules": {"seats": 1},
-            "ballot_rules": {
-                "voting": "rank_candidates",
-                "votes": "all"},
-            "counting_rules": {"method": None}
-        }
-    data = {
-        'name': {
-            'nb': name,
-            'en': name,
-        },
-        'type': election_group_type,
-        'description': {
-            'nb': 'Description foo',
-            'en': 'Description foo',
-        },
-        'meta': meta,
-    }
 
-    election_group = evalg.database.query.get_or_create(
-        db_session, ElectionGroup, **data)
-    db_session.add(election_group)
-    db_session.flush()
-
-    election_group.elections = new_elections_generator(
-        db_session,
-        election_group,
-        countable_election=countable_election,
-        running_election=running_election,
-        multiple=multiple)
-    if owner:
-        current_user_principal = evalg.proc.authz.get_or_create_principal(
-            db_session,
-            principal_type='person',
-            person_id=owner.id)
-        evalg.proc.authz.add_election_group_role(
-            session=db_session,
-            election_group=election_group,
-            principal=current_user_principal,
-            role_name='admin')
-
-    if with_key:
-        election_group.public_key = election_keys()['public']
+        election_group = evalg.database.query.get_or_create(
+            db_session, ElectionGroup, **data)
         db_session.add(election_group)
-
-    if published:
-        election_group.publish()
-
-    db_session.flush()
-    return election_group
-
-#
-# Elections group fixtures of different types and in different states
-#
-
-
-@pytest.fixture
-def simple_election_group():
-    """Simple election group."""
-    def simple_election_group(db_session):
-        return new_election_group_generator(db_session)
-    return simple_election_group
-
-
-@pytest.fixture
-def owned_election_group():
-    """Simple election group owned by the logged in user."""
-    def owned_election_group(db_session, owner):
-        return new_election_group_generator(db_session, owner=owner)
-    return owned_election_group
-
-
-@pytest.fixture
-def multiple_election_group():
-    """Multiple election group."""
-    def multiple_election_group(db_session):
-        election_group = new_election_group_generator(db_session,
-                                                      multiple=True)
         db_session.flush()
-        return election_group
-    return multiple_election_group
 
-
-@pytest.fixture
-def owned_multiple_election_group():
-    """Multiple election group owned by the logged in user."""
-    def owned_multiple_election_group(db_session, owner):
-        election_group = new_election_group_generator(
-            db_session, multiple=True, owner=owner)
-        db_session.flush()
-        return election_group
-    return owned_multiple_election_group
-
-
-@pytest.fixture
-def countable_election_group():
-    """Countable election group."""
-    def countable_election_group(db_session):
-        return new_election_group_generator(
-            db_session, countable_election=True, multiple=True)
-    return countable_election_group
-
-
-@pytest.fixture
-def owned_countable_election_group():
-    """Countable election group owned by the logged in user."""
-    def owned_countable_election_group(db_session, owner):
-        return new_election_group_generator(
-            db_session, owner=owner, countable_election=True, multiple=True)
-    return owned_countable_election_group
-
-
-@pytest.fixture
-def counted_election_group():
-    """Counted election group."""
-    def countable_election_group(db_session):
-        election_group = new_election_group_generator(
-            db_session, countable_election=True, multiple=True)
-
-        election_group_counter = evalg.proc.count.ElectionGroupCounter(
+        election_group.elections = new_elections_generator(
             db_session,
-            election_group.id,
-            election_keys()['private']
-        )
+            election_group,
+            countable=countable,
+            running=running,
+            with_self_added_voters=with_self_added_voters,
+            multiple=multiple)
+        if owner:
+            current_user_principal = evalg.proc.authz.get_or_create_principal(
+                db_session,
+                principal_type='person',
+                person_id=owner.id)
+            evalg.proc.authz.add_election_group_role(
+                session=db_session,
+                election_group=election_group,
+                principal=current_user_principal,
+                role_name='admin')
 
-        count = election_group_counter.log_start_count()
-        election_group_counter.deserialize_ballots()
-        election_group_counter.process_for_count()
+        if with_key:
+            election_group.public_key = election_keys()['public']
+            db_session.add(election_group)
 
-        election_group_counter.generate_results(count)
-        election_group_counter.log_finalize_count(count)
-        return election_group
-    return countable_election_group
+        if published:
+            election_group.publish()
 
+        if logged_in_user_in_census:
+            pollbook = election_group.elections[0].pollbooks[0]
+            voter_policy = ElectionVoterPolicy(db_session)
+            voter_policy.add_voter(pollbook, logged_in_user.person)
 
-@pytest.fixture
-def owned_counted_election_group():
-    """Counted election group owned by the logged in user."""
-    def owned_countable_election_group(db_session, owner):
-        election_group = new_election_group_generator(
-            db_session, owner=owner, countable_election=True, multiple=True)
-
-        election_group_counter = evalg.proc.count.ElectionGroupCounter(
-            db_session,
-            election_group.id,
-            election_keys()['private']
-        )
-
-        count = election_group_counter.log_start_count()
-        election_group_counter.deserialize_ballots()
-        election_group_counter.process_for_count()
-
-        election_group_counter.generate_results(count)
-        election_group_counter.log_finalize_count(count)
-        return election_group
-
-    return owned_countable_election_group
-
-
-@pytest.fixture
-def votable_election_group():
-    """Votable election group."""
-    def votable_election_group(db_session):
-        return new_election_group_generator(db_session, running_election=True)
-    return votable_election_group
-
-
-@pytest.fixture
-def owned_votable_election_group():
-    """Votable election group owned by the logged in user."""
-    def owned_votable_election_group(db_session, owner):
-        return new_election_group_generator(
-            db_session, owner=owner, running_election=True)
-    return owned_votable_election_group
-
-
-@pytest.fixture
-def logged_in_votable_election_group():
-    """Logged in users is a verified voter in the election."""
-    def logged_in_votable_election_group(db_session, user):
-        election_group = new_election_group_generator(
-            db_session, running_election=True)
-        pollbook = election_group.elections[0].pollbooks[0]
-        voter_policy = ElectionVoterPolicy(db_session)
-        voter_policy.add_voter(pollbook, user)
         db_session.flush()
+
+        if counted:
+            election_group_counter = evalg.proc.count.ElectionGroupCounter(
+                db_session,
+                election_group.id,
+                election_keys()['private']
+            )
+
+            count = election_group_counter.log_start_count()
+            election_group_counter.deserialize_ballots()
+            election_group_counter.process_for_count()
+
+            election_group_counter.generate_results(count)
+            election_group_counter.log_finalize_count(count)
+
         return election_group
-    return logged_in_votable_election_group
+
+    return election_group_generator
 
 
 @pytest.fixture
-def owned_logged_in_votable_election_group():
-    """Logged in users is a verified voter and owner of the election."""
-    def owned_logged_in_votable_election_group(db_session, user):
-        election_group = new_election_group_generator(
-            db_session, owner=user, running_election=True)
-        pollbook = election_group.elections[0].pollbooks[0]
-        voter_policy = ElectionVoterPolicy(db_session)
-        voter_policy.add_voter(pollbook, user)
-        db_session.flush()
-        return election_group
-    return owned_logged_in_votable_election_group
-
-
-@pytest.fixture
-def election_group_grant():
+def election_group_grant_generator(db_session, election_group_generator):
     """Election group grant for some other person."""
-    def election_group_grant(db_session):
-        election_group = new_election_group_generator(db_session)
+    def election_group_grant(owner=None):
+        if owner:
+            election_group = election_group_generator(
+                owner=owner)
+        else:
+            election_group = election_group_generator()
         person = new_person_generator(db_session)
         feide_id = next(i for i in person.identifiers if i.id_type ==
                         'feide_id')
@@ -1509,30 +1397,6 @@ def election_group_grant():
         db_session.flush()
         return grant
     return election_group_grant
-
-
-@pytest.fixture
-def owned_election_group_grant():
-    """Election group grant owned by user."""
-    def owned_election_group_grant(db_session, user):
-        election_group = new_election_group_generator(
-            db_session, owner=user)
-        person = new_person_generator(db_session)
-        feide_id = next(i for i in person.identifiers if i.id_type ==
-                        'feide_id')
-        principal = evalg.proc.authz.get_or_create_principal(
-            session=db_session,
-            principal_type='person_identifier',
-            id_type=feide_id.id_type,
-            id_value=feide_id.id_value)
-        grant = evalg.proc.authz.add_election_group_role(
-            session=db_session,
-            election_group=election_group,
-            principal=principal,
-            role_name='admin')
-        db_session.flush()
-        return grant
-    return owned_election_group_grant
 
 
 def ballot_data_generator(vote_type='prefElectVote',

@@ -47,10 +47,10 @@ def test_auth_person_for_voter_in_my_election(
         client,
         db_session,
         logged_in_user,
-        owned_election_group,
+        election_group_generator,
         simple_person):
     """Test that we are allowed to lookup the person in owned election."""
-    election_group = owned_election_group(db_session, logged_in_user.person)
+    election_group = election_group_generator(owner=logged_in_user.person)
     pollbook = election_group.elections[0].pollbooks[0]
     person = simple_person(db_session)
     voter_policy = ElectionVoterPolicy(db_session)
@@ -68,10 +68,10 @@ def test_auth_person_for_voter_not_in_my_election(
         client,
         db_session,
         logged_in_user,
-        simple_election_group,
+        election_group_generator,
         simple_person):
     """Test that we are not allowed to lookup the person for voter."""
-    election_group = simple_election_group(db_session)
+    election_group = election_group_generator()
     pollbook = election_group.elections[0].pollbooks[0]
     person = simple_person(db_session)
     voter_policy = ElectionVoterPolicy(db_session)
@@ -102,10 +102,10 @@ def test_auth_voters_for_person_in_my_election(
         client,
         db_session,
         logged_in_user,
-        owned_election_group,
+        election_group_generator,
         simple_person):
     """Test that we are allowed to lookup the person in owned election."""
-    election_group = owned_election_group(db_session, logged_in_user.person)
+    election_group = election_group_generator(owner=logged_in_user.person)
     pollbook = election_group.elections[0].pollbooks[0]
     person = simple_person(db_session)
     voter_policy = ElectionVoterPolicy(db_session)
@@ -125,10 +125,10 @@ def test_auth_voters_for_person_in_my_election(
         client,
         db_session,
         logged_in_user,
-        owned_election_group,
+        election_group_generator,
         simple_person):
     """Test that we are allowed to lookup the person in owned election."""
-    election_group = owned_election_group(db_session, logged_in_user.person)
+    election_group = election_group_generator(owner=logged_in_user.person)
     pollbook = election_group.elections[0].pollbooks[0]
     person = simple_person(db_session)
     voter_policy = ElectionVoterPolicy(db_session)
@@ -183,9 +183,9 @@ def test_auth_election_group_owned(
         db_session,
         client,
         logged_in_user,
-        owned_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = owned_election_group(db_session, logged_in_user.person)
+    election_group = election_group_generator(owner=logged_in_user.person)
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['electionGroup'],
                                variables=variables,
@@ -199,9 +199,9 @@ def test_auth_election_group_no_owned_not_published(
         db_session,
         client,
         logged_in_user,
-        simple_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = simple_election_group(db_session)
+    election_group = election_group_generator()
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['electionGroup'],
                                variables=variables,
@@ -214,9 +214,9 @@ def test_auth_election_group_no_owned_published(
         db_session,
         client,
         logged_in_user,
-        votable_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = votable_election_group(db_session)
+    election_group = election_group_generator(running=True)
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['electionGroup'],
                                variables=variables,
@@ -230,10 +230,11 @@ def test_auth_election_group_key_meta_owned(
         db_session,
         client,
         logged_in_user,
-        owned_votable_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = owned_votable_election_group(db_session,
-                                                  logged_in_user.person)
+    election_group = election_group_generator(
+        owner=logged_in_user.person,
+        running=True)
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['electionGroupKeyMeta'],
                                variables=variables,
@@ -249,9 +250,9 @@ def test_auth_election_group_key_meta_not_owned(
         db_session,
         client,
         logged_in_user,
-        votable_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = votable_election_group(db_session)
+    election_group = election_group_generator(running=True)
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['electionGroupKeyMeta'],
                                variables=variables,
@@ -294,11 +295,12 @@ def test_auth_election_group_counting_results_owned(
         db_session,
         client,
         logged_in_user,
-        owned_counted_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = owned_counted_election_group(
-        db_session,
-        logged_in_user.person)
+    election_group = election_group_generator(
+        owner=logged_in_user.person,
+        counted=True,
+        multiple=True)
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['electionGroupCountingResults'],
                                variables=variables,
@@ -317,9 +319,11 @@ def test_auth_election_group_counting_results_not_owned(
         db_session,
         client,
         logged_in_user,
-        counted_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = counted_election_group(db_session)
+    election_group = election_group_generator(
+        counted=True,
+        multiple=True)
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['electionGroupCountingResults'],
                                variables=variables,
@@ -338,11 +342,12 @@ def test_auth_election_group_count_owned(
         db_session,
         client,
         logged_in_user,
-        owned_counted_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = owned_counted_election_group(
-        db_session,
-        logged_in_user.person)
+    election_group = election_group_generator(
+        owner=logged_in_user.person,
+        multiple=True,
+        counted=True)
     count = get_latest_election_group_count(
         db_session, election_group.id)
     variables = {'id': str(count.id)}
@@ -362,9 +367,11 @@ def test_auth_election_group_count_not_owned(
         db_session,
         client,
         logged_in_user,
-        counted_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = counted_election_group(db_session)
+    election_group = election_group_generator(
+        multiple=True,
+        counted=True)
     count = get_latest_election_group_count(
         db_session, election_group.id)
     variables = {'id': str(count.id)}
@@ -384,10 +391,11 @@ def test_auth_search_voters_owned(
         db_session,
         client,
         logged_in_user,
-        owned_votable_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = owned_votable_election_group(db_session,
-                                                  logged_in_user.person)
+    election_group = election_group_generator(
+        owner=logged_in_user.person,
+        running=True)
     voter = election_group.elections[0].pollbooks[0].voters[0]
     variables = {
         'electionGroupId': str(election_group.id),
@@ -408,10 +416,9 @@ def test_auth_search_voters_not_owned(
         db_session,
         client,
         logged_in_user,
-        votable_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = votable_election_group(db_session)
-
+    election_group = election_group_generator(running=True)
     voter = election_group.elections[0].pollbooks[0].voters[0]
     variables = {
         'electionGroupId': str(election_group.id),
@@ -428,11 +435,12 @@ def test_auth_election_result_owned(
         db_session,
         client,
         logged_in_user,
-        owned_counted_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = owned_counted_election_group(
-        db_session,
-        logged_in_user.person)
+    election_group = election_group_generator(
+        owner=logged_in_user.person,
+        counted=True,
+        multiple=True)
     count = get_latest_election_group_count(
         db_session, election_group.id)
     election_result = count.election_results[0]
@@ -456,9 +464,11 @@ def test_auth_election_result_not_owned(
         db_session,
         client,
         logged_in_user,
-        counted_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = counted_election_group(db_session)
+    election_group = election_group_generator(
+        counted=True,
+        multiple=True)
     count = get_latest_election_group_count(
         db_session, election_group.id)
     election_result = count.election_results[0]
@@ -482,10 +492,10 @@ def test_auth_person_with_multiple_verified_voters_owned(
         db_session,
         client,
         logged_in_user,
-        owned_votable_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = owned_votable_election_group(db_session,
-                                                  logged_in_user.person)
+    election_group = election_group_generator(owner=logged_in_user.person,
+                                              running=True)
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['personsWithMultipleVerifiedVoters'],
                                variables=variables,
@@ -499,9 +509,9 @@ def test_auth_person_with_multiple_verified_voters_deny(
         db_session,
         client,
         logged_in_user,
-        votable_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
-    election_group = votable_election_group(db_session)
+    election_group = election_group_generator(running=True)
     variables = {'id': str(election_group.id)}
     execution = client.execute(queries['personsWithMultipleVerifiedVoters'],
                                variables=variables,
@@ -516,13 +526,13 @@ def test_auth_election_groups_votable(
         db_session,
         client,
         logged_in_user,
-        simple_election_group,
-        votable_election_group):
+        election_group_generator):
     """Test auth for the electionGroup query."""
     # Visible
-    votable_election_group(db_session)
+    election_group_generator(running=True)
+
     # Not visible
-    simple_election_group(db_session)
+    election_group_generator()
     execution = client.execute(queries['electionGroups'],
                                context=get_test_context(db_session))
     print(execution)

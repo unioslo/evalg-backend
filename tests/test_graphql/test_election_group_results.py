@@ -57,12 +57,18 @@ def test_mutation_start_election_group_count(
 
 
 def test_mutation_start_election_group_count_responses(
-        client, db_session, logged_in_user, election_group_baz,
-        election_group_foo, election_foo, election_list_pref_foo,
+        client,
+        db_session,
+        logged_in_user,
+        election_group_generator,
         election_keys_foo):
     """Verify that the mutation gives correct responses when the count fails"""
+    election_group = election_group_generator(
+        owner=logged_in_user.person,
+        running=True
+    )
     variables = {
-        'id': str(election_group_foo.id),
+        'id': str(election_group.id),
         'electionKey': election_keys_foo['private']
     }
     mutation = """
@@ -83,7 +89,7 @@ def test_mutation_start_election_group_count_responses(
             result['code'] == 'cannot-count-before-all-elections-are-closed')
 
     variables = {
-        'id': str(election_group_foo.id),
+        'id': str(election_group.id),
         'electionKey': election_keys_foo['public']
     }
     execution = client.execute(mutation, variables=variables,
