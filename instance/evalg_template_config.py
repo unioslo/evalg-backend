@@ -280,6 +280,14 @@ ELECTION_GROUP_TEMPLATES = {
         },
         'settings': election_group_types['board_leader'],
     },
+    'uio_center_director': {
+        'name': {
+            'nb': 'Senterleder ved {}',
+            'nn': 'Senterleiar ved {}',
+            'en': 'Centre Director at {}'
+        },
+        'settings': election_group_types['board_leader'],
+    },
     'uio_university_board': {
         'name': {
             'nb': 'Universitetsstyre ved {}',
@@ -301,6 +309,14 @@ ELECTION_GROUP_TEMPLATES = {
             'nb': 'Instituttstyre ved {}',
             'nn': 'Instituttstyre ved {}',
             'en': 'Department board at {}',
+        },
+        'settings': election_group_types['board'],
+    },
+    'uio_other_board': {
+        'name': {
+            'nb': 'Styre ved {}',
+            'nn': 'Styre ved {}',
+            'en': 'Board at {}',
         },
         'settings': election_group_types['board'],
     },
@@ -409,6 +425,19 @@ board_leader_node = {
                 'template_name': 'uio_department_leader'
             }
         },
+        {
+            'name': {
+                'nb': 'Senterleder/-ledelse',
+                'nn': 'Senterleiar/-leiing',
+                'en': 'Centre Director',
+            },
+            'settings': {
+                'ou_tag': 'unit',
+                'template_name': 'uio_center_director'
+            }
+        },
+
+
     ]
 }
 
@@ -450,6 +479,17 @@ board_node = {
             'settings': {
                 'ou_tag': 'unit',
                 'template_name': 'uio_department_board'
+            }
+        },
+        {
+            'name': {
+                'nb': 'Andre',
+                'nn': 'Andre',
+                'en': 'Other',
+            },
+            'settings': {
+                'ou_tag': 'unit',
+                'template_name': 'uio_other_board'
             }
         },
     ]
