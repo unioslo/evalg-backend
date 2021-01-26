@@ -236,10 +236,10 @@ def election_group_new(db_session, election_keys):
 
 
 @pytest.fixture
-def make_election(db_session, election_group_foo):
+def make_election(db_session, election_group_generator):
     def make_election(name, election_group=None, active=False):
         if not election_group:
-            election_group = election_group_foo
+            election_group = election_group_generator(owner=True)
         data = {
             'name': {
                 'nb': name,
@@ -386,93 +386,6 @@ def team_pref_candidates_foo(db_session, election_list_team_pref_foo):
 
 
 @pytest.fixture
-def make_pollbook(db_session, election_foo):
-    def make_pollbook(name, election=None):
-        if not election:
-            election = election_foo
-
-        data = {
-            "name": {
-                "nb": name,
-                "en": name,
-            },
-            "election_id": election.id,
-        }
-        pollbook = evalg.database.query.get_or_create(
-            db_session, Pollbook, **data)
-        db_session.add(pollbook)
-        db_session.flush()
-        return pollbook
-
-    return make_pollbook
-
-
-@pytest.fixture
-def pollbook_foo(db_session, make_pollbook):
-    return make_pollbook('Poolbook Foo')
-
-
-@pytest.fixture
-def person_generator(db_session):
-    # TODO remove
-    def person_generator(display_name=None,
-                         email=None,
-                         ids=None):
-
-        if not display_name:
-            rand_gn = ''.join(random.choices(string.ascii_lowercase, k=8))
-            rand_cn = ''.join(random.choices(string.ascii_lowercase, k=8))
-            display_name = '{} {}'.format(rand_gn, rand_cn)
-
-        if not email:
-            rand_local = ''.join(random.choices(string.ascii_lowercase, k=8))
-            email = '{}@example.org'.format(rand_local)
-
-        if not ids:
-            ids = {}
-
-        rand_slug = ''.join(random.choices(string.ascii_lowercase, k=10))
-        if 'uid' not in ids:
-            ids['uid'] = rand_slug
-
-        if 'feide_id' not in ids:
-            ids['feide_id'] = '{}@uio.no'.format(rand_slug)
-
-        if 'nin' not in ids:
-            ids['nin'] = ''.join([
-                str(random.randint(0, 9)) for _ in range(0, 10)])
-
-        data = {
-            'display_name': display_name,
-            'email': email,
-        }
-        identifiers = [
-            {
-                'id_type': 'feide_id',
-                'id_value': ids['feide_id'],
-            },
-            {
-                'id_type': 'uid',
-                'id_value': ids['uid'],
-            },
-            {
-                'id_type': 'nin',
-                'id_value': ids['nin'],
-            },
-        ]
-        person = evalg.database.query.get_or_create(db_session, Person, **data)
-        for identifier in identifiers:
-            id_obj = evalg.database.query.get_or_create(
-                db_session, PersonExternalId, **identifier)
-            person.identifiers.append(id_obj)
-        db_session.add(person)
-        db_session.flush()
-        return person
-
-    return person_generator
-
-
-@pytest.fixture
 def persons(db_session, person_generator):
     """
     Returns all persons in the test database.
@@ -490,14 +403,6 @@ def persons(db_session, person_generator):
         ]
 
     return {str(x.id): x for x in persons}
-
-
-@pytest.fixture
-def person_foo(db_session, persons):
-    for x in persons.values():
-        if x.email == 'foo@example.org':
-            return x
-    assert False
 
 
 @pytest.fixture
@@ -636,36 +541,6 @@ def global_roles(db_session, make_group, make_group_principal):
     }
 
 
-@pytest.fixture
-def make_pollbook_voter(db_session, person_foo, pollbook_foo):
-    def make_pollbook_voter(person=None, pollbook=None):
-
-        if not person:
-            person = person_foo
-        if not pollbook:
-            pollbook = pollbook_foo
-
-        data = {
-            'id_type': person.identifiers[0].id_type,
-            'id_value': person.identifiers[0].id_value,
-            'pollbook_id': pollbook.id,
-            'self_added': False,
-            'reviewed': False,
-            'verified': True,
-        }
-
-        pollbook_voter = evalg.database.query.get_or_create(
-            db_session, Voter, **data)
-        db_session.add(pollbook_voter)
-        db_session.flush()
-        return pollbook_voter
-
-    return make_pollbook_voter
-
-
-@pytest.fixture
-def pollbook_voter_foo(db_session, make_pollbook_voter):
-    return make_pollbook_voter()
 
 
 @pytest.fixture
@@ -680,25 +555,23 @@ def election_pref_vote(db_session, pref_candidates_foo):
 
 
 @pytest.fixture
-def make_pollbook_vote(db_session, election_pref_vote,
-                       pollbook_voter_foo,
-                       make_election_vote_policy):
-    def make_pollbook_vote(pollbook_voter=None, ballot_data=None):
-        if not ballot_data:
-            ballot_data = election_pref_vote
+def pref_election_ballot_generator(db_session):
+    def pref_election_ballot_generator(candidates):
+        ballot_data = {
+            'voteType': 'prefElecVote',
+            'isBlankVote': False,
+            'rankedCandidateIds': [str(x.id) for x in candidates]
+        }
+        return ballot_data
 
-        if not pollbook_voter:
-            pollbook_voter = pollbook_voter_foo
-        election_vote_policy = make_election_vote_policy(pollbook_voter.id)
-        return election_vote_policy.add_vote(ballot_data.copy())
-
-    return make_pollbook_vote
+    return pref_election_ballot_generator
 
 
 @pytest.fixture
-def election_group_count_foo(db_session, election_group_foo):
+def election_group_count_foo(db_session, election_group_generator):
+    election_group = election_group_generator(owner=True)
     data = {
-        'group_id': election_group_foo.id,
+        'group_id': election_group.id,
     }
 
     election_group_count = evalg.database.query.get_or_create(
@@ -736,214 +609,34 @@ def election_result_foo(db_session, election_foo, election_group_count_foo):
     return election_result
 
 
-@pytest.fixture
-def election_group_bar(db_session, make_election_group):
-    return make_election_group(
-        'Bar',
-        announced_at=(datetime.datetime.now(datetime.timezone.utc) -
-                      datetime.timedelta(days=3)),
-        published_at=(datetime.datetime.now(datetime.timezone.utc) -
-                      datetime.timedelta(days=3)),
-        admin=True
-    )
 
-
-@pytest.fixture
-def election_bar(db_session, election_group_bar):
-    data = {
-        'name': {
-            'nb': 'Valg av bar',
-            'en': 'Election of bar',
-        },
-        'description': {
-            'nb': 'Description bar',
-            'en': 'Description bar',
-        },
-        'meta': {
-            'candidate_rules': {'candidate_gender': True,
-                                'seats': 1},
-            'counting_rules': {'method': 'uio_stv',
-                               'affirmative_action': ['gender_40']},
-        },
-        'active': True,
-        'group_id': election_group_bar.id,
-        'start': (datetime.datetime.now(datetime.timezone.utc) -
-                  datetime.timedelta(days=2)),
-        'end': (datetime.datetime.now(datetime.timezone.utc) -
-                datetime.timedelta(days=1)),
-
-    }
-    election = evalg.database.query.get_or_create(
-        db_session, Election, **data)
-    db_session.add(election)
-    db_session.flush()
-    return election
-
-
-@pytest.fixture
-def election_list_pref_bar(db_session, election_bar):
-    election_list_data['election_id'] = election_bar.id
-
-    election_list = evalg.database.query.get_or_create(
-        db_session, ElectionList, **election_list_data)
-
-    db_session.add(election_list)
-    db_session.flush()
-    return election_list
-
-
-@pytest.fixture
-def pref_candidates_bar(db_session, election_list_pref_bar):
-    [x.update({'list_id': election_list_pref_bar.id}) for x in
-     pref_candidates_data]
-    candidates = [evalg.database.query.get_or_create(
-        db_session, Candidate, **x) for x in pref_candidates_data]
-    for candidate in candidates:
-        db_session.add(candidate)
-        election_list_pref_bar.candidates.append(candidate)
-    db_session.flush()
-    return candidates
-
-
-@pytest.fixture
-def pollbook_bar(db_session, election_bar):
-    data = {
-        "name": {
-            "nb": "Pollbook bar",
-            "en": "Pollbook bar",
-        },
-        "election_id": election_bar.id,
-    }
-
-    pollbook = evalg.database.query.get_or_create(db_session,
-                                                  Pollbook,
-                                                  **data)
-
-    db_session.add(pollbook)
-    db_session.flush()
-    return pollbook
-
-
-@pytest.fixture
-def pollbook_voter_bar(db_session, person_foo, pollbook_bar):
-    person = person_foo
-
-    data = {
-        'id_type': person.identifiers[0].id_type,
-        'id_value': person.identifiers[0].id_value,
-        'pollbook_id': pollbook_bar.id,
-        'self_added': False,
-        'reviewed': False,
-        'verified': True,
-    }
-
-    pollbook_voter = evalg.database.query.get_or_create(
-        db_session, Voter, **data)
-
-    db_session.add(pollbook_voter)
-    db_session.flush()
-
-    return pollbook_voter
-
-
-@pytest.fixture
-def envelope_bar(db_session, config, pref_candidates_bar, election_keys,
-                 pollbook_bar):
-    ballot_serializer = Base64NaClSerializer(
-        election_public_key=election_keys['public'],
-        backend_private_key=getattr(config, 'BACKEND_PRIVATE_KEY'),
-        envelope_padded_len=getattr(config, 'ENVELOPE_PADDED_LEN'),
-    )
-    ballot_data = {
-        'pollbookId': str(pollbook_bar.id),
-        'rankedCandidateIds': [str(candidate.id) for candidate in
-                               pref_candidates_bar]
-    }
-    data = {
-        'envelope_type': 'base64-nacl',
-        'ballot_data': ballot_serializer.serialize(ballot_data)
-    }
-    envelope = evalg.database.query.get_or_create(
-        db_session,
-        Envelope,
-        **data
-    )
-    db_session.add(envelope)
-    db_session.flush()
-    return envelope
-
-
-@pytest.fixture
-def vote_bar(db_session, pollbook_voter_bar, envelope_bar):
-    data = {
-        'voter_id': pollbook_voter_bar.id,
-        'ballot_id': envelope_bar.id,
-
-    }
-    vote = evalg.database.query.get_or_create(
-        db_session,
-        Vote,
-        **data
-    )
-    db_session.add(vote)
-    db_session.flush()
-    return vote
-
-
-@pytest.fixture
-def make_full_election(make_election_group,
-                       make_election,
-                       make_pollbook,
-                       person_generator,
-                       make_pollbook_voter,
-                       make_pollbook_vote):
-    """Create full elections."""
-    def make_full_election(name, nr_of_elections=2, pollboks_per_election=1,
-                           voters_per_pollbook=1):
-        election_group = make_election_group('Test election group', admin=True)
-
-        elections = [make_election('{0} election {1}'.format(name, x),
-                                   election_group=election_group) for x in
-                     range(1, nr_of_elections + 1)]
-
-        pollbooks = {}
-        pollbook_voters = {}
-        persons_all = []
-        voters_all = []
-
-        for election in elections:
-
-            pollbooks[str(election.id)] = ([make_pollbook(
-                '{0} pollbook {1}'.format(election.name, x),
-                election=election) for x in range(0, pollboks_per_election)])
-
-            for pollbook in pollbooks[str(election.id)]:
-                p = [person_generator('{0} test person {1}'.format(
-                    pollbook.name, x), '{0}-{1}@example.org'.format(
-                        name, x)) for x in range(0, voters_per_pollbook)]
-                persons_all.extend(p)
-                v = [make_pollbook_voter(x, pollbook) for x in p]
-
-                voters_all.extend(v)
-                pollbook_voters[str(pollbook.id)] = v
-
-        # TODO create more votes.
-        votes = [make_pollbook_vote(pollbook_voter=voters_all[0])]
-        return {
-            'election_group': election_group,
-            'elections': elections,
-            'pollbooks': pollbooks,
-            'pollbook_voters': pollbook_voters,
-            'persons_all': persons_all,
-            'voters_all': voters_all,
-            'votes': votes,
-        }
-    return make_full_election
 
 #
 # Fixed fixtures below
 #
 # TODO: convert the rest of the tests to use the fixture bellow.
+
+
+def ballot_data_generator(pollbook,
+                          vote_type='prefElectVote',
+                          blank_vote=False,
+                          candidates=None):
+    """Ballot data generator used to crate fixtures."""
+    if blank_vote and (candidates and len(candidates) != 0):
+        raise ValueError('Ballot can\'t be both blank and have '
+                         'candidates.')
+
+    if not candidates or len(candidates) == 0:
+        blank_vote = True
+        candidates = []
+
+    ballot_data = {
+        'voteType': vote_type,
+        'isBlankVote': blank_vote,
+        'pollbookId': str(pollbook.id),
+        'rankedCandidateIds': [str(x.id) for x in candidates]
+    }
+    return ballot_data
 
 
 @pytest.fixture
@@ -984,7 +677,10 @@ def ou_generator(db_session):
     return ou_generator
 
 
-def new_person_generator(db, display_name=None, email=None, ids=None):
+def _person_generator(db_session,
+                      display_name=None,
+                      email=None,
+                      ids=None):
     """Generate persons used by fixtures."""
     if not display_name:
         rand_gn = ''.join(random.choices(string.ascii_lowercase, k=8))
@@ -1033,28 +729,33 @@ def new_person_generator(db, display_name=None, email=None, ids=None):
         id_obj = PersonExternalId(**identifier)
         new_ids.append(id_obj)
     person.identifiers = new_ids
-    db.add(person)
-    db.flush()
+    db_session.add(person)
+    db_session.flush()
     return person
 
 
 @pytest.fixture
-def simple_person():
-    """Simple person fixture."""
-    def simple_person(db_session):
-        return new_person_generator(db_session)
+def person_generator(db_session):
+    def person_generator(display_name=None,
+                         email=None,
+                         ids=None):
+        return _person_generator(db_session,
+                                 display_name=display_name,
+                                 email=email,
+                                 ids=ids)
+    return person_generator
 
-    return simple_person
 
-
-def pollbook_generator(db_session, election, name=None, with_self_added_voters=False):
+def pollbook_generator(db_session,
+                       election,
+                       name=None,
+                       with_self_added_voters=False,
+                       nr_of_votes=10,
+                       voters_with_votes=False):
     """Generate pollbooks used by fixtures."""
     if not name:
         name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
         name = 'poolbook-{}'.format(name_rand)
-
-    if not election:
-        election = election_foo
 
     data = {
         "name": {
@@ -1068,28 +769,69 @@ def pollbook_generator(db_session, election, name=None, with_self_added_voters=F
     db_session.add(pollbook)
     db_session.flush()
 
-    # Add a voter to the pollbook.
-    # TODO fix
+    self_added_status = [False for _ in range(nr_of_votes)]
+
     if with_self_added_voters:
-        self_added_status = [False, True]
-    else:
-        self_added_status = [False, False]
+        self_added_status[0] = True
+        self_added_status[1] = True
 
     for self_added in self_added_status:
-        person = new_person_generator(db_session)
+        person = _person_generator(db_session)
         voter_policy = ElectionVoterPolicy(db_session)
         voter = voter_policy.add_voter(
             pollbook, person, self_added=self_added)
         db_session.add(voter)
+
     db_session.flush()
+
+    if voters_with_votes:
+        # Add votes to half of the voters
+        for voter in pollbook.voters[:len(pollbook.voters)//2]:
+            election_vote_policy = ElectionVotePolicy(db_session, voter.id)
+            election_vote_policy.add_vote(
+                ballot_data_generator(pollbook, candidates=election.candidates))
+
     return pollbook
+
+
+def candidate_generator(db_session,
+                        candidate_type,
+                        candidate_list,
+                        gender=None):
+
+    if candidate_type == 'single':
+        if gender:
+            meta = {'gender': gender}
+        else:
+            meta = {'gender': random.choice(['male', 'female'])}
+    elif candidate_type == 'single_team':
+        meta = {'co_candidates': [{'name': 'test'}]}
+    elif candidate_type == 'party_list':
+        raise NotImplementedError
+    else:
+        raise NotImplementedError
+
+    name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
+    candidate_name = 'candidate-{0}'.format(name_rand)
+    candidate = evalg.models.candidate.Candidate(
+        name=candidate_name,
+        meta=meta,
+        list_id=candidate_list.id,
+        information_url='www.uio.no')
+    db_session.add(candidate)
+    db_session.flush()
+    return candidate
 
 
 def new_elections_generator(db_session,
                             election_group,
+                            candidates_per_pollbook=1,
+                            nr_of_seats=1,
+                            nr_of_substitutes=2,
                             running=False,
                             countable=False,
                             with_self_added_voters=False,
+                            voters_with_votes=False,
                             multiple=False):
     """Generate an election."""
     if running and countable:
@@ -1100,16 +842,16 @@ def new_elections_generator(db_session,
         election_meta = {
             "candidate_type": "single",
             "candidate_rules": {
-                "seats": 1,
-                "substitutes": 2,
+                "seats": nr_of_seats,
+                "substitutes": nr_of_substitutes,
                 "candidate_gender": True},
             "ballot_rules": {
                 "voting": "rank_candidates",
                 "votes": "all",
             },
             "counting_rules": {
-                "method": "uio_stv",
-                "affirmative_action": ["gender_40"],
+                "method": election_group.meta['counting_rules']['method'],
+                "affirmative_action": election_group.meta['counting_rules']['affirmative_action'],
             },
         }
     else:
@@ -1124,7 +866,7 @@ def new_elections_generator(db_session,
                 "votes": "all",
             },
             "counting_rules": {
-                "method": None,
+                "method": election_group.meta['counting_rules']['method'],
             },
         }
     # In future, running, in past
@@ -1177,8 +919,6 @@ def new_elections_generator(db_session,
         db_session.add(election)
         db_session.flush()
 
-        candidate_name = 'candidate-{0}'.format(name_rand)
-
         election_list = ElectionList(election_id=str(election.id),
                                      name={'nb': election_name,
                                            'en': election_name})
@@ -1186,34 +926,22 @@ def new_elections_generator(db_session,
         election.lists = [election_list]
 
         candidate_list = election.lists[0]
-        if candidate_type == 'single':
-            meta = {'gender': 'female'}
-            candidate = evalg.models.candidate.Candidate(
-                name=candidate_name,
-                meta=meta,
-                list_id=candidate_list.id,
-                information_url='www.uio.no')
-            db_session.add(candidate)
-        elif candidate_type == 'single_team':
-            meta = {'co_candidates': [{'name': 'test'}]}
-            candidate = evalg.models.candidate.Candidate(
-                name=candidate_name,
-                meta=meta,
-                list_id=candidate_list.id,
-                information_url='www.uio.no')
-            db_session.add(candidate)
-        elif candidate_type == 'party_list':
-            raise NotImplementedError
-        else:
-            raise NotImplementedError
+        for _ in range(candidates_per_pollbook):
+            candidate_generator(db_session, candidate_type, candidate_list)
 
         if multiple:
             election.pollbooks = [pollbook_generator(
-                db_session, election, with_self_added_voters=with_self_added_voters)]
+                db_session,
+                election,
+                with_self_added_voters=with_self_added_voters,
+                voters_with_votes=voters_with_votes)]
         else:
             election.pollbooks = [pollbook_generator(
-                db_session, election, with_self_added_voters=with_self_added_voters)
-                                  for _ in range(4)]
+                db_session,
+                election,
+                with_self_added_voters=with_self_added_voters,
+                voters_with_votes=voters_with_votes)
+                    for _ in range(4)]
         db_session.flush()
         elections.append(election)
     return elections
@@ -1222,14 +950,21 @@ def new_elections_generator(db_session,
 @pytest.fixture
 def election_group_generator(db_session, logged_in_user, election_keys):
 
+    # TODO cleanup the inputs
     def election_group_generator(multiple=False,
                                  owner=False,
                                  running=False,
+                                 election_type='uio_stv',
+                                 affirmative_action='gender_40',
+                                 candidates_per_pollbook=1,
+                                 nr_of_seats=1,
+                                 nr_of_substitutes=2,
                                  with_self_added_voters=False,
                                  countable=False,
                                  published=False,
                                  counted=False,
                                  logged_in_user_in_census=False,
+                                 voters_with_votes=False,
                                  with_key=True):
         """Generate different types of elections."""
         if running and countable:
@@ -1256,26 +991,33 @@ def election_group_generator(db_session, logged_in_user, election_keys):
 
         if multiple:
             election_group_type = 'multiple_elections'
+            # TODO make more generic
             meta = {
                 "candidate_type": "single",
                 "candidate_rules": {
-                    "seats": 1, "substitutes": 2,
+                    "seats": nr_of_seats,
+                    "substitutes": nr_of_substitutes,
                     "candidate_gender": True
                 },
-                "ballot_rules": {"voting": "rank_candidates", "votes": "all"},
+                "ballot_rules": {
+                    "voting": "rank_candidates",
+                    "votes": "all"},
                 "counting_rules": {
-                    "method": "uio_stv", "affirmative_action": ["gender_40"]
+                    "method": election_type,
+                    "affirmative_action": [affirmative_action] if affirmative_action else []
                 }
             }
         else:
             election_group_type = 'single_election'
             meta = {
                 "candidate_type": "single_team",
-                "candidate_rules": {"seats": 1},
+                "candidate_rules": {"seats": nr_of_seats},
                 "ballot_rules": {
                     "voting": "rank_candidates",
                     "votes": "all"},
-                "counting_rules": {"method": None}
+                "counting_rules": {
+                    "method": election_type
+                }
             }
         data = {
             'name': {
@@ -1293,6 +1035,11 @@ def election_group_generator(db_session, logged_in_user, election_keys):
         election_group = evalg.database.query.get_or_create(
             db_session, ElectionGroup, **data)
         db_session.add(election_group)
+
+        if with_key:
+            election_group.public_key = election_keys['public']
+            db_session.add(election_group)
+
         db_session.flush()
 
         election_group.elections = new_elections_generator(
@@ -1300,7 +1047,11 @@ def election_group_generator(db_session, logged_in_user, election_keys):
             election_group,
             countable=countable,
             running=running,
+            nr_of_seats=nr_of_seats,
+            nr_of_substitutes=nr_of_substitutes,
+            candidates_per_pollbook=candidates_per_pollbook,
             with_self_added_voters=with_self_added_voters,
+            voters_with_votes=voters_with_votes,
             multiple=multiple)
         if owner:
             current_user_principal = evalg.proc.authz.get_or_create_principal(
@@ -1312,10 +1063,6 @@ def election_group_generator(db_session, logged_in_user, election_keys):
                 election_group=election_group,
                 principal=current_user_principal,
                 role_name='admin')
-
-        if with_key:
-            election_group.public_key = election_keys['public']
-            db_session.add(election_group)
 
         if published:
             election_group.publish()
@@ -1347,7 +1094,9 @@ def election_group_generator(db_session, logged_in_user, election_keys):
 
 
 @pytest.fixture
-def election_group_grant_generator(db_session, election_group_generator):
+def election_group_grant_generator(db_session,
+                                   person_generator,
+                                   election_group_generator):
     """Election group grant for some other person."""
     def election_group_grant(owner=None):
         if owner:
@@ -1355,7 +1104,7 @@ def election_group_grant_generator(db_session, election_group_generator):
                 owner=owner)
         else:
             election_group = election_group_generator()
-        person = new_person_generator(db_session)
+        person = person_generator()
         feide_id = next(i for i in person.identifiers if i.id_type ==
                         'feide_id')
         principal = evalg.proc.authz.get_or_create_principal(
@@ -1373,49 +1122,33 @@ def election_group_grant_generator(db_session, election_group_generator):
     return election_group_grant
 
 
-def ballot_data_generator(vote_type='prefElectVote',
-                          blank_vote=False,
-                          candidates=None):
-    """Ballot data generator used to crate fixtures."""
-    if blank_vote and (candidates and len(candidates) != 0):
-        raise ValueError('Ballot can\'t be both blank and have '
-                         'candidates.')
-
-    if not candidates or len(candidates) == 0:
-        blank_vote = True
-        candidates = []
-
-    ballot_data = {
-        'voteType': vote_type,
-        'isBlankVote': blank_vote,
-        'rankedCandidateIds': [str(x.id) for x in candidates]
-    }
-    return ballot_data
-
-
 @pytest.fixture
 def blank_pref_election_ballot_data():
     """Blank pref election ballot data."""
-    return ballot_data_generator(vote_type='prefElectVote', blank_vote=True)
+    def blank_pref_election_ballot_data(pollbook):
+        return ballot_data_generator(pollbook,
+                                     vote_type='prefElectVote',
+                                     blank_vote=True)
+    return blank_pref_election_ballot_data
 
 
 @pytest.fixture
 def vote_generator(db_session,
                    ballot_data_generator,
-                   pollbook_voter_foo,
                    make_election_vote_policy):
     """Vote generator."""
-    def vote_generator(election, voter, ballot_data=None):
+    def vote_generator(pollbook, voter, ballot_data=None):
 
         if not ballot_data:
             # TODO, create data from election type
-            candidates = election.candidates
+            candidates = pollbook.election.candidates
             blank_vote = False
             if not candidates or len(candidates) == 0:
                 candidates = []
                 blank_vote = True
 
-            ballot_data = ballot_data_generator(blank_vote=blank_vote,
+            ballot_data = ballot_data_generator(pollbook,
+                                                blank_vote=blank_vote,
                                                 candidates=candidates)
 
         election_vote_policy = ElectionVotePolicy(db_session, voter.id)

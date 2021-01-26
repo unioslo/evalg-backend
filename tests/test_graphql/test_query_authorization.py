@@ -33,11 +33,11 @@ def test_auth_person_for_voter_in_my_election(
         client,
         db_session,
         election_group_generator,
-        simple_person):
+        person_generator):
     """Test that we are allowed to lookup the person in owned election."""
     election_group = election_group_generator(owner=True)
     pollbook = election_group.elections[0].pollbooks[0]
-    person = simple_person(db_session)
+    person = person_generator()
     voter_policy = ElectionVoterPolicy(db_session)
     voter = voter_policy.add_voter(pollbook, person, self_added=False)
     variables = {'voterId': str(voter.id)}
@@ -53,11 +53,11 @@ def test_auth_person_for_voter_not_in_my_election(
         client,
         db_session,
         election_group_generator,
-        simple_person):
+        person_generator):
     """Test that we are not allowed to lookup the person for voter."""
     election_group = election_group_generator()
     pollbook = election_group.elections[0].pollbooks[0]
-    person = simple_person(db_session)
+    person = person_generator()
     voter_policy = ElectionVoterPolicy(db_session)
     voter = voter_policy.add_voter(pollbook, person, self_added=False)
     variables = {'voterId': str(voter.id)}
@@ -86,11 +86,11 @@ def test_auth_voters_for_person_in_my_election(
         client,
         db_session,
         election_group_generator,
-        simple_person):
+        person_generator):
     """Test that we are allowed to lookup the person in owned election."""
     election_group = election_group_generator(owner=True)
     pollbook = election_group.elections[0].pollbooks[0]
-    person = simple_person(db_session)
+    person = person_generator()
     voter_policy = ElectionVoterPolicy(db_session)
     voter = voter_policy.add_voter(pollbook, person, self_added=False)
 
@@ -108,11 +108,11 @@ def test_auth_voters_for_person_in_my_election(
         client,
         db_session,
         election_group_generator,
-        simple_person):
+        person_generator):
     """Test that we are allowed to lookup the person in owned election."""
     election_group = election_group_generator(owner=True)
     pollbook = election_group.elections[0].pollbooks[0]
-    person = simple_person(db_session)
+    person = person_generator()
     voter_policy = ElectionVoterPolicy(db_session)
     voter = voter_policy.add_voter(pollbook, person, self_added=False)
 

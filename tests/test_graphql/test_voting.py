@@ -2,17 +2,27 @@ import json
 
 from evalg.graphql import get_context
 from evalg.models.ballot import Envelope
+from evalg.proc.pollbook import get_voters_for_person
 
 
-def test_vote(db_session, client, pollbook_foo, make_pollbook_voter,
-              make_pollbook_vote, election_pref_vote, logged_in_user):
+def test_vote(db_session,
+              client,
+              pref_election_ballot_generator,
+              election_group_generator,
+              logged_in_user):
     """Test the vote mutation."""
-    voter = make_pollbook_voter(person=logged_in_user.person,
-                                pollbook=pollbook_foo)
-
+    election_group = election_group_generator(
+        running=True,
+        logged_in_user_in_census=True)
+    election = election_group.elections[0]
+    voter = get_voters_for_person(
+        db_session,
+        logged_in_user.person,
+        election=election)[0]
+    ballot = pref_election_ballot_generator(election.candidates[:2])
     variables = {
         'voterId': str(voter.id),
-        'ballot': json.dumps(election_pref_vote)
+        'ballot': json.dumps(ballot)
     }
     mutation = """
     mutation ($voterId: UUID!, $ballot: JSONString!) {
@@ -33,15 +43,31 @@ def test_vote(db_session, client, pollbook_foo, make_pollbook_voter,
 
     ballot_after = Envelope.query.get(response['ballotId'])
     assert ballot_after
-    # TODO decrypt and check ballot contents.
 
 
-def test_vote_denied(db_session, client, election_pref_vote,
-                     pollbook_voter_bar, logged_in_user):
-
+def test_vote_denied(db_session,
+                     client,
+                     election_group_generator,
+                     pref_election_ballot_generator,
+                     logged_in_user):
+    """
+    Check that a voter can only vote i the correct election.
+    """
+    election_group_foo = election_group_generator(running=True)
+    election_foo = election_group_foo.elections[0]
+    ballot = pref_election_ballot_generator(
+        election_foo.candidates[:2])
+    election_group_bar = election_group_generator(
+        running=True,
+        logged_in_user_in_census=True)
+    election_bar = election_group_bar.elections[0]
+    voter = get_voters_for_person(
+        db_session,
+        logged_in_user.person,
+        election=election_bar)[0]
     variables = {
-        'voterId': str(pollbook_voter_bar.id),
-        'ballot': json.dumps(election_pref_vote)
+        'voterId': str(voter.id),
+        'ballot': json.dumps(ballot)
     }
     mutation = """
         mutation ($voterId: UUID!, $ballot: JSONString!) {

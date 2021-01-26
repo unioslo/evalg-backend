@@ -703,7 +703,7 @@ def test_auth_add_voter_by_person_id(db_session,
                                      is_owner,
                                      is_allowed,
                                      client,
-                                     simple_person,
+                                     person_generator,
                                      election_group_generator):
     """Allowed and denied scenario tests of addVoterByPersonId."""
     if is_owner:
@@ -713,7 +713,7 @@ def test_auth_add_voter_by_person_id(db_session,
         election_group = election_group_generator()
     pollbook = election_group.elections[0].pollbooks[0]
     variables = {
-        'personId': str(simple_person(db_session).id),
+        'personId': str(person_generator().id),
         'pollbookId': str(pollbook.id)
     }
     mutation = """
@@ -736,7 +736,7 @@ def test_auth_add_voter_by_identifier(db_session,
                                       is_owner,
                                       is_allowed,
                                       client,
-                                      simple_person,
+                                      person_generator,
                                       election_group_generator):
     """Allowed and denied scenario tests of addVoterByIdentifier."""
     if is_owner:
@@ -745,7 +745,7 @@ def test_auth_add_voter_by_identifier(db_session,
     else:
         election_group = election_group_generator()
     pollbook = election_group.elections[0].pollbooks[0]
-    feide_id = next(i for i in simple_person(db_session).identifiers if
+    feide_id = next(i for i in person_generator().identifiers if
                     i.id_type == 'feide_id')
     variables = {
         'idType': feide_id.id_type,
@@ -1132,7 +1132,7 @@ def test_auth_vote(db_session,
         voter = pollbook.voters[0]
     variables = {
         'voterId': str(voter.id),
-        'ballot': json.dumps(blank_pref_election_ballot_data)
+        'ballot': json.dumps(blank_pref_election_ballot_data(pollbook))
     }
     mutation = """
     mutation ($voterId: UUID!, $ballot: JSONString!) {

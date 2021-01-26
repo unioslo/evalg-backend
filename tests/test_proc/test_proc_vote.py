@@ -7,7 +7,7 @@ from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 
 def test_election_vote_policy(
         config,
-        pollbook_voter_foo,
+        election_group_generator,
         make_election_vote_policy,
         election_pref_vote,
         election_keys):
@@ -16,7 +16,16 @@ def test_election_vote_policy(
 
     Tests a normal vote, with at valid vote, valid election etc.
     """
-    election_vote_policy = make_election_vote_policy(pollbook_voter_foo.id)
+    election_group = election_group_generator(owner=True,
+                                              countable=True,
+                                              multiple=True,
+                                              election_type='uio_stv',
+                                              candidates_per_pollbook=7,
+                                              nr_of_seats=2,
+                                              voters_with_votes=False)
+    voter = election_group.elections[0].pollbooks[0].voters[0]
+
+    election_vote_policy = make_election_vote_policy(voter.id)
     assert election_vote_policy.envelope_type == config.ENVELOPE_TYPE
     vote = election_vote_policy.add_vote(election_pref_vote.copy())
     assert vote

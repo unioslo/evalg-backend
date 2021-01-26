@@ -9,7 +9,8 @@ from evalg.graphql import get_context
 
 # Election Group Count
 
-def test_query_election_group_count_by_id(client, election_group_count_foo,
+def test_query_election_group_count_by_id(client,
+                                          election_group_count_foo,
                                           logged_in_user):
     variables = {'id': str(election_group_count_foo.id)}
     query = """
@@ -34,15 +35,14 @@ def test_query_election_group_count_by_id(client, election_group_count_foo,
 def test_mutation_start_election_group_count(client,
                                              db_session,
                                              logged_in_user,
-                                             pref_candidates_bar,
-                                             pollbook_voter_bar,
-                                             election_group_bar,
-                                             election_bar,
-                                             pollbook_bar,
-                                             election_list_pref_bar,
+                                             election_group_generator,
                                              election_keys):
+    election_group = election_group_generator(owner=True,
+                                              multiple=True,
+                                              countable=True,
+                                              with_key=True)
     variables = {
-        'id': str(election_group_bar.id),
+        'id': str(election_group.id),
         'electionKey': election_keys['private']
     }
     mutation = """
@@ -58,7 +58,6 @@ def test_mutation_start_election_group_count(client,
     execution = client.execute(mutation, variables=variables, context=context)
     assert not execution.get('errors')
     result = execution['data']['startElectionGroupCount']
-    print(result)
     assert result['success']
 
 
