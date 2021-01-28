@@ -37,7 +37,8 @@ def set_counting_method(session, election):
     # TODO: Make more dynamic... Remove hardcoded counting methods.
     if election.election_group.template_name in ('uio_principal',
                                                  'uio_dean',
-                                                 'uio_department_leader'):
+                                                 'uio_department_leader',
+                                                 'uio_center_director'):
         if len(election.candidates) == 2:
             election.meta['counting_rules']['method'] = 'uio_mv'
             logger.info('Setting counting method for election %s to %s',
