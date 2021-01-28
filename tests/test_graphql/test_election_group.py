@@ -116,13 +116,9 @@ def test_set_election_group_key_mutation(
         key,
         success,
         client,
-        make_election_group_from_template,
-        logged_in_user):
+        election_group_generator):
     """Test the SetElectionGroupKey mutation."""
-
-    election_group = make_election_group_from_template(
-        'uio_dean', logged_in_user)
-
+    election_group = election_group_generator(owner=True)
     variables = {
         'id': str(election_group.id),
         'publicKey': key

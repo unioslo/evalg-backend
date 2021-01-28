@@ -122,267 +122,10 @@ def election_keys():
 
 
 @pytest.fixture
-def make_election_vote_policy(db_session):
+def election_vote_policy_generator(db_session):
     def election_vote_policy(voter_id):
         return ElectionVotePolicy(db_session, voter_id)
     return election_vote_policy
-
-
-@pytest.fixture
-def make_election_group(db_session, election_keys, make_person_principal,
-                        logged_in_user, make_role):
-    """Election group fixture."""
-    # TODO, REMOVE
-
-    def make_election_group(name,
-                            announced_at=None,
-                            published_at=None,
-                            admin=False):
-        data = {
-            'name': {
-                'nb': name,
-                'en': name,
-            },
-            'type': 'single_election',
-            'description': {
-                'nb': 'Description foo',
-                'en': 'Description foo',
-            },
-            'announced_at': announced_at,
-            'published_at': published_at,
-            'public_key': election_keys['public'],
-            'meta': {
-                'candidate_rules': {'seats': 1,
-                                    'substitutes': 2,
-                                    'candidate_gender': True}
-            }
-        }
-        election_group = ElectionGroup(**data)
-        db_session.add(election_group)
-        db_session.flush()
-        election_group.publish()
-        election_group.announce()
-
-        db_session.add(election_group)
-        db_session.flush()
-        if admin:
-            person_principal = make_person_principal(logged_in_user.person)
-            make_role(election_group, person_principal)
-        return election_group
-
-    return make_election_group
-
-
-@pytest.fixture
-def make_election_group_from_template(db_session, ou_generator):
-    def make_election_group_from_template(template_name,
-                                          owner=None):
-        ou = ou_generator()
-        election_group = evalg.proc.election.make_group_from_template(
-            db_session, template_name, ou)
-
-        if owner:
-            current_user_principal = evalg.proc.authz.get_or_create_principal(
-                db_session,
-                principal_type='person',
-                person_id=owner.person.id)
-            evalg.proc.authz.add_election_group_role(
-                session=db_session,
-                election_group=election_group,
-                principal=current_user_principal,
-                role_name='admin')
-        db_session.commit()
-        return election_group
-
-    return make_election_group_from_template
-
-
-@pytest.fixture
-def election_group_baz(make_election_group):
-    return make_election_group('Baz', admin=False)
-
-
-@pytest.fixture
-def election_group_foo(make_election_group):
-    return make_election_group('Election group foo fixture', admin=True)
-
-
-@pytest.fixture
-def election_group_new(db_session, election_keys):
-    data = {
-        'name': {
-            'nb': 'Test',
-            'en': 'Test',
-        },
-        'type': 'single_election',
-        'description': {
-            'nb': 'Description foo',
-            'en': 'Description foo',
-        },
-        'public_key': election_keys['public'],
-    }
-
-    election_group = evalg.database.query.get_or_create(
-        db_session, ElectionGroup, **data)
-    # election_group.publish()
-    # election_group.announce()
-
-    db_session.add(election_group)
-    db_session.flush()
-    db_session.commit()
-    # person_principal = make_person_principal(logged_in_user.person)
-    # make_role(election_group, person_principal)
-    return election_group
-
-
-@pytest.fixture
-def make_election(db_session, election_group_generator):
-    def make_election(name, election_group=None, active=False):
-        if not election_group:
-            election_group = election_group_generator(owner=True)
-        data = {
-            'name': {
-                'nb': name,
-                'en': name,
-            },
-            'description': {
-                'nb': 'Description {0}'.format(name),
-                'en': 'Description {0}'.format(name),
-            },
-            'group_id': election_group.id,
-            'start': datetime.datetime.now(datetime.timezone.utc),
-            'end': datetime.datetime.now(
-                datetime.timezone.utc) + datetime.timedelta(days=1),
-            'active': active,
-            'meta': {
-                'counting_rules': {
-                    'method': None,
-                },
-            },
-        }
-        election = evalg.database.query.get_or_create(
-            db_session, Election, **data)
-        db_session.add(election)
-        db_session.flush()
-        return election
-
-    return make_election
-
-
-@pytest.fixture
-def election_foo(make_election):
-    """Election fixture."""
-    return make_election('Election foo')
-
-
-election_list_data = {
-    "name": {
-        "nb": "Vitenskapelig ansatte",
-        "nn": "Vitskapeleg tilsette",
-        "en": "Academic staff",
-    },
-    "description": {
-        "nb": "Vitenskapelig ansatte",
-        "nn": "Vitskapeleg tilsette",
-        "en": "Academic staff"
-    },
-    "information_url": "https://uio.no",
-}
-
-
-@pytest.fixture
-def election_list_pref_foo(db_session, election_foo):
-    """Election list fixture, with candidates."""
-    election_list_data["election_id"] = election_foo.id
-
-    election_list = evalg.database.query.get_or_create(
-        db_session, ElectionList, **election_list_data)
-
-    db_session.add(election_list)
-    db_session.flush()
-    return election_list
-
-
-@pytest.fixture
-def election_list_team_pref_foo(db_session, election_foo):
-    """Election list fixture, with candidates."""
-    data = {
-        "name": {
-            "nb": "Vitenskapelig ansatte",
-            "nn": "Vitskapeleg tilsette",
-            "en": "Academic staff",
-        },
-        "description": {
-            "nb": "Vitenskapelig ansatte",
-            "nn": "Vitskapeleg tilsette",
-            "en": "Academic staff"
-        },
-        "information_url": "https://uio.no",
-        "election_id": election_foo.id,
-    }
-
-    election_list = evalg.database.query.get_or_create(
-        db_session, ElectionList, **data)
-
-    db_session.add(election_list)
-    db_session.flush()
-    return election_list
-
-
-pref_candidates_data = [
-    {
-        "name": "Peder Aas",
-        "meta": {
-            "gender": "Male"
-        },
-    },
-    {
-        "name": "Marte Kirkerud",
-        "meta": {
-            "gender": "female"
-        },
-    },
-]
-
-
-@pytest.fixture
-def pref_candidates_foo(db_session, election_list_pref_foo):
-    [x.update({'list_id': election_list_pref_foo.id}) for x in
-     pref_candidates_data]
-    candidates = [evalg.database.query.get_or_create(
-        db_session, Candidate, **x) for x in pref_candidates_data]
-    for candidate in candidates:
-        db_session.add(candidate)
-        election_list_pref_foo.candidates.append(candidate)
-    db_session.flush()
-    return candidates
-
-
-@pytest.fixture
-def team_pref_candidates_foo(db_session, election_list_team_pref_foo):
-    data = [
-        {
-            "name": "Peder Aas",
-            "meta": {
-                "coCandidates": [
-                    {"name": "Marte Kirkerud"},
-                    {"name": "Lars Holm"},
-                ]
-            },
-            "information_url": "http://uio.no",
-            "priority": 0,
-            "pre_cumulated": True,
-            "user_cumulated": False,
-            "list_id": election_list_team_pref_foo.id,
-        },
-    ]
-    candidates = [evalg.database.query.get_or_create(
-        db_session, Candidate, **x) for x in data]
-    for candidate in candidates:
-        db_session.add(candidate)
-        election_list_team_pref_foo.candidates.append(candidate)
-    db_session.flush()
-    return candidates
 
 
 @pytest.fixture
@@ -406,9 +149,9 @@ def persons(db_session, person_generator):
 
 
 @pytest.fixture
-def make_group():
+def group_generator():
     """Returns a method that create new groups."""
-    def make_group(db_session, name):
+    def group_generator(db_session, name):
         data = {
             'name': name,
         }
@@ -416,7 +159,7 @@ def make_group():
         db_session.add(group)
         db_session.flush()
         return group
-    return make_group
+    return group_generator
 
 
 @pytest.fixture
@@ -507,10 +250,10 @@ def grant_for_person_generator(db_session):
 
 
 @pytest.fixture
-def global_roles(db_session, make_group, make_group_principal):
+def global_roles(db_session, group_generator, make_group_principal):
     """Create the global roles and groups."""
-    publisher_group = make_group(db_session, 'publisher')
-    global_admin_group = make_group(db_session, 'global_admin')
+    publisher_group = group_generator(db_session, 'publisher')
+    global_admin_group = group_generator(db_session, 'global_admin')
     publisher_principal = make_group_principal(publisher_group)
     global_admin_principal = make_group_principal(global_admin_group)
     publisher_role = evalg.proc.authz.add_election_group_role(
@@ -541,86 +284,16 @@ def global_roles(db_session, make_group, make_group_principal):
     }
 
 
-
-
-@pytest.fixture
-def election_pref_vote(db_session, pref_candidates_foo):
-    ballot_data = {
-        'voteType': 'prefElecVote',
-        'isBlankVote': False,
-        'rankedCandidateIds': [str(x.id) for x in pref_candidates_foo]
-    }
-
-    return ballot_data
-
-
-@pytest.fixture
-def pref_election_ballot_generator(db_session):
-    def pref_election_ballot_generator(candidates):
-        ballot_data = {
-            'voteType': 'prefElecVote',
-            'isBlankVote': False,
-            'rankedCandidateIds': [str(x.id) for x in candidates]
-        }
-        return ballot_data
-
-    return pref_election_ballot_generator
-
-
-@pytest.fixture
-def election_group_count_foo(db_session, election_group_generator):
-    election_group = election_group_generator(owner=True)
-    data = {
-        'group_id': election_group.id,
-    }
-
-    election_group_count = evalg.database.query.get_or_create(
-        db_session,
-        ElectionGroupCount,
-        **data,
-    )
-
-    db_session.add(election_group_count)
-    db_session.flush()
-
-    return election_group_count
-
-
-@pytest.fixture
-def election_result_foo(db_session, election_foo, election_group_count_foo):
-    # TODO: Dummy result, change to use a "real" election result
-    data = {
-        'election_id': election_foo.id,
-        'election_group_count_id': election_group_count_foo.id,
-        'election_protocol': {'test123': '123123'},
-        'ballots': [{'vote': 'test'}, {'vote': 'test2'}],
-        'result': {"winner": "test"}
-    }
-
-    election_result = evalg.database.query.get_or_create(
-        db_session,
-        ElectionResult,
-        **data,
-    )
-
-    db_session.add(election_result)
-    db_session.flush()
-
-    return election_result
-
-
-
-
 #
 # Fixed fixtures below
 #
 # TODO: convert the rest of the tests to use the fixture bellow.
 
 
-def ballot_data_generator(pollbook,
-                          vote_type='prefElectVote',
-                          blank_vote=False,
-                          candidates=None):
+def _ballot_data_generator(pollbook,
+                           vote_type='prefElectVote',
+                           blank_vote=False,
+                           candidates=None):
     """Ballot data generator used to crate fixtures."""
     if blank_vote and (candidates and len(candidates) != 0):
         raise ValueError('Ballot can\'t be both blank and have '
@@ -637,6 +310,22 @@ def ballot_data_generator(pollbook,
         'rankedCandidateIds': [str(x.id) for x in candidates]
     }
     return ballot_data
+
+@pytest.fixture
+def ballot_data_generator():
+    def ballot_data_generator(pollbook,
+                              vote_type='prefElectVote',
+                              blank_vote=False,
+                              candidates=None):
+
+        return _ballot_data_generator(
+            pollbook,
+            vote_type=vote_type,
+            blank_vote=blank_vote,
+            candidates=candidates
+        )
+
+    return ballot_data_generator
 
 
 @pytest.fixture
@@ -789,7 +478,7 @@ def pollbook_generator(db_session,
         for voter in pollbook.voters[:len(pollbook.voters)//2]:
             election_vote_policy = ElectionVotePolicy(db_session, voter.id)
             election_vote_policy.add_vote(
-                ballot_data_generator(pollbook, candidates=election.candidates))
+                _ballot_data_generator(pollbook, candidates=election.candidates))
 
     return pollbook
 
@@ -1126,16 +815,16 @@ def election_group_grant_generator(db_session,
 def blank_pref_election_ballot_data():
     """Blank pref election ballot data."""
     def blank_pref_election_ballot_data(pollbook):
-        return ballot_data_generator(pollbook,
-                                     vote_type='prefElectVote',
-                                     blank_vote=True)
+        return _ballot_data_generator(pollbook,
+                                      vote_type='prefElectVote',
+                                      blank_vote=True)
     return blank_pref_election_ballot_data
 
 
 @pytest.fixture
 def vote_generator(db_session,
                    ballot_data_generator,
-                   make_election_vote_policy):
+                   election_vote_policy_generator):
     """Vote generator."""
     def vote_generator(pollbook, voter, ballot_data=None):
 

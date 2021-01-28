@@ -3,13 +3,14 @@
 from evalg.models.ballot import Envelope
 from evalg.models.votes import Vote
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
+from evalg.proc.vote import ElectionVotePolicy
 
 
 def test_election_vote_policy(
         config,
         election_group_generator,
-        make_election_vote_policy,
-        election_pref_vote,
+        ballot_data_generator,
+        election_vote_policy_generator,
         election_keys):
     """
     Test the election vote policy flow.
@@ -23,11 +24,16 @@ def test_election_vote_policy(
                                               candidates_per_pollbook=7,
                                               nr_of_seats=2,
                                               voters_with_votes=False)
-    voter = election_group.elections[0].pollbooks[0].voters[0]
+    election = election_group.elections[0]
+    pollbook = election.pollbooks[0]
+    voter = pollbook.voters[0]
+    candidate = election.lists[0].candidates[0]
 
-    election_vote_policy = make_election_vote_policy(voter.id)
+    ballot_data = ballot_data_generator(pollbook, candidates=[candidate])
+
+    election_vote_policy = election_vote_policy_generator(voter.id)
     assert election_vote_policy.envelope_type == config.ENVELOPE_TYPE
-    vote = election_vote_policy.add_vote(election_pref_vote.copy())
+    vote = election_vote_policy.add_vote(ballot_data.copy())
     assert vote
     assert election_vote_policy.get_voter(vote.voter_id)
 
@@ -49,5 +55,5 @@ def test_election_vote_policy(
     assert serializer
     ballot_after = serializer.deserialize(encrypted_ballot_data)
     assert ballot_after
-    assert ballot_after == election_pref_vote
+    assert ballot_after == ballot_data
 

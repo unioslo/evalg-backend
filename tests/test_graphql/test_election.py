@@ -169,13 +169,15 @@ def test_add_pref_elec_candidate_mutation(db_session,
             break
 
 
-def test_update_pref_elec_candidate_mutation(pref_candidates_foo,
-                                             client,
-                                             logged_in_user):
+def test_update_pref_elec_candidate_mutation(client,
+                                             election_group_generator):
     """Test the update pref elec candidate mutation."""
-    candidate_before = pref_candidates_foo[0]
-
-    election_list = ElectionList.query.get(candidate_before.list_id)
+    election_group = election_group_generator(
+        owner=True,
+        multiple=True
+    )
+    election_list = election_group.elections[0].lists[0]
+    candidate_before = election_list.candidates[0]
 
     variables = {
         'id': str(candidate_before.id),
@@ -274,14 +276,13 @@ def test_add_team_pref_elec_candidate_mutation(db_session,
 
 
 def test_update_team_pref_elec_candidate_mutation(
-        team_pref_candidates_foo,
         client,
+        election_group_generator,
         logged_in_user):
     """Test the update team pref elec candidate mutation."""
-
-    candidate_before = team_pref_candidates_foo[0]
-
-    election_list = ElectionList.query.get(candidate_before.list_id)
+    election_group = election_group_generator(owner=True)
+    election_list = election_group.elections[0].lists[0]
+    candidate_before = election_list.candidates[0]
 
     variables = {
         'id': str(candidate_before.id),
@@ -324,5 +325,5 @@ def test_update_team_pref_elec_candidate_mutation(
     assert candidate_after.name != candidate_before.name
     assert candidate_after.name == variables['name']
     assert candidate_after.meta['co_candidates'] != (
-        candidate_before.meta['coCandidates'])
+        candidate_before.meta['co_candidates'])
     assert candidate_after.meta['co_candidates'] == variables['coCandidates']

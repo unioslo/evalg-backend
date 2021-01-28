@@ -7,7 +7,7 @@ from evalg.proc.pollbook import get_voters_for_person
 
 def test_vote(db_session,
               client,
-              pref_election_ballot_generator,
+              ballot_data_generator,
               election_group_generator,
               logged_in_user):
     """Test the vote mutation."""
@@ -19,10 +19,12 @@ def test_vote(db_session,
         db_session,
         logged_in_user.person,
         election=election)[0]
-    ballot = pref_election_ballot_generator(election.candidates[:2])
+    ballot_data = ballot_data_generator(
+        election.pollbooks[0],
+        candidates=election.candidates[:2])
     variables = {
         'voterId': str(voter.id),
-        'ballot': json.dumps(ballot)
+        'ballot': json.dumps(ballot_data)
     }
     mutation = """
     mutation ($voterId: UUID!, $ballot: JSONString!) {
@@ -47,16 +49,17 @@ def test_vote(db_session,
 
 def test_vote_denied(db_session,
                      client,
+                     ballot_data_generator,
                      election_group_generator,
-                     pref_election_ballot_generator,
                      logged_in_user):
     """
     Check that a voter can only vote i the correct election.
     """
     election_group_foo = election_group_generator(running=True)
     election_foo = election_group_foo.elections[0]
-    ballot = pref_election_ballot_generator(
-        election_foo.candidates[:2])
+    ballot_data = ballot_data_generator(
+        election_foo.pollbooks[0],
+        candidates=election_foo.candidates[:2])
     election_group_bar = election_group_generator(
         running=True,
         logged_in_user_in_census=True)
@@ -67,7 +70,7 @@ def test_vote_denied(db_session,
         election=election_bar)[0]
     variables = {
         'voterId': str(voter.id),
-        'ballot': json.dumps(ballot)
+        'ballot': json.dumps(ballot_data)
     }
     mutation = """
         mutation ($voterId: UUID!, $ballot: JSONString!) {
