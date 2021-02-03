@@ -82,7 +82,7 @@ def validate_voter_return_data(response, is_allowed):
 
 
 @reg.add_scenario('votersForPerson', 'allow')
-def test_auth_voters_for_person_in_my_election(
+def test_auth_allow_voters_for_person_in_my_election(
         client,
         db_session,
         election_group_generator,
@@ -92,7 +92,7 @@ def test_auth_voters_for_person_in_my_election(
     pollbook = election_group.elections[0].pollbooks[0]
     person = person_generator()
     voter_policy = ElectionVoterPolicy(db_session)
-    voter = voter_policy.add_voter(pollbook, person, self_added=False)
+    voter_policy.add_voter(pollbook, person, self_added=False)
 
     variables = {'id': str(person.id)}
     execution = client.execute(queries['votersForPerson'],
@@ -104,7 +104,7 @@ def test_auth_voters_for_person_in_my_election(
 
 
 @reg.add_scenario('votersForPerson', 'deny')
-def test_auth_voters_for_person_in_my_election(
+def test_auth_deny_voters_for_person_in_my_election(
         client,
         db_session,
         election_group_generator,
@@ -114,7 +114,7 @@ def test_auth_voters_for_person_in_my_election(
     pollbook = election_group.elections[0].pollbooks[0]
     person = person_generator()
     voter_policy = ElectionVoterPolicy(db_session)
-    voter = voter_policy.add_voter(pollbook, person, self_added=False)
+    voter_policy.add_voter(pollbook, person, self_added=False)
 
     variables = {'id': str(person.id)}
     execution = client.execute(queries['votersForPerson'],

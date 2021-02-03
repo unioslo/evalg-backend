@@ -409,7 +409,7 @@ class Election(AbstractElection):
                             males.append(candidate)
                         elif candidate.meta['gender'] == 'female':
                             females.append(candidate)
-                    if self.type_str == 'uio_stv':
+                    if self.type_str == 'uio_stv' or self.type_str == 'mntv':
                         # no other elections implemented yet...
                         if self.num_choosable <= 1:
                             min_value = 0

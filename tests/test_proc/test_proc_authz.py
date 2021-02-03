@@ -1,7 +1,4 @@
-from evalg.database.query import get_or_create
-from evalg.models.authorization import (PersonPrincipal,
-                                        PersonIdentifierPrincipal)
-from evalg.models.person import PersonExternalId, Person
+from evalg.models.authorization import PersonPrincipal
 from evalg.proc.authz import (get_or_create_principal,
                               get_person_identifier_principals,
                               get_principals_for_person)
@@ -26,7 +23,8 @@ def test_get_or_create_principal(db_session, person_generator):
 
 def test_get_person_identifier_principals(db_session, person_generator):
     person = person_generator()
-    feide_id = [x.id_value for x in person.identifiers if x.id_type == 'feide_id'][0]
+    feide_id = [x.id_value for x in person.identifiers
+                if x.id_type == 'feide_id'][0]
     nin = [x.id_value for x in person.identifiers if x.id_type == 'nin'][0]
     feide_id_principal = get_or_create_principal(
         session=db_session,
@@ -55,7 +53,8 @@ def test_get_person_identifier_principals(db_session, person_generator):
 
 def test_get_principals_for_person(db_session, person_generator):
     person = person_generator()
-    feide_id = [x.id_value for x in person.identifiers if x.id_type == 'feide_id'][0]
+    feide_id = [x.id_value for x in person.identifiers
+                if x.id_type == 'feide_id'][0]
     principal = get_or_create_principal(
         session=db_session,
         principal_type='person',

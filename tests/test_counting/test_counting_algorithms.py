@@ -57,10 +57,12 @@ def test_counting_algorithms_uiostv(election_group_generator):
     assert len(result_dict['regular_candidates']) == 2
     assert len(result_dict['substitute_candidates']) == 2
 
-    # One of the male candidates should have been elected as a regular candidate
+    # One of the male candidates should have been elected
+    # as a regular candidate
     assert [x for x in result_dict['regular_candidates'] if x in males]
 
-    # One of the female candidates should have been elected as a regular candidate
+    # One of the female candidates should have been elected as
+    # a regular candidate
     assert [x for x in result_dict['regular_candidates'] if x in females]
 
     # test the protocol #

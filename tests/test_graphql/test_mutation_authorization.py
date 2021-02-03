@@ -1056,11 +1056,12 @@ def test_auth_add_election_group_role_by_identifier(db_session,
 @reg.add_scenario('removeElectionGroupRoleByGrant', 'allow')
 @reg.add_scenario('removeElectionGroupRoleByGrant', 'deny')
 @pytest.mark.parametrize('is_owner,is_allowed', [(True, True), (False, False)])
-def test_auth_remove_election_group_role_by_grant(db_session,
-                                                  is_owner,
-                                                  is_allowed,
-                                                  client,
-                                                  election_group_grant_generator):
+def test_auth_remove_election_group_role_by_grant(
+        db_session,
+        is_owner,
+        is_allowed,
+        client,
+        election_group_grant_generator):
     """Allow and deny scenarios for removeElectionGroupRoleByGrant."""
     if is_owner:
         grant = election_group_grant_generator(

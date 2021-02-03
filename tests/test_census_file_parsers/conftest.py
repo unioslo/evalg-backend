@@ -280,6 +280,7 @@ def uid_student_parliament_missing_builder(
     return generate_census_file_builder(uids_student_parliament_missing_faknr,
                                         'csv')
 
+
 @pytest.fixture
 def uid_student_parliament_as_txt_builder(uids_student_parliament):
     """Csv census file of of uids from FS."""

@@ -8,8 +8,14 @@ from evalg.models.person import PersonIdType
 
 
 add_election_group_role_by_identifier_mutation = """
-    mutation addElectionGroupRoleByIdentifier($electionGroupId: UUID!, $role: ElectionGroupRoleType!, $idType: PersonIdType!, $idValue: String!) {
-        addElectionGroupRoleByIdentifier(electionGroupId: $electionGroupId, role: $role, idType: $idType, idValue: $idValue) {
+    mutation addElectionGroupRoleByIdentifier($electionGroupId: UUID!,
+                                              $role: ElectionGroupRoleType!,
+                                              $idType: PersonIdType!,
+                                              $idValue: String!) {
+        addElectionGroupRoleByIdentifier(electionGroupId: $electionGroupId,
+                                         role: $role,
+                                         idType: $idType,
+                                         idValue: $idValue) {
             success
             code
             message
@@ -119,8 +125,8 @@ def test_add_election_admin_by_identifier(
         logged_in_user,
         client):
     """
-    Ensure the addElectionGroupRoleByIdentifier mutation allows adding new admins
-    if the current user is an admin for the election.
+    Ensure the addElectionGroupRoleByIdentifier mutation allows
+    adding new admins if the current user is an admin for the election.
     """
     election_group = election_group_generator(owner=True)
     variables = {

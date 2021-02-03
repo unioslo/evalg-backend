@@ -1,5 +1,5 @@
-import pytest
 import uuid
+import pytest
 
 from sqlalchemy.exc import IntegrityError
 
@@ -47,7 +47,8 @@ def test_voter_verification_status_valid(db_session, election_group_generator):
         assert voter.verified_status
 
 
-def test_voter_verification_status_invalid(db_session, election_group_generator):
+def test_voter_verification_status_invalid(db_session,
+                                           election_group_generator):
     election_group = election_group_generator(owner=True,
                                               multiple=True,
                                               nr_of_seats=2,

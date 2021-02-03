@@ -3,7 +3,6 @@
 from evalg.models.ballot import Envelope
 from evalg.models.votes import Vote
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
-from evalg.proc.vote import ElectionVotePolicy
 
 
 def test_election_vote_policy(
@@ -56,4 +55,3 @@ def test_election_vote_policy(
     ballot_after = serializer.deserialize(encrypted_ballot_data)
     assert ballot_after
     assert ballot_after == ballot_data
-

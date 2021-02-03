@@ -5,8 +5,8 @@ from evalg.graphql import get_context
 
 
 def test_query_election_group_by_id(election_group_generator,
-                                   client,
-                                   logged_in_user):
+                                    client,
+                                    logged_in_user):
     """Test the electionGroup query."""
     election_group = election_group_generator(
         published=True)
@@ -182,8 +182,8 @@ def test_update_pref_elec_candidate_mutation(client,
     variables = {
         'id': str(candidate_before.id),
         'name': 'FooBar',
-        'gender': 'Female' if candidate_before.meta['gender'] == 'Male' else
-        'Female',
+        'gender':
+            'female' if candidate_before.meta['gender'] == 'male' else 'male',
         'listId': str(candidate_before.list_id)
     }
     mutation = """

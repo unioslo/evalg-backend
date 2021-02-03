@@ -1,5 +1,4 @@
 import datetime
-import io
 import string
 import random
 
@@ -12,21 +11,15 @@ import evalg.database.query
 
 from evalg import create_app, db
 from evalg.authentication import user
-from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 from evalg.models.candidate import Candidate
-from evalg.models.ballot import Envelope
-from evalg.models.votes import Vote
 from evalg.models.election import ElectionGroup, Election
-from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.election_list import ElectionList
-from evalg.models.election_result import ElectionResult
 from evalg.models.group import Group
 from evalg.models.group import GroupMembership
 from evalg.models.privkeys_backup import MasterKey
 from evalg.models.ou import OrganizationalUnit
 from evalg.models.person import Person, PersonExternalId
 from evalg.models.pollbook import Pollbook
-from evalg.models.voter import Voter
 from evalg.proc.pollbook import ElectionVoterPolicy
 from evalg.proc.vote import ElectionVotePolicy
 
@@ -284,12 +277,6 @@ def global_roles(db_session, group_generator, make_group_principal):
     }
 
 
-#
-# Fixed fixtures below
-#
-# TODO: convert the rest of the tests to use the fixture bellow.
-
-
 def _ballot_data_generator(pollbook,
                            vote_type='prefElectVote',
                            blank_vote=False,
@@ -310,6 +297,7 @@ def _ballot_data_generator(pollbook,
         'rankedCandidateIds': [str(x.id) for x in candidates]
     }
     return ballot_data
+
 
 @pytest.fixture
 def ballot_data_generator():
@@ -439,7 +427,8 @@ def pollbook_generator(db_session,
                        election,
                        name=None,
                        with_self_added_voters=False,
-                       nr_of_votes=10,
+                       nr_of_voters=10,
+                       weight=None,
                        voters_with_votes=False):
     """Generate pollbooks used by fixtures."""
     if not name:
@@ -453,12 +442,16 @@ def pollbook_generator(db_session,
         },
         "election_id": election.id,
     }
+
+    if weight:
+        data['weight'] = weight
+
     pollbook = evalg.database.query.get_or_create(
         db_session, Pollbook, **data)
     db_session.add(pollbook)
     db_session.flush()
 
-    self_added_status = [False for _ in range(nr_of_votes)]
+    self_added_status = [False for _ in range(nr_of_voters)]
 
     if with_self_added_voters:
         self_added_status[0] = True
@@ -478,7 +471,9 @@ def pollbook_generator(db_session,
         for voter in pollbook.voters[:len(pollbook.voters)//2]:
             election_vote_policy = ElectionVotePolicy(db_session, voter.id)
             election_vote_policy.add_vote(
-                _ballot_data_generator(pollbook, candidates=election.candidates))
+                _ballot_data_generator(
+                    pollbook,
+                    candidates=election.candidates))
 
     return pollbook
 
@@ -502,7 +497,7 @@ def candidate_generator(db_session,
 
     name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
     candidate_name = 'candidate-{0}'.format(name_rand)
-    candidate = evalg.models.candidate.Candidate(
+    candidate = Candidate(
         name=candidate_name,
         meta=meta,
         list_id=candidate_list.id,
@@ -540,7 +535,8 @@ def new_elections_generator(db_session,
             },
             "counting_rules": {
                 "method": election_group.meta['counting_rules']['method'],
-                "affirmative_action": election_group.meta['counting_rules']['affirmative_action'],
+                "affirmative_action":
+                    election_group.meta['counting_rules']['affirmative_action']
             },
         }
     else:
@@ -615,8 +611,26 @@ def new_elections_generator(db_session,
         election.lists = [election_list]
 
         candidate_list = election.lists[0]
-        for _ in range(candidates_per_pollbook):
-            candidate_generator(db_session, candidate_type, candidate_list)
+        for _ in range(candidates_per_pollbook//2):
+            candidate_generator(
+                db_session,
+                candidate_type,
+                candidate_list,
+                gender='male')
+        for _ in range(candidates_per_pollbook//2):
+            candidate_generator(
+                db_session,
+                candidate_type,
+                candidate_list,
+                gender='female')
+        if candidates_per_pollbook % 2:
+            # Add the correct nr of candidates if
+            # candidates_per_pollbook is odd.
+            candidate_generator(
+                db_session,
+                candidate_type,
+                candidate_list,
+                gender='female')
 
         if multiple:
             election.pollbooks = [pollbook_generator(
@@ -629,8 +643,9 @@ def new_elections_generator(db_session,
                 db_session,
                 election,
                 with_self_added_voters=with_self_added_voters,
+                weight=weight,
                 voters_with_votes=voters_with_votes)
-                    for _ in range(4)]
+                    for weight in [53, 22, 25]]
         db_session.flush()
         elections.append(election)
     return elections
@@ -638,8 +653,6 @@ def new_elections_generator(db_session,
 
 @pytest.fixture
 def election_group_generator(db_session, logged_in_user, election_keys):
-
-    # TODO cleanup the inputs
     def election_group_generator(multiple=False,
                                  owner=False,
                                  running=False,
@@ -680,7 +693,6 @@ def election_group_generator(db_session, logged_in_user, election_keys):
 
         if multiple:
             election_group_type = 'multiple_elections'
-            # TODO make more generic
             meta = {
                 "candidate_type": "single",
                 "candidate_rules": {
@@ -693,7 +705,8 @@ def election_group_generator(db_session, logged_in_user, election_keys):
                     "votes": "all"},
                 "counting_rules": {
                     "method": election_type,
-                    "affirmative_action": [affirmative_action] if affirmative_action else []
+                    "affirmative_action":
+                        [affirmative_action] if affirmative_action else []
                 }
             }
         else:
@@ -777,6 +790,7 @@ def election_group_generator(db_session, logged_in_user, election_keys):
             election_group_counter.generate_results(count)
             election_group_counter.log_finalize_count(count)
 
+        db_session.commit()
         return election_group
 
     return election_group_generator
@@ -827,9 +841,7 @@ def vote_generator(db_session,
                    election_vote_policy_generator):
     """Vote generator."""
     def vote_generator(pollbook, voter, ballot_data=None):
-
         if not ballot_data:
-            # TODO, create data from election type
             candidates = pollbook.election.candidates
             blank_vote = False
             if not candidates or len(candidates) == 0:
