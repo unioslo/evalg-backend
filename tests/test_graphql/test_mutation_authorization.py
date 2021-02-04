@@ -297,11 +297,9 @@ def test_auth_update_voter_info(db_session,
                                 client,
                                 election_group_generator):
     """Allowed and denied scenario tests of updateVoterInfo."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
     elections = [{'id': str(e.id),
                   'mandatePeriodStart': str(e.mandate_period_start),
                   'mandatePeriodEnd': str(e.mandate_period_end +
@@ -328,13 +326,12 @@ def test_auth_add_election_list(db_session,
                                 is_owner,
                                 is_allowed,
                                 client,
-                                logged_in_user,
-                                multiple_election_group,
-                                owned_multiple_election_group):
+                                election_group_generator):
     """Allowed and denied scenario tests of addElectionList."""
-    election_group = (owned_multiple_election_group(db_session,
-                                                    logged_in_user.person)
-                      if is_owner else multiple_election_group(db_session))
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
+
     election = election_group.elections[0]
     variables = {
         'name': {
@@ -364,13 +361,12 @@ def test_auth_update_election_list(db_session,
                                    is_owner,
                                    is_allowed,
                                    client,
-                                   logged_in_user,
-                                   multiple_election_group,
-                                   owned_multiple_election_group):
+                                   election_group_generator):
     """Allowed and denied scenario tests of updateElectionList."""
-    election_group = (owned_multiple_election_group(db_session,
-                                                    logged_in_user.person)
-                      if is_owner else multiple_election_group(db_session))
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
+
     election = election_group.elections[0]
     election_list = election_group.elections[0].lists[0]
     variables = {
@@ -402,13 +398,11 @@ def test_auth_delete_election_list(db_session,
                                    is_owner,
                                    is_allowed,
                                    client,
-                                   logged_in_user,
-                                   multiple_election_group,
-                                   owned_multiple_election_group):
+                                   election_group_generator):
     """Allowed and denied scenario tests of updateElectionList."""
-    election_group = (owned_multiple_election_group(db_session,
-                                                    logged_in_user.person)
-                      if is_owner else multiple_election_group(db_session))
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
     election_list = election_group.elections[0].lists[0]
     variables = {
         'id': str(election_list.id)
@@ -435,12 +429,9 @@ def test_auth_update_list_elec_candidate(db_session,
                                          client,
                                          election_group_generator):
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True,
-            multiple=True)
-    else:
-        election_group = election_group_generator(multiple=True)
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
     election_list = election_group.elections[0].lists[0]
     candidate = election_group.elections[0].lists[0].candidates[0]
     new_name = '{} Testesen'.format(candidate.name)
@@ -479,13 +470,11 @@ def test_auth_add_list_elec_candidate(db_session,
                                       is_owner,
                                       is_allowed,
                                       client,
-                                      logged_in_user,
-                                      multiple_election_group,
-                                      owned_multiple_election_group):
+                                      election_group_generator):
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
-    election_group = (owned_multiple_election_group(db_session,
-                                                    logged_in_user.person)
-                      if is_owner else multiple_election_group(db_session))
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
     election_list = election_group.elections[0].lists[0]
     variables = {
         'name': "Test Testesen",
@@ -520,13 +509,11 @@ def test_auth_update_pref_elec_candidate(db_session,
                                          is_owner,
                                          is_allowed,
                                          client,
-                                         logged_in_user,
-                                         multiple_election_group,
-                                         owned_multiple_election_group):
+                                         election_group_generator):
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
-    election_group = (owned_multiple_election_group(db_session,
-                                                    logged_in_user.person)
-                      if is_owner else multiple_election_group(db_session))
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
     election_list = election_group.elections[0].lists[0]
     candidate = election_group.elections[0].lists[0].candidates[0]
     new_name = '{} Testesen'.format(candidate.name)
