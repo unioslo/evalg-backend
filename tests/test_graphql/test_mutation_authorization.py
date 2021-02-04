@@ -61,14 +61,9 @@ def test_auth_update_base_settings(db_session,
                                    client,
                                    election_group_generator):
     """Allowed and denied scenario tests of updateBaseSettings."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True,
-            multiple=True)
-    else:
-        election_group = election_group_generator(
-            multiple=True
-        )
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
     elections = [{'id': str(e.id),
                   'seats': e.meta['candidate_rules']['seats'],
                   'substitutes': e.meta['candidate_rules']['substitutes'],
@@ -115,10 +110,7 @@ def test_auth_publish_election_group(db_session,
                                      election_group_generator,
                                      make_person_publisher):
     """Allowed and denied scenario of publishElectionGroup."""
-    if is_owner:
-        election_group = election_group_generator(owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     if is_publisher:
         make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
@@ -155,11 +147,7 @@ def test_auth_unpublish_election_group(db_session,
                                        election_group_generator,
                                        make_person_publisher):
     """Allowed and denied scenario of unpublishElectionGroup."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     if is_publisher:
         make_person_publisher(db_session, logged_in_user.person)
     variables = {'id': str(election_group.id)}
@@ -189,11 +177,7 @@ def test_auth_set_election_group_key(db_session,
                                      election_keys,
                                      election_group_generator):
     """Allowed and denied scenario tests of setElectionGroupKey."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     variables = {
         'id': str(election_group.id),
         'publicKey': election_keys['public']
@@ -224,15 +208,10 @@ def test_auth_start_election_group_count(db_session,
                                          election_keys,
                                          election_group_generator):
     """Allowed and denied scenario tests of startElectionGroupCount."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True,
-            countable=True,
-            multiple=True)
-    else:
-        election_group = election_group_generator(
-            multiple=True,
-            countable=True)
+    election_group = election_group_generator(
+        owner=is_owner,
+        countable=True,
+        multiple=True)
     variables = {
         'id': str(election_group.id),
         'electionKey': election_keys['private']
@@ -262,12 +241,9 @@ def test_auth_update_voting_periods(db_session,
                                     client,
                                     election_group_generator):
     """Allowed and denied scenario tests of updateVotingPeriods."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True,
-            multiple=True)
-    else:
-        election_group = election_group_generator(multiple=True)
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
     elections = [{'id': str(e.id),
                   'start': str(e.start - datetime.timedelta(days=3)),
                   'end': str(e.end)}
@@ -548,13 +524,9 @@ def test_auth_add_pref_elec_candidate(db_session,
                                       client,
                                       election_group_generator):
     """Allowed and denied scenario tests of addPrefElecCandidate."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True,
-            multiple=True)
-    else:
-        election_group = election_group_generator(
-            multiple=True)
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
     election_list = election_group.elections[0].lists[0]
     variables = {
         'gender': 'female',
@@ -583,11 +555,7 @@ def test_auth_update_team_pref_elec_candidate(db_session,
                                               client,
                                               election_group_generator):
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     election_list = election_group.elections[0].lists[0]
     candidate = election_group.elections[0].lists[0].candidates[0]
     new_name = '{} Testesen'.format(candidate.name)
@@ -625,11 +593,7 @@ def test_auth_add_team_pref_elec_candidate(db_session,
                                            client,
                                            election_group_generator):
     """Allowed and denied scenario tests of addTeamPrefElecCandidate."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     election_list = election_group.elections[0].lists[0]
     variables = {
         'coCandidates': [{'name': 'Test Testemeresen'}],
@@ -662,11 +626,7 @@ def test_auth_delete_candidate(db_session,
                                client,
                                election_group_generator):
     """Allowed and denied scenario tests of deleteCandidate."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     candidate = election_group.elections[0].candidates[0]
     variables = {'id': str(candidate.id)}
     mutation = """
@@ -693,11 +653,7 @@ def test_auth_add_voter_by_person_id(db_session,
                                      person_generator,
                                      election_group_generator):
     """Allowed and denied scenario tests of addVoterByPersonId."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     pollbook = election_group.elections[0].pollbooks[0]
     variables = {
         'personId': str(person_generator().id),
@@ -726,11 +682,7 @@ def test_auth_add_voter_by_identifier(db_session,
                                       person_generator,
                                       election_group_generator):
     """Allowed and denied scenario tests of addVoterByIdentifier."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     pollbook = election_group.elections[0].pollbooks[0]
     feide_id = next(i for i in person_generator().identifiers if
                     i.id_type == 'feide_id')
@@ -763,11 +715,7 @@ def test_auth_update_voter_pollbook(db_session,
                                     client,
                                     election_group_generator):
     """Allowed and denied scenario tests of updateVoterPollbook."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     pollbook_1 = election_group.elections[0].pollbooks[0]
     pollbook_2 = election_group.elections[0].pollbooks[1]
     voter = next(x for x in pollbook_1.voters if not x.self_added)
@@ -832,13 +780,8 @@ def test_auth_delete_voter(db_session,
                            client,
                            election_group_generator):
     """Allow and deny scenarios for deleteVoter."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     voters = election_group.elections[0].pollbooks[0].voters
-
     voter = next(x for x in voters if not x.self_added)
     variables = {'id': str(voter.id)}
     mutation = """
@@ -864,11 +807,7 @@ def test_auth_delete_voters_in_pollbook(db_session,
                                         client,
                                         election_group_generator):
     """Allow and deny scenarios for deleteVotersInPollbook."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     pollbook = election_group.elections[0].pollbooks[0]
     variables = {'id': str(pollbook.id)}
     mutation = """
@@ -903,11 +842,7 @@ def test_auth_upload_census_file(db_session,
         'evalg.tasks.celery_worker.import_census_file_task.delay',
         lambda x, y: f"Patched {x}-{y}")
 
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     pollbook = election_group.elections[0].pollbooks[0]
     variables = {
         'censusFile': feide_id_plane_text_census_builder.files['file'],
@@ -940,13 +875,9 @@ def test_auth_review_voter(db_session,
                            client,
                            election_group_generator):
     """Allow and deny scenarios for reviewVoter."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True,
-            with_self_added_voters=True)
-    else:
-        election_group = election_group_generator(
-            with_self_added_voters=True)
+    election_group = election_group_generator(
+        owner=is_owner,
+        with_self_added_voters=True)
     pollbook = election_group.elections[0].pollbooks[0]
     voter = next(x for x in pollbook.voters if x.self_added)
     variables = {'id': str(voter.id), 'verify': True}
@@ -972,13 +903,9 @@ def test_auth_undo_review_voter(db_session,
                                 client,
                                 election_group_generator):
     """Allow and deny scenarios for undoReviewVoter."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True,
-            with_self_added_voters=True)
-    else:
-        election_group = election_group_generator(
-            with_self_added_voters=True)
+    election_group = election_group_generator(
+        owner=is_owner,
+        with_self_added_voters=True)
     pollbook = election_group.elections[0].pollbooks[0]
     voter = next(x for x in pollbook.voters if x.self_added)
     variables = {'id': str(voter.id)}
@@ -1005,11 +932,7 @@ def test_auth_add_election_group_role_by_identifier(db_session,
                                                     election_group_generator,
                                                     logged_in_user):
     """Allow and deny scenarios for addElectionGroupRoleByIdentifier."""
-    if is_owner:
-        election_group = election_group_generator(
-            owner=True)
-    else:
-        election_group = election_group_generator()
+    election_group = election_group_generator(owner=is_owner)
     person = logged_in_user.person
     feide_id = next(i for i in person.identifiers if i.id_type == 'feide_id')
     variables = {
@@ -1050,12 +973,7 @@ def test_auth_remove_election_group_role_by_grant(
         client,
         election_group_grant_generator):
     """Allow and deny scenarios for removeElectionGroupRoleByGrant."""
-    if is_owner:
-        grant = election_group_grant_generator(
-            owner=True)
-    else:
-        grant = election_group_grant_generator()
-
+    grant = election_group_grant_generator(owner=is_owner)
     variables = {'grantId': str(grant.grant_id)}
     mutation = """
     mutation ($grantId: UUID!) {
@@ -1090,25 +1008,11 @@ def test_auth_vote(db_session,
                    election_group_generator,
                    logged_in_user):
     """Allow and deny scenarios for vote."""
-    if as_logged_in_user:
-        if is_owner:
-            election_group = election_group_generator(
-                owner=True,
-                running=True,
-                logged_in_user_in_census=True)
-        else:
-            election_group = election_group_generator(
-                running=True,
-                logged_in_user_in_census=True)
-    else:
-        if is_owner:
-            election_group = election_group_generator(
-                owner=True,
-                running=True)
-        else:
-            election_group = election_group_generator(
-                running=True)
-
+    election_group = election_group_generator(
+        owner=is_owner,
+        logged_in_user_in_census=as_logged_in_user,
+        running=True
+    )
     pollbook = election_group.elections[0].pollbooks[0]
     logged_in_feide_id = next(x.id_value for x in
                               logged_in_user.person.identifiers if
@@ -1146,11 +1050,7 @@ def test_auth_add_election_group_key_backup(db_session,
                                             election_group_generator,
                                             master_key):
     """Allow and deny scenarios for addElectionGroupKeyBackup."""
-    if is_owner:
-        election_group = election_group_generator(owner=True)
-    else:
-        election_group = election_group_generator()
-
+    election_group = election_group_generator(owner=is_owner)
     _, master_key = master_key(db_session)
     variables = {
         'electionGroupId': str(election_group.id),
