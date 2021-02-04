@@ -98,27 +98,6 @@ class Round:
         """counter_obj-property"""
         return self._counter_obj
 
-    def _can_elect_candidate(self, candidate, candidate_count, total_score, results):
-        """
-        Check if a candidate can be elected.
-
-        To be elected, a candidate must have:
-        - More then 1/(number of seats) of the total score
-        - More votes then the next candidate.
-        """
-
-        if candidate_count > total_score / decimal.Decimal(
-                self.counter_obj.election.num_choosable):
-            # TODO: Check quotas..
-            logger.info("Candidate %s: %s (has more than 1/%d of the total "
-                        "score and will be elected)",
-                        candidate,
-                        candidate_count,
-                        self.counter_obj.election.num_choosable)
-            return True
-
-        return False
-
     def _set_count_results(self, count_results):
         self._count_results = count_results
 
