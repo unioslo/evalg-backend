@@ -1,57 +1,23 @@
-FROM library/python:3-alpine
+FROM harbor.uio.no/library/docker.io-python:3.8-slim
 
 MAINTAINER USITINT <bnt-int@usit.uio.no>
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
 WORKDIR /usr/src/evalg
+ADD . /usr/src/evalg
 
-# Add dependencies
-ADD requirements-test.txt /usr/src/evalg
-ADD requirements.txt /usr/src/evalg
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Docker entrypoint
-ADD docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
-    ln -s /usr/local/bin/docker-entrypoint.sh /
-
-
-# Install build-deps, then install/build deps
-RUN set -ex \
-    && apk add --no-cache --virtual .evalg-build-deps \
-            gcc \
-            make \
-            libc-dev \
-            musl-dev \
-            linux-headers \
-            libffi-dev \
-    && apk add --no-cache --virtual .evalg-deps \
-            bash \
-            git \
-            logrotate \
-            postgresql-dev \
-            rsyslog \
-    && pip3 install -U pip \
-    && pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
-    && pip3 config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
-    && pip3 install -r /usr/src/evalg/requirements-test.txt \
-    && pip3 install -r /usr/src/evalg/requirements.txt \
-    && apk del .evalg-build-deps
-
-# Add rsyslog and logrotate config
-ADD instance/evalg_logrotate.conf /etc/logrotate.d/evalg
-ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evag.conf
-RUN mkdir /var/log/evalg \
-    && chmod 644 /etc/logrotate.d/evalg \
-    && rm /etc/logrotate.d/acpid \
-    && rm /etc/logrotate.d/rsyslog
-
-# Disable kernel logs
-RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf
+RUN pip config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
+ && pip config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
+ && pip install -r /usr/src/evalg/requirements.txt \
+ && pip install -r /usr/src/evalg/requirements-test.txt 
 
 ENV FLASK_ENV=development
-# Install app
-ADD . /usr/src/evalg
-RUN pip3 install --editable /usr/src/evalg
+RUN pip install --editable /usr/src/evalg
 
-
-ENTRYPOINT ["/docker-entrypoint.sh"]
+RUN useradd --create-home evalg
+WORKDIR /home/evalg
+USER evalg
