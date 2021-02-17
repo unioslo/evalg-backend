@@ -40,12 +40,28 @@ pipeline {
                 APP_NAME = 'evalg-backend-k8s'
                 CONTAINER = "${REPO}/${PROJECT}/${APP_NAME}"
                 IMAGE_TAG = "${CONTAINER}:${BRANCH_NAME}-${VERSION}"
+                WORKER_APP_NAME = 'evalg-worker-k8s'
+                WORKER_CONTAINER = "${REPO}/${PROJECT}/${WORKER_APP_NAME}"
+                WORKER_IMAGE_TAG = "${WORKER_CONTAINER}:${BRANCH_NAME}-${VERSION}"
+
             }
             stages {
-                stage('Build docker image') {
-                    steps {
-                        script {
-                            docker_image = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-k8s .')
+                stage('Build docker images') {
+                    parallel {
+                        stage('Build evalg image') {
+                            steps {
+                                script {
+                                    docker_image = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-k8s .')
+                                }
+                            }
+
+                        }
+                        stage('Build evalg worker image') {
+                            steps {
+                                script {
+                                    docker_image_worker = docker.build("${WORKER_IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-k8s-worker .')
+                                }
+                            }
                         }
                     }
                 }
@@ -55,6 +71,7 @@ pipeline {
                             steps {
                                 script {
                                     docker_image.push()
+                                    docker_image_worker.push()
                                 }
                             }
                         }
@@ -63,6 +80,7 @@ pipeline {
                             steps {
                                 script {
                                     docker_image.push('latest')
+                                    docker_image_worker.push('latest')
                                 }
                             }
                         }
