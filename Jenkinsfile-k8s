@@ -1,0 +1,97 @@
+#!/usr/bin/env groovy
+
+pipeline {
+    agent any
+    stages {
+        stage('Build, test and deploy python package') {
+            agent {
+                docker { image 'harbor.uio.no/it-usit-int-drift/jenkins-python-3:3.8' }
+            }
+            environment {
+                PIP_INDEX_URL='https://repo.usit.uio.no/nexus/repository/pypi-usit/simple'
+                PIP_EXTRA_INDEX_URL='https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi'
+            }
+            stages {
+                stage('Run unit tests') {
+                    steps {
+                        sh 'tox --recreate'
+                    }
+                }
+            }
+            post {
+                always {
+                    junit '**/junit*.xml'
+                }
+                cleanup {
+                    sh('rm -vf junit-*.xml')
+                    sh('rm -vf coverage-*.xml')
+                }
+            }
+        }
+        stage('Build and deploy docker image') {
+            agent { label 'docker' }
+            environment {
+                VERSION = sh(
+                    returnStdout: true,
+                    script: 'git describe --dirty=+ --tags'
+                ).trim()
+                REPO = 'harbor.uio.no'
+                PROJECT = 'it-usit-int-drift'
+                APP_NAME = 'evalg-backend-k8s'
+                CONTAINER = "${REPO}/${PROJECT}/${APP_NAME}"
+                IMAGE_TAG = "${CONTAINER}:${BRANCH_NAME}-${VERSION}"
+                WORKER_APP_NAME = 'evalg-worker-k8s'
+                WORKER_CONTAINER = "${REPO}/${PROJECT}/${WORKER_APP_NAME}"
+                WORKER_IMAGE_TAG = "${WORKER_CONTAINER}:${BRANCH_NAME}-${VERSION}"
+
+            }
+            stages {
+                stage('Build docker images') {
+                    parallel {
+                        stage('Build evalg image') {
+                            steps {
+                                script {
+                                    docker_image = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-k8s .')
+                                }
+                            }
+
+                        }
+                        stage('Build evalg worker image') {
+                            steps {
+                                script {
+                                    docker_image_worker = docker.build("${WORKER_IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-k8s-worker .')
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Deploy') {
+                    parallel {
+                        stage('Push image to harbor') {
+                            steps {
+                                script {
+                                    docker_image.push()
+                                    docker_image_worker.push()
+                                }
+                            }
+                        }
+                        stage('Tag image as latest') {
+                            when { branch 'master' }
+                            steps {
+                                script {
+                                    docker_image.push('latest')
+                                    docker_image_worker.push('latest')
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            post {
+                cleanup {
+                    sh("docker rmi -f \$(docker images --filter 'reference=${IMAGE_TAG}' -q)")
+                }
+            }
+        }
+    }
+}
