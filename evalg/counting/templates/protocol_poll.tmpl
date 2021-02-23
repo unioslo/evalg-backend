@@ -1,0 +1,58 @@
+{% macro nb(object) -%}
+{% if object.nb is defined %}{{ object.nb }}{% else %}{{ object }}{% endif %}
+{%- endmacro %}
+{% macro person_name(person_id) -%}
+{{ meta.candidates[person_id] }}
+{%- endmacro %}
+{% macro person_names_list(person_ids) -%}
+{%- for person_id in person_ids %}{{ meta.candidates[person_id] }}{%- if not loop.last %}, {% endif -%}{%- endfor %}
+{%- endmacro %}
+{% macro pollbook_name(pollbook_id) -%}
+{{ nb(meta.pollbook_mappings[pollbook_id]) }}
+{%- endmacro %}
+Valg-ID: {{ meta.election_id }}
+Valg-tittel: {{ nb(meta.election_name) }}
+Valg-type: {{ meta.election_type }}
+Valgperiode: {{ meta.election_start }} (CET) - {{ meta.election_end }} (CET)
+Opptellingstidspunkt: {{ meta.counted_at }} (CET)
+Opptelling startet av: {{ meta.counted_by|default('Ukjent', true) }}
+Alternativer: {{ meta.candidates.values() |join(', ')}}
+
+Antall stemmer: {{ meta.ballots_count }}
+Antall blanke stemmer: {{ meta.empty_ballots_count }}
+
+
+Manntall
+========
+
+{% for pollbook in meta.pollbooks -%}
+Navn: {{ pollbook_name(pollbook['id']) }}
+Antall stemmer: {{ pollbook.ballots_count }}
+Antall blanke stemmer: {{ pollbook.empty_ballots_count }}
+Manntallsgruppens vekting: (vekt i %) {{ pollbook.weight }} / (ikke-blanke stemmer) {{ pollbook.counting_ballots_count }} = {{ pollbook.weight_per_vote }}
+Multiplikator: {{ meta.scale_factor }}
+Vekt per stemme: {{ pollbook.weight_per_vote }} * {{ meta.scale_factor }} = {{ pollbook.weight_per_pollbook }}
+
+{% endfor -%}
+
+
+{% for round in rounds -%}
+{% for event in round -%}
+
+{% if event.event_type == 'NEW_COUNT' -%}
+Resultat
+========
+Stemmetall totalt: {{ event.event_data['total_score'] }}
+Stemmetall 1/2: {{ event.event_data['half_score'] }}
+{% for result in event.event_data['count_results'] -%}
+{{ meta.candidates[result[0]] }}: {{ result[1] }}{% if 'count_result_stats' in event.event_data %} ({% for pollbook_id in event.event_data['count_result_stats'] %}{{ pollbook_name(pollbook_id) }}: {{ event.event_data['count_result_stats'][pollbook_id][result[0]]['total'] }} ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['amount'] }} stemmer) ({{ event.event_data['count_result_stats'][pollbook_id][result[0]]['percent_pollbook'] }}%){% if not loop.last %}, {% endif %}{% endfor %}){% endif %} (total: {{ event.event_data['total_stats'][result[0]]['percent_score'] }}%)
+{% endfor %}
+{% else %}
+DEBUG: Unimplemented event {{ event.event_type }}
+{% endif -%}
+{% endfor -%}
+{% endfor -%}
+
+
+(Avslutter protokoll)
+
