@@ -197,9 +197,13 @@ class Round:
             logger.info(
                 "None of the above candidates reached 1/2 of the total score. "
                 "Drawing candidate to elect")
-            elected_candidate = self._counter_obj.draw_candidate([
-                count_results[0][0],
-                count_results[1][0]])
+            possible_candidates = []
+            for candidate_count in count_results:
+                if candidate_count[1] == count_results[0][1]:
+                    possible_candidates.append(candidate_count[0])
+            elected_candidate = self._counter_obj.draw_candidate(
+                possible_candidates
+            )
             self._state.add_event(count.CountingEvent(
                 count.CountingEventType.DRAW_SELECT,
                 {'candidate': str(elected_candidate.id)}))
