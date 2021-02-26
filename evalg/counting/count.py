@@ -12,7 +12,8 @@ import secrets
 
 import pytz
 
-from evalg.counting.algorithms import ntnucv, uiostv, uiomv
+from evalg.counting.algorithms import ntnucv, uiostv, uiomv, poll
+# TODO: circular import, is it necessary?
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -21,12 +22,18 @@ DEFAULT_LOG_LEVEL = logging.DEBUG
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
-PROTOCOL_MAPPINGS = {'uio_stv': uiostv.Protocol,
-                     'uio_mv': uiomv.Protocol,
-                     'ntnu_cv': ntnucv.Protocol}
-RESULT_MAPPINGS = {'uio_stv': uiostv.Result,
-                   'uio_mv': uiomv.Result,
-                   'ntnu_cv': ntnucv.Result}
+PROTOCOL_MAPPINGS = {
+    'uio_stv': uiostv.Protocol,
+    'uio_mv': uiomv.Protocol,
+    'ntnu_cv': ntnucv.Protocol,
+    'poll': poll.Protocol,
+}
+RESULT_MAPPINGS = {
+    'uio_stv': uiostv.Result,
+    'uio_mv': uiomv.Result,
+    'ntnu_cv': ntnucv.Result,
+    'poll': poll.Result,
+}
 
 
 class CountingFailure(Exception):
@@ -599,6 +606,16 @@ class ElectionCountPath:
         last_state = self._round_state_list[-1]
         return last_state.all_elected_substitutes
 
+    def get_poll_alternatives(self):
+        """
+        :return: The elected substitute candidates for this path
+        :rtype: tuple
+        """
+        if not self._round_state_list:
+            return dict()
+        last_state = self._round_state_list[-1]
+        return last_state.alternatives
+
     def get_probability(self):
         """
         :return: The probability of the patch
@@ -659,6 +676,11 @@ class ElectionCountPath:
                 substitute_candidates=[
                     str(cand.id) for cand in
                     self.get_elected_substitute_candidates()])
+        if election.type_str == 'poll':
+            return poll.Result(
+                meta=meta,
+                alternatives=self.get_poll_alternatives()
+            )
         return None
 
     def get_protocol(self):
@@ -742,6 +764,8 @@ class ElectionCountPath:
             return uiomv.Protocol(meta=meta, rounds=rounds)
         if election.type_str == 'ntnu_cv':
             return ntnucv.Protocol(meta=meta, rounds=rounds)
+        if election.type_str == 'poll':
+            return poll.Protocol(meta=meta, rounds=rounds)
         return None
 
 
@@ -885,7 +909,7 @@ class Counter:
         election_count_tree.append_path(self._current_election_path)
         # Now check election type and select the proper counting class
         # This method (and class) should remain algorithm agnostic.
-        if self._election_obj.type_str not in ('ntnu_cv', 'uio_stv', 'uio_mv'):
+        if self._election_obj.type_str not in RESULT_MAPPINGS.keys():
             # no other election algorithms implemented so far
             logger.warning("No algorithm implemented for election type: %s",
                            self._election_obj.type_str)
@@ -899,6 +923,8 @@ class Counter:
             round_cls = uiomv.Round
         elif self._election_obj.type_str == 'ntnu_cv':
             round_cls = ntnucv.Round
+        elif self._election_obj.type_str == 'poll':
+            round_cls = poll.Round
         election_round = round_cls(self)
         election_round.count()
         if self._drawing_nodes:
