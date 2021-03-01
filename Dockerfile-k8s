@@ -14,9 +14,6 @@ RUN apt-get update && apt-get install -y \
 ENV http_proxy=""
 ENV https_proxy=""
 
-COPY evalg/migrations /usr/src/evalg/evalg/migrations
-COPY evalg/migrations /evalg/migrations
-
 COPY . /tmp/evalg
 
 RUN pip config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
@@ -29,6 +26,9 @@ RUN pip install /tmp/evalg
 RUN useradd --create-home evalg
 WORKDIR /home/evalg
 USER evalg
+
+COPY evalg/migrations /usr/src/evalg/evalg/migrations
+COPY evalg/migrations /home/evalg/evalg/migrations
 
 # Set instance path
 ENV EVALG_CONFIG="/usr/local/var/evalg-instance/evalg_config.py"
