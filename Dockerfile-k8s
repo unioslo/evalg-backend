@@ -4,8 +4,8 @@ MAINTAINER USITINT <bnt-int@usit.uio.no>
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
 # Proxy for updates during build
-#ENV http_proxy="http://software-proxy.uio.no:3128"
-#ENV https_proxy="https://software-proxy.uio.no:3128"
+ENV http_proxy="http://software-proxy.uio.no:3128"
+ENV https_proxy="https://software-proxy.uio.no:3128"
 
 RUN apt-get update && apt-get install -y \
     git \
