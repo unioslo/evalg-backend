@@ -1,5 +1,5 @@
 """
-Commands for importing units.
+Commands for adding and removing publishers.
 """
 import click
 import flask.cli
