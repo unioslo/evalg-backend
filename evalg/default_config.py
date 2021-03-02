@@ -236,6 +236,9 @@ PERMISSIONS = {
 #
 # Feide entitlement to group mappings.
 #
+
+FEIDE_ENTITLEMENT_MAPPING_ENABLED = True
+
 FEIDE_ENTITLEMENT_MAPPING = {
     'publisher': [],
     'global_admin': [],

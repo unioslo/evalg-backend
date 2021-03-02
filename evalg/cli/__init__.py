@@ -7,6 +7,7 @@ from . import election_group_cmds
 from . import email_cmds
 from . import flask_cmds
 from . import key_cmds
+from . import publisher_cmds
 from . import unit_cmds
 
 
@@ -18,4 +19,5 @@ def init_app(app):
     email_cmds.init_app(app)
     flask_cmds.init_app(app)
     key_cmds.init_app(app)
+    publisher_cmds.init_app(app)
     unit_cmds.init_app(app)

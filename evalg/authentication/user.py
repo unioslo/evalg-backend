@@ -212,9 +212,13 @@ class EvalgUser(object):
 
     def update_entitlement_groups(self, person):
         """Update entitlement_groups."""
+        if not current_app.config['FEIDE_ENTITLEMENT_MAPPING_ENABLED']:
+            current_app.logger.info('Entitlements mapping not enabled,'
+                    ' skipping')
+            return
+
         current_app.logger.info('Updating person entitlements for '
                                 'person_id=%r', person.id)
-
         self._entitlement_mapping = current_app.config[
                 'FEIDE_ENTITLEMENT_MAPPING']
 
