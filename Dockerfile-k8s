@@ -4,8 +4,8 @@ MAINTAINER USITINT <bnt-int@usit.uio.no>
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
 # Proxy for updates during build
-ENV http_proxy="http://software-proxy.uio.no:3128"
-ENV https_proxy="https://software-proxy.uio.no:3128"
+#ENV http_proxy="http://software-proxy.uio.no:3128"
+#ENV https_proxy="https://software-proxy.uio.no:3128"
 
 RUN apt-get update && apt-get install -y \
     git \
@@ -13,9 +13,6 @@ RUN apt-get update && apt-get install -y \
 
 ENV http_proxy=""
 ENV https_proxy=""
-
-COPY evalg/migrations /usr/src/evalg/evalg/migrations
-COPY evalg/migrations /evalg/migrations
 
 COPY . /tmp/evalg
 
@@ -29,6 +26,9 @@ RUN pip install /tmp/evalg
 RUN useradd --create-home evalg
 WORKDIR /home/evalg
 USER evalg
+
+COPY evalg/migrations /usr/src/evalg/evalg/migrations
+COPY evalg/migrations /home/evalg/evalg/migrations
 
 # Set instance path
 ENV EVALG_CONFIG="/usr/local/var/evalg-instance/evalg_config.py"
