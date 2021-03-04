@@ -89,10 +89,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
             raise ValueError('File contains invalid NINs')
 
         if all(['@' in x for x in ids]):
-            if all([cls.is_posix_uid(x.split('@')[0]) for x in ids]):
-                return 'feide_id'
-
-            raise ValueError('File contains invalid Feide IDs')
+            return 'feide_id'
 
         if any(['@' in x for x in ids]):
             # Probably a feide id or email mixed in with usernames
