@@ -2768,6 +2768,30 @@ class SubstituteRound(RegularRound):
                     count.CountingEventType.TERMINATE_19_2, {}))
             return self._terminate_substitute_count()
 
+    def _adjust_oslomet_quotas(self):
+        """
+        Update quotas in case where quota is shared between candidate
+        and substitute when only one of each is to be elected.
+        """
+        election = self._counter_obj.election
+        logger.warning('oslomet:, %s', election.oslomet_quotas)
+        if not (
+                election.num_choosable == election.num_substitutes == 1
+                and election.oslomet_quotas
+        ):
+            return
+        logger.info(
+            'oslomet_quota rules and candidates == substitutes == 1.'
+            ' Quota rules shared between candidate and substitute')
+        cand_quota = self._get_candidate_quota_groups(self._elected[0])[0]
+        other_quota = (set(self._counter_obj.quotas) - set([cand_quota])).pop()
+        if other_quota.members:
+            logger.warning('changing min_value')
+            self._state.add_event(count.CountingEvent(
+                count.CountingEventType.QUOTA_OSLOMET, {
+                    'quota_group_name': cand_quota.name}))
+            other_quota.min_value_substitutes = 1
+
     def _update_quota_values(self):
         """
         Updates the quota values for substitute candidates.
@@ -2782,16 +2806,7 @@ class SubstituteRound(RegularRound):
         # should be handled
         if self._quotas_disabled:
             return None
-        # adjust the min_value_substitutes for quotas, in case not enough
-        # candidates
-        # check:
-        # - self.counter_obj.election.oslomet_quotas
-        # - min_value_substitutes == 1
-        # - elected == 1
-        # ... and handle the special case:
-        # - adjust values if reasonable
-        # - extra log + extra event
-        # - test
+        self._adjust_oslomet_quotas()
         quota_unelected = {}
         empty_quota_group = False
         for quota_group in self._counter_obj.quotas:
@@ -2849,7 +2864,10 @@ class SubstituteRound(RegularRound):
                 {}))
             self._quotas_disabled = True
             return None
-        if no_min_value_substitutes:
+        if (
+                no_min_value_substitutes
+                and not self._counter_obj.election.oslomet_quotas
+        ):
             logger.info("At least one quota-group has min_value_substitutes. "
                         "Removing quota-rules.")
             self._state.add_event(count.CountingEvent(
