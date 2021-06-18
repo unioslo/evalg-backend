@@ -152,8 +152,14 @@ def configure_sentry(config):
         klass = name_to_integration.get(name)
         integrations.append(klass(**kwargs))
 
+    environment = config.get('environment')
+
+    if not environment:
+        environment = "unknown"
+
     sentry_sdk.init(
         dsn=dsn,
+        environment=environment,
         integrations=integrations,
         default_integrations=True,
     )

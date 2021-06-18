@@ -256,6 +256,7 @@ ENVELOPE_PADDED_LEN = 1000
 SENTRY = {
     'enable': False,
     'dsn': '',
+    'environment': 'unknown',
     'integrations': {
         'logging': {
             'enable': True,
