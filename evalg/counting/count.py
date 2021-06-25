@@ -12,8 +12,7 @@ import secrets
 
 import pytz
 
-from evalg.counting.algorithms import ntnucv, uiostv, uiomv, poll
-# TODO: circular import, is it necessary?
+from evalg.counting.algorithms import ntnucv, mntv, uiostv, uiomv, poll
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -25,16 +24,17 @@ logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 PROTOCOL_MAPPINGS = {
     'uio_stv': uiostv.Protocol,
     'uio_mv': uiomv.Protocol,
+    'mntv': mntv.Protocol,
     'ntnu_cv': ntnucv.Protocol,
     'poll': poll.Protocol,
 }
 RESULT_MAPPINGS = {
     'uio_stv': uiostv.Result,
     'uio_mv': uiomv.Result,
+    'mntv': mntv.Result,
     'ntnu_cv': ntnucv.Result,
     'poll': poll.Result,
 }
-
 
 class CountingFailure(Exception):
     """General custom exception"""
@@ -681,6 +681,18 @@ class ElectionCountPath:
                 meta=meta,
                 alternatives=self.get_poll_alternatives()
             )
+        if election.type_str == 'mntv':
+            logger.info(self.get_elected_regular_candidates())
+            a = mntv.Result(
+                meta=meta,
+                regular_candidates=[str(cand.id) for cand in
+                                    self.get_elected_regular_candidates()],
+                substitute_candidates=[
+                    str(cand.id) for cand in
+                    self.get_elected_substitute_candidates()])
+            logger.info(a)
+            return a
+
         return None
 
     def get_protocol(self):
@@ -766,6 +778,8 @@ class ElectionCountPath:
             return ntnucv.Protocol(meta=meta, rounds=rounds)
         if election.type_str == 'poll':
             return poll.Protocol(meta=meta, rounds=rounds)
+        if election.type_str == 'mntv':
+            return mntv.Protocol(meta=meta, rounds=rounds)
         return None
 
 
@@ -925,6 +939,8 @@ class Counter:
             round_cls = ntnucv.Round
         elif self._election_obj.type_str == 'poll':
             round_cls = poll.Round
+        elif self._election_obj.type_str == 'mntv':
+            round_cls = mntv.Round
         election_round = round_cls(self)
         election_round.count()
         if self._drawing_nodes:
@@ -948,7 +964,7 @@ class Counter:
         """
         Draws a candidate for the given round.
 
-        This implementsa type of caching in order to use properly
+        This implements a type of caching in order to use properly
         the DrawingNode object(s)
 
         :param candidates: The candidates to choose from

@@ -3,28 +3,26 @@ from evalg.models.election_result import ElectionResult
 from evalg.proc.count import ElectionGroupCounter
 
 
-def test_election_group_counter(
-        election_group_bar,
-        pref_candidates_bar,
-        pollbook_bar,
-        pollbook_voter_bar,
-        envelope_bar,
-        vote_bar,
-        election_keys_foo,
-        db_session
-):
+def test_election_group_counter(db_session,
+                                election_group_generator,
+                                election_keys):
+    election_group = election_group_generator(owner=True,
+                                              multiple=True,
+                                              countable=True,
+                                              voters_with_votes=True)
+    voters = election_group.elections[0].pollbooks[0].voters
+    voters_with_votes = [x for x in voters if x.has_voted]
     election_group_counter = ElectionGroupCounter(db_session,
-                                                  election_group_bar.id,
-                                                  election_keys_foo['private'],
+                                                  election_group.id,
+                                                  election_keys['private'],
                                                   test_mode=True)
-
     count = election_group_counter.log_start_count()
     assert count.status == 'ongoing'
     election_group_counter.deserialize_ballots()
     pollbook = election_group_counter.group.elections[0].pollbooks[0]
     assert pollbook.ballots[0].ballot_data
     election_group_counter.process_for_count()
-    assert pollbook.weight_per_vote == 1
+    assert float(pollbook.weight_per_vote) == 1 / len(voters_with_votes)
     assert pollbook.weight_per_pollbook == 1
     election_group_counter.generate_results(count, 'Test Runner')
 
