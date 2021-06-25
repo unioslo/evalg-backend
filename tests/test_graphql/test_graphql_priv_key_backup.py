@@ -35,12 +35,12 @@ def test_query_master_keys(client, db_session, master_key):
 
 def test_mutation_add_election_group_key_backup(client,
                                                 db_session,
-                                                make_election_group,
+                                                election_group_generator,
+                                                logged_in_user,
                                                 master_key):
     """Tests the add_election_group_key_backup mutation"""
     privkey, master_key = master_key(db_session)
-    election_group = make_election_group('add_election_group_key_backup test',
-                                         admin=True)
+    election_group = election_group_generator(owner=True)
     mutation = """
     mutation (
         $electionGroupId: UUID!

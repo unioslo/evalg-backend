@@ -9,7 +9,7 @@ from evalg.counting.count import Counter
 @pytest.mark.parametrize("regular, substitutes, oslomet",
                          [(2, 2, False),
                           (1, 1, True)])
-def test_counting_algorithms_uiostv(make_full_election,
+def test_counting_algorithms_uiostv(election_group_generator,
                                     regular,
                                     substitutes,
                                     oslomet):
@@ -21,13 +21,18 @@ def test_counting_algorithms_uiostv(make_full_election,
     - No votes
     - Gender quotas
     """
-    election_data = make_full_election(
-        'test_counting_algorithms_uiostv election',
-        nr_of_elections=1)
-    election = election_data['elections'][0]
+    election_group = election_group_generator(owner=True,
+                                              countable=True,
+                                              multiple=True,
+                                              election_type='uio_stv',
+                                              candidates_per_pollbook=7,
+                                              nr_of_seats=regular,
+                                              nr_of_substitutes=substitutes,
+                                              voters_with_votes=True)
+    election = election_group.elections[0]
+     
     election.meta['counting_rules']['oslomet_quotas'] = oslomet
-    election.meta['candidate_rules']['seats'] = regular
-    election.meta['candidate_rules']['substitutes'] = substitutes
+
     # duplicate the process_for_count functionality
     for pollbook in election.pollbooks:
         pollbook.ballots_count = 0
@@ -42,8 +47,11 @@ def test_counting_algorithms_uiostv(make_full_election,
     # sanity checks before counting ...
     candidates = election.candidates
     assert len(candidates) == 7  # should be 7 candidates
-    males = [c for c in candidates if c.meta['gender'] == 'male']
+    males = [str(c.id) for c in candidates if c.meta['gender'] == 'male']
     assert males
+    females = [str(c.id) for c in candidates if c.meta['gender'] == 'female']
+    assert females
+
     # now the counting
     counter = Counter(election, [])  # no test_mode. Real randomization at work
     default_path = counter.count().default_path
@@ -61,10 +69,24 @@ def test_counting_algorithms_uiostv(make_full_election,
     assert len(result_dict['regular_candidates']) == regular
     assert len(result_dict['substitute_candidates']) == substitutes
     if oslomet:
-        assert (str(males[0].id) in result_dict['regular_candidates']
-                or str(males[0].id) in result_dict['substitute_candidates'])
+        # One of the male candidates should have been elected
+        # as a regular or substitute candidate
+        assert ([x for x in result_dict['regular_candidates'] if x in males]
+            or [x for x in result_dict['substitute_candidates'] if x in males])
+
+        # One of the female candidates should have been elected as
+        # a regular candidate
+        assert ([x for x in result_dict['regular_candidates'] if x in females]
+            or [x for x in result_dict['substitute_candidates'] if x in females])
     else:
-        assert str(males[0].id) in result_dict['regular_candidates']
+        # One of the male candidates should have been elected
+        # as a regular candidate
+        assert [x for x in result_dict['regular_candidates'] if x in males]
+    
+        # One of the female candidates should have been elected as
+        # a regular candidate
+        assert [x for x in result_dict['regular_candidates'] if x in females]
+
     # test the protocol #
     assert election_protocol_dict
     assert (''.join(result_dict['regular_candidates']) ==
@@ -88,8 +110,7 @@ def test_counting_algorithms_uiostv(make_full_election,
     assert protocol.render()
     # more tests / checks should be added in the future
 
-
-def test_counting_algorithms_uiomv(make_full_election):
+def test_counting_algorithms_uiomv(election_group_generator):
     """
     Tests for the UiO MV algorithm - case1
 
@@ -97,13 +118,15 @@ def test_counting_algorithms_uiomv(make_full_election):
     - 1 regular candidate to elect.
     - No votes
     """
-    election_data = make_full_election(
-        'test_counting_algorithms_uiostv election',
-        nr_of_elections=1,
-        seats=1,
-        substitutes=0,
-        election_type='uio_mv')
-    election = election_data['elections'][0]
+    election_group = election_group_generator(owner=True,
+                                              countable=True,
+                                              multiple=True,
+                                              election_type='uio_mv',
+                                              candidates_per_pollbook=2,
+                                              nr_of_seats=1,
+                                              nr_of_substitutes=0,
+                                              voters_with_votes=True)
+    election = election_group.elections[0]
     # duplicate the process_for_count functionality
     for pollbook in election.pollbooks:
         pollbook.ballots_count = 0
@@ -144,7 +167,7 @@ def test_counting_algorithms_uiomv(make_full_election):
     # more tests / checks should be added in the future
 
 
-def test_counting_algorithms_ntnucv(make_full_election):
+def test_counting_algorithms_ntnucv(election_group_generator):
     """
     Tests for the NTNU CV algorithm - case1
 
@@ -153,13 +176,15 @@ def test_counting_algorithms_ntnucv(make_full_election):
     - No votes
     - Gender quotas
     """
-    election_data = make_full_election(
-        'test_counting_algorithms_ntnu election',
-        nr_of_elections=1,
-        seats=1,
-        substitutes=1,
-        election_type='ntnu_cv')
-    election = election_data['elections'][0]
+    election_group = election_group_generator(owner=True,
+                                              countable=True,
+                                              multiple=True,
+                                              election_type='ntnu_cv',
+                                              affirmative_action='gender_40',
+                                              candidates_per_pollbook=7,
+                                              nr_of_seats=1,
+                                              nr_of_substitutes=1)
+    election = election_group.elections[0]
     # duplicate the process_for_count functionality
     for pollbook in election.pollbooks:
         pollbook.ballots_count = 0
@@ -172,10 +197,14 @@ def test_counting_algorithms_ntnucv(make_full_election):
     election.total_amount_empty_ballots = 0
     election.total_amount_counting_ballots = 0
     # sanity checks before counting ...
+
     candidates = election.candidates
     assert len(candidates) == 7  # should be 7 candidates
-    males = [c for c in candidates if c.meta['gender'] == 'male']
+    males = [str(c.id) for c in candidates if c.meta['gender'] == 'male']
     assert males
+    females = [str(c.id) for c in candidates if c.meta['gender'] == 'female']
+    assert females
+
     # now the counting
     counter = Counter(election, [])  # no test_mode. Real randomization at work
     default_path = counter.count().default_path
@@ -189,12 +218,18 @@ def test_counting_algorithms_ntnucv(make_full_election):
     assert result.to_json()
     # empty ballot election can only be decided by drawing
     assert result_dict['meta']['drawing']
-    # 2 regular and 2 substitutes should have been elected
+    # 1 regular and 1 substitutes should have been elected
     assert len(result_dict['regular_candidates']) == 1
     assert len(result_dict['substitute_candidates']) == 1
-    # the only male candidate should have been elected
-    assert (str(males[0].id) in result_dict['regular_candidates'] or
-            str(males[0].id) in result_dict['substitute_candidates'])
+
+    # One male candidate should have been elected
+    assert ([x for x in result_dict['regular_candidates'] if x in males] or
+            [x for x in result_dict['substitute_candidates'] if x in males])
+
+    # One female candidate should have been elected
+    assert ([x for x in result_dict['regular_candidates'] if x in females] or
+            [x for x in result_dict['substitute_candidates'] if x in females])
+
     # test the protocol #
     assert election_protocol_dict
     assert (''.join(result_dict['regular_candidates']) ==
