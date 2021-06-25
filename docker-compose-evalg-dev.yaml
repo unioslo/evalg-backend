@@ -39,7 +39,7 @@ services:
       LANG: C.UTF-8
 
   db:
-    image: harbor.uio.no/library/postgres:latest
+    image: harbor.uio.no/library/docker.io-postgres:latest
     ports:
       - "5432:5432"
     volumes:
