@@ -141,17 +141,17 @@ class AddVote(graphene.Mutation):
                     voter_id,
                     vote_policy.voter.pollbook.election.id)
 
-        #from evalg.tasks.celery_worker import send_vote_confirmation_mail_task
+        if current_app.config.get('MAIL_ENABLE'):
+            from evalg.tasks.celery_worker import send_vote_confirmation_mail_task
 
-        election_group = vote_policy.voter.pollbook.election.election_group
-        election_group_name = election_group.name
+            election_group = vote_policy.voter.pollbook.election.election_group
+            election_group_name = election_group.name
 
-        #if current_app.config.get('MAIL_ENABLE'):
-        #    try:
-        #        send_vote_confirmation_mail_task.delay(
-        #            user.person.email,
-        #            election_group_name)
-        #    except Exception as e:
-        #        logger.error('Could not send email to %s, rabbit down', user.person.email)
+            try:
+                send_vote_confirmation_mail_task.delay(
+                    user.person.email,
+                    election_group_name)
+            except Exception as e:
+                logger.error('Could not send email to %s, rabbit down', user.person.email)
 
         return node
