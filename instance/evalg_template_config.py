@@ -32,6 +32,22 @@ election_rule_sets = {
             'affirmative_action': ['gender_40'],
         },
     },
+    'mntv': {
+        'candidate_type': 'single',
+        # which metadata to collect:
+        'candidate_rules': {'seats': 1,
+                            'substitutes': 2,
+                            'candidate_gender': True},
+        'ballot_rules': {
+            'voting': 'no_rank',
+            'votes': "nr_of_seats",
+            'allow_blank': True,
+        },
+        'counting_rules': {
+            'method': 'mntv',
+            'affirmative_action': ['gender_40'],
+        },
+    },
     'uio_teams': {
         'candidate_type': 'single_team',
         'candidate_rules': {'seats': 1},
@@ -155,7 +171,7 @@ election_group_types = {
     },
     'board': {
         'group_type': 'multiple_elections',
-        'rule_set': election_rule_sets['uio_stv'],
+        'rule_set': election_rule_sets['mntv'],
         'elections': [
             {
                 'sequence': 'permanent_academic_staff',

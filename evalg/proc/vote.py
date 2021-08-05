@@ -1,6 +1,8 @@
 """This module implements interfaces for voting and getting vote statistics."""
 import collections
 import logging
+from re import I, L
+import re
 
 from flask import current_app
 from sqlalchemy.sql import and_, select, func
@@ -17,6 +19,8 @@ from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 
 logger = logging.getLogger(__name__)
 
+class BallotException(Exception):
+    """Election ballot exception."""
 
 class ElectionVotePolicy(object):
     """Helper class used to create and store ballots correctly."""
@@ -64,11 +68,41 @@ class ElectionVotePolicy(object):
                 return False
         return True
 
+    def verify_no_duplicates(self, ranked_candidate_ids):
+        """Verify that the votes does not contain any duplicates"""
+        if len(set(ranked_candidate_ids)) != len(ranked_candidate_ids):
+            return False
+        return True
+
+    def verify_nr_of_votes_in_ballot(self, candidate_ids):
+        """Check that a ballot contains a correct nr of votes."""
+        meta = self.voter.pollbook.election.meta
+        ballot_rules = meta['ballot_rules']
+        candidate_rules = meta['candidate_rules']
+        if (ballot_rules['votes'] == 'nr_of_seats' and
+                candidate_rules['seats'] < len(candidate_ids)):
+            if candidate_rules['seats'] == 0:
+                if (candidate_rules['substitutes'] < len(candidate_ids)):
+                    return False
+            else:
+                return False
+        return True
+
     def verify_ballot_content(self, ballot_data):
         ranked_candidate_ids = ballot_data['rankedCandidateIds']
-        if ranked_candidate_ids and ballot_data['isBlankVote']:
+        if (ranked_candidate_ids and 'isBlankVote' in ballot_data
+                and ballot_data['isBlankVote']):
             logger.error('A blank vote can not contain preferred candidates')
             return False
+
+        if not self.verify_no_duplicates(ranked_candidate_ids):
+            logger.error('Ballot contains duplicate votes for candidate')
+            return False
+
+        if not self.verify_nr_of_votes_in_ballot(ranked_candidate_ids):
+            logger.error('Ballot contains to many votes!')
+            return False
+
         if not self.verify_candidates_exist(ranked_candidate_ids,
                                             self.voter.pollbook.election_id):
             logger.error('Selected candidate(s) does not exist (%r)',
@@ -115,6 +149,9 @@ class ElectionVotePolicy(object):
             self.voter.pollbook.election.election_group.public_key)
         if not election_public_key:
             raise Exception('Election key is missing.')
+
+        if not self.verify_ballot_content(ballot_data):
+            raise BallotException('Error in ballot data')
 
         envelope = self.make_ballot(ballot_data, election_public_key)
         self.session.add(envelope)

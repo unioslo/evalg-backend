@@ -516,7 +516,8 @@ def new_elections_generator(db_session,
                             countable=False,
                             with_self_added_voters=False,
                             voters_with_votes=False,
-                            multiple=False):
+                            multiple=False,
+                            nr_of_votes='all'):
     """Generate an election."""
     if running and countable:
         raise ValueError('Election can\'t be running and countable at the '
@@ -531,7 +532,7 @@ def new_elections_generator(db_session,
                 "candidate_gender": True},
             "ballot_rules": {
                 "voting": "rank_candidates",
-                "votes": "all",
+                "votes": nr_of_votes,
             },
             "counting_rules": {
                 "method": election_group.meta['counting_rules']['method'],
@@ -548,7 +549,7 @@ def new_elections_generator(db_session,
             },
             "ballot_rules": {
                 "voting": "rank_candidates",
-                "votes": "all",
+                "votes": nr_of_votes,
             },
             "counting_rules": {
                 "method": election_group.meta['counting_rules']['method'],
@@ -688,6 +689,11 @@ def election_group_generator(db_session, logged_in_user, election_keys):
             published = True
             with_key = True
 
+        if election_type == 'mntv':
+            nr_of_votes = 'nr_of_seats'
+        else:
+            nr_of_votes = 'all'
+
         name_rand = ''.join(random.choices(string.ascii_lowercase, k=10))
         name = 'election_group-{}'.format(name_rand)
 
@@ -702,7 +708,7 @@ def election_group_generator(db_session, logged_in_user, election_keys):
                 },
                 "ballot_rules": {
                     "voting": "rank_candidates",
-                    "votes": "all"},
+                    "votes": nr_of_votes},
                 "counting_rules": {
                     "method": election_type,
                     "affirmative_action":
@@ -716,7 +722,7 @@ def election_group_generator(db_session, logged_in_user, election_keys):
                 "candidate_rules": {"seats": nr_of_seats},
                 "ballot_rules": {
                     "voting": "rank_candidates",
-                    "votes": "all"},
+                    "votes": nr_of_votes},
                 "counting_rules": {
                     "method": election_type
                 }
@@ -754,7 +760,8 @@ def election_group_generator(db_session, logged_in_user, election_keys):
             candidates_per_pollbook=candidates_per_pollbook,
             with_self_added_voters=with_self_added_voters,
             voters_with_votes=voters_with_votes,
-            multiple=multiple)
+            multiple=multiple,
+            nr_of_votes=nr_of_votes)
         if owner:
             current_user_principal = evalg.proc.authz.get_or_create_principal(
                 db_session,

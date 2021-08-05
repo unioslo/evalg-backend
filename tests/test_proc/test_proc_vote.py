@@ -1,5 +1,6 @@
+import pytest
 
-
+from evalg.proc.vote import BallotException
 from evalg.models.ballot import Envelope
 from evalg.models.votes import Vote
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
@@ -55,3 +56,27 @@ def test_election_vote_policy(
     ballot_after = serializer.deserialize(encrypted_ballot_data)
     assert ballot_after
     assert ballot_after == ballot_data
+
+
+def test_vote_validation(
+    config,
+    election_group_generator,
+    ballot_data_generator,
+    election_vote_policy_generator,
+    election_keys):
+
+    election_group = election_group_generator(owner=True,
+                                              countable=True,
+                                              multiple=True,
+                                              election_type='mntv',
+                                              candidates_per_pollbook=7,
+                                              nr_of_seats=2,
+                                              voters_with_votes=False)
+    election = election_group.elections[0]
+    pollbook = election.pollbooks[0]
+    voter = pollbook.voters[0]
+    candidates = election.lists[0].candidates
+    ballot_data = ballot_data_generator(pollbook, candidates=candidates[:4])
+    election_vote_policy = election_vote_policy_generator(voter.id)
+    with pytest.raises(BallotException):
+        election_vote_policy.add_vote(ballot_data.copy())
