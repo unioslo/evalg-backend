@@ -1,8 +1,6 @@
 """This module implements interfaces for voting and getting vote statistics."""
 import collections
 import logging
-from re import I, L
-import re
 
 from flask import current_app
 from sqlalchemy.sql import and_, select, func
