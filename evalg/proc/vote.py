@@ -66,11 +66,9 @@ class ElectionVotePolicy(object):
                 return False
         return True
 
-    def verify_no_duplicates(self, ranked_candidate_ids):
+    def verify_no_duplicates(self, candidate_ids):
         """Verify that the votes does not contain any duplicates"""
-        if len(set(ranked_candidate_ids)) != len(ranked_candidate_ids):
-            return False
-        return True
+        return len(set(candidate_ids)) == len(candidate_ids)
 
     def verify_nr_of_votes_in_ballot(self, candidate_ids):
         """Check that a ballot contains a correct nr of votes."""
@@ -98,7 +96,7 @@ class ElectionVotePolicy(object):
             return False
 
         if not self.verify_nr_of_votes_in_ballot(ranked_candidate_ids):
-            logger.error('Ballot contains to many votes!')
+            logger.error('Ballot contains too many votes!')
             return False
 
         if not self.verify_candidates_exist(ranked_candidate_ids,
