@@ -19,6 +19,8 @@ class ElectionMutations(graphene.ObjectType):
         nodes.election_group.SetElectionGroupKey.Field()
     start_election_group_count = \
         nodes.election_group.CountElectionGroup.Field()
+    update_election_group_name = \
+        nodes.election_group.UpdateElectionGroupName.Field()
 
     # Election
     update_voting_periods = \

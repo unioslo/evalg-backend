@@ -314,10 +314,11 @@ list_election_group_counting_results_query = graphene.List(
 #
 
 class ElectionName(graphene.InputObjectType):
-    """Tuple of name and language"""
+    """Name of election in different languages"""
 
-    language = graphene.String(required=True)
-    name = graphene.String(required=True)
+    en = graphene.String(required=True)
+    nb = graphene.String(required=True)
+    nn = graphene.String(required=True)
 
 
 class CreateNewElectionGroup(graphene.Mutation):
@@ -327,15 +328,15 @@ class CreateNewElectionGroup(graphene.Mutation):
         ou_id = graphene.UUID(required=True)
         template = graphene.Boolean()
         template_name = graphene.String(required=True)
-        name_list = graphene.List(ElectionName)
+        name_dict = ElectionName()
 
     ok = graphene.Boolean()
     election_group = graphene.Field(lambda: ElectionGroup)
 
-    def mutate(self, info, ou_id, template, template_name, name_list):
+    def mutate(self, info, ou_id, template, template_name, name_dict=None):
         session = get_session(info)
         ou = session.query(evalg.models.ou.OrganizationalUnit).get(ou_id)
-        name_dict = {el.language: el.name for el in name_list}
+        # TODO: her er det noe å se på for hvordan navn settes
         election_group = evalg.proc.election.make_group_from_template(
             session, template_name, ou, name_dict=name_dict)
         current_user = get_current_user(info)
@@ -670,3 +671,29 @@ class CountElectionGroup(graphene.Mutation):
 
         return CountElectionGroupResponse(success=True,
                                           election_group_count_id=count.id)
+
+
+class UpdateElectionGroupName(graphene.Mutation):
+    """Update name for elections in an election group."""
+
+    class Arguments:
+        election_group_id = graphene.UUID(required=True)
+        name_dict = ElectionName(required=True)
+
+    ok = graphene.Boolean()
+
+    def mutate(self, info, election_group_id, name_dict):
+        print('STARTING TO MUTATE NAME' + '*'*100)
+        session = get_session(info)
+        user = get_current_user(info)
+        election_group_id = election_group_id
+        election_group = session.query(
+            evalg.models.election.ElectionGroup).get(election_group_id)
+        if not can_manage_election_group(session, user, election_group):
+            print('NOT ALLOWED DONE TO MUTATE NAME')
+            return UpdateElectionGroupName(ok=False)
+        election_group.name = name_dict
+        session.add(election_group)
+        session.commit()
+        print('DONE TO MUTATE NAME')
+        return UpdateElectionGroupName(ok=True)
