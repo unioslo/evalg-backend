@@ -31,17 +31,17 @@ def test_allow_create_new_election_group(db_session,
         'ouId': str(ou.id),
         'template': True,
         'templateName': 'uio_dean',
-        'name': []
+        'name': None
     }
     mutation = """
     mutation ($ouId: UUID!,
               $template: Boolean!,
               $templateName: String!,
-              $name: [ElectionName]) {
+              $name: ElectionName) {
         createNewElectionGroup(ouId: $ouId,
                                template: $template,
                                templateName: $templateName,
-                               nameList: $name) {
+                               nameDict: $name) {
             ok
         }
     }
@@ -90,6 +90,42 @@ def test_auth_update_base_settings(db_session,
     execution = client.execute(
         mutation, variables=variables, context=get_test_context(db_session))
     response = execution['data']['updateBaseSettings']
+    assert response['ok'] == is_allowed
+
+
+@reg.add_scenario('updateElectionGroupName', 'allow')
+@reg.add_scenario('updateElectionGroupName', 'deny')
+@pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
+def test_auth_update_base_settings(db_session,
+                                   is_owner,
+                                   is_allowed,
+                                   client,
+                                   election_group_generator):
+    """Allowed and denied scenario tests of updateBaseSettings."""
+    election_group = election_group_generator(
+        owner=is_owner,
+        multiple=True)
+    elections = [{'id': str(e.id),
+                  'seats': e.meta['candidate_rules']['seats'],
+                  'substitutes': e.meta['candidate_rules']['substitutes'],
+                  'active': e.active}
+                 for e in election_group.elections]
+    variables = {
+        'id': str(election_group.id),
+        'name': election_group.name
+    }
+    mutation = """
+    mutation ($id: UUID!,
+              $name: ElectionName!) {
+        updateElectionGroupName(electionGroupId: $id,
+                                nameDict: $name) {
+            ok
+        }
+    }
+    """
+    execution = client.execute(
+        mutation, variables=variables, context=get_test_context(db_session))
+    response = execution['data']['updateElectionGroupName']
     assert response['ok'] == is_allowed
 
 
