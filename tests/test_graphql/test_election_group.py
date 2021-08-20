@@ -143,11 +143,40 @@ def test_set_election_group_key_mutation(
     assert (election_group_db.public_key == key) == success
 
 
-# def test_update_election_group_name_mutation(
-#         name,
-#         client,
-#         make_election_group_from_template,
-#         logger_in_user):
-#     """Test the UpdateElectionGroupName mutation"""
-#     election_group = make_election_group(
-#         'set_key_test', 'uio_dean', logged_in_user)
+@pytest.mark.parametrize(
+    'name',
+    [
+        {'nb': 'bokmål',
+         'nn': 'nynorsk',
+         'en': 'english'}
+    ]
+)
+def test_update_election_group_name_mutation(
+        name,
+        client,
+        election_group_generator,
+        logged_in_user):
+    """Test the UpdateElectionGroupName mutation"""
+    election_group = election_group_generator(owner=True)
+    variables = {
+        'id': str(election_group.id),
+        'name': name
+    }
+    mutation = """
+    mutation ($id: UUID!,
+              $name: ElectionName!) {
+        updateElectionGroupName(electionGroupId: $id,
+                                nameDict: $name) {
+            ok
+        }
+    }
+    """
+    assert not election_group.name == name
+    execution = client.execute(
+        mutation,
+        variables=variables,
+        context=get_context())
+    response = execution['data']['updateElectionGroupName']
+    assert response['ok']
+    election_group_db = ElectionGroup.query.get(election_group.id)
+    assert election_group_db.name == name

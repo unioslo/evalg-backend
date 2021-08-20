@@ -683,17 +683,14 @@ class UpdateElectionGroupName(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(self, info, election_group_id, name_dict):
-        print('STARTING TO MUTATE NAME' + '*'*100)
         session = get_session(info)
         user = get_current_user(info)
         election_group_id = election_group_id
         election_group = session.query(
             evalg.models.election.ElectionGroup).get(election_group_id)
         if not can_manage_election_group(session, user, election_group):
-            print('NOT ALLOWED DONE TO MUTATE NAME')
             return UpdateElectionGroupName(ok=False)
         election_group.name = name_dict
         session.add(election_group)
         session.commit()
-        print('DONE TO MUTATE NAME')
         return UpdateElectionGroupName(ok=True)
