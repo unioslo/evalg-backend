@@ -145,11 +145,11 @@ def test_set_election_group_key_mutation(
 
 @pytest.mark.parametrize(
     'name',
-    [
-        {'nb': 'bokmål',
-         'nn': 'nynorsk',
-         'en': 'english'}
-    ]
+    [{
+        'nb': 'bokmål',
+        'nn': 'nynorsk',
+        'en': 'english'
+    }]
 )
 def test_update_election_group_name_mutation(
         name,
@@ -171,7 +171,7 @@ def test_update_election_group_name_mutation(
         }
     }
     """
-    assert not election_group.name == name
+    assert election_group.name != name
     execution = client.execute(
         mutation,
         variables=variables,

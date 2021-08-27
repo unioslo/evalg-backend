@@ -685,7 +685,6 @@ class UpdateElectionGroupName(graphene.Mutation):
     def mutate(self, info, election_group_id, name_dict):
         session = get_session(info)
         user = get_current_user(info)
-        election_group_id = election_group_id
         election_group = session.query(
             evalg.models.election.ElectionGroup).get(election_group_id)
         if not can_manage_election_group(session, user, election_group):
