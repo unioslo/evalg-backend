@@ -36,7 +36,7 @@ pipeline {
             post {
                 always {
                     junit '**/junit*.xml'
-                    publishCoverage adapters: [coberturaAdapter(path: '**/coverage*.xml')] w
+                    publishCoverage adapters: [coberturaAdapter(path: '**/coverage*.xml')]
                 }
                 cleanup {
                     sh('rm -vf junit-*.xml')
