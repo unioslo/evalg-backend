@@ -409,21 +409,71 @@ class Election(AbstractElection):
                             males.append(candidate)
                         elif candidate.meta['gender'] == 'female':
                             females.append(candidate)
-                    if self.type_str == 'uio_stv' or self.type_str == 'mntv':
-                        # no other elections implemented yet...
-                        if self.num_choosable <= 1:
-                            min_value = 0
-                        elif self.num_choosable <= 3:
-                            min_value = 1
-                        elif self.num_choosable:
-                            min_value = math.ceil(0.4 * self.num_choosable)
-                        if self.num_substitutes <= 1:
-                            min_value_substitutes = 0
-                        elif self.num_substitutes <= 3:
-                            min_value_substitutes = 1
-                        elif self.num_substitutes:
-                            min_value_substitutes = math.ceil(
-                                0.4 * self.num_substitutes)
+                    if self.num_choosable <= 1:
+                        min_value = 0
+                    elif self.num_choosable <= 3:
+                        min_value = 1
+                    elif self.num_choosable:
+                        min_value = math.ceil(0.4 * self.num_choosable)
+                    if self.num_substitutes <= 1:
+                        min_value_substitutes = 0
+                    elif self.num_substitutes <= 3:
+                        min_value_substitutes = 1
+                    elif self.num_substitutes:
+                        min_value_substitutes = math.ceil(
+                            0.4 * self.num_substitutes)
+                    # handle universal cases when members < min_value
+                    min_value_males = min([min_value, len(males)])
+                    min_value_females = min([min_value, len(females)])
+                    quotas.append(
+                        QuotaGroup(
+                            {'en': 'Males',
+                             'nn': 'Menn',
+                             'nb': 'Menn'},
+                            males,
+                            min_value_males,
+                            min([min_value_substitutes,
+                                 len(males) - min_value_males])))
+                    quotas.append(
+                        QuotaGroup(
+                            {'en': 'Females',
+                             'nn': 'Kvinner',
+                             'nb': 'Kvinner'},
+                            females,
+                            min_value_females,
+                            min([min_value_substitutes,
+                                 len(females) - min_value_females])))
+                elif quota_name == 'gender_equality_law':
+                    males = []
+                    females = []
+                    min_value = 0
+                    min_value_substitutes = 0  # for uiostv .. etc
+                    for candidate in self.candidates:
+                        if candidate.meta['gender'] == 'male':
+                            males.append(candidate)
+                        elif candidate.meta['gender'] == 'female':
+                            females.append(candidate)
+                    if self.num_choosable in (0, 1):
+                        min_value = 0
+                    elif self.num_choosable in (2, 3):
+                        min_value = 1
+                    elif self.num_choosable in (4, 5):
+                        min_value = 2
+                    elif self.num_choosable in (6, 7, 8):
+                        min_value = 3
+                    elif self.num_choosable:
+                        min_value = math.ceil(0.4 * self.num_choosable)
+                    if self.num_substitutes in (0, 1):
+                        min_value_substitutes = 0
+                    elif self.num_substitutes in (2, 3):
+                        min_value_substitutes = 1
+                    elif self.num_substitutes in (4, 5):
+                        min_value_substitutes = 2
+                    elif self.num_substitutes in (6, 7, 8):
+                        min_value_substitutes = 3
+                    elif self.num_substitutes:
+                        min_value_substitutes = math.ceil(
+                            0.4 * self.num_substitutes)
                     # handle universal cases when members < min_value
                     min_value_males = min([min_value, len(males)])
                     min_value_females = min([min_value, len(females)])
