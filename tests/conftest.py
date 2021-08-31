@@ -730,11 +730,13 @@ def election_group_generator(db_session, logged_in_user, election_keys):
         data = {
             'name': {
                 'nb': name,
+                'nn': name,
                 'en': name,
             },
             'type': election_group_type,
             'description': {
                 'nb': 'Description foo',
+                'nn': 'Description foo',
                 'en': 'Description foo',
             },
             'meta': meta,

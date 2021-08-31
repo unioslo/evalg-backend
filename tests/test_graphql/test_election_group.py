@@ -9,18 +9,18 @@ from evalg.graphql import get_context
 
 @pytest.mark.parametrize(
     'template_name, expected_election_nr, election_type, name',
-    [('uio_principal', 1, 'single_election', []),
-     ('uio_dean', 1, 'single_election', []),
-     ('uio_department_leader', 1, 'single_election', []),
-     ('uio_university_board', 4, 'multiple_elections', []),
-     ('uio_faculty_board', 4, 'multiple_elections', []),
-     ('uio_department_board', 4, 'multiple_elections', []),
-     ('uio_student_parliament', 1, 'single_election', []),
-     ('uio_vb_lamu', 1, 'multiple_elections', [
-         {'language': 'en', 'name': 'en'},
-         {'language': 'nb', 'name': 'nb'},
-         {'language': 'nn', 'name': 'nn'},
-     ]),
+    [('uio_principal', 1, 'single_election', None),
+     ('uio_dean', 1, 'single_election', None),
+     ('uio_department_leader', 1, 'single_election', None),
+     ('uio_university_board', 4, 'multiple_elections', None),
+     ('uio_faculty_board', 4, 'multiple_elections', None),
+     ('uio_department_board', 4, 'multiple_elections', None),
+     ('uio_student_parliament', 1, 'single_election', None),
+     ('uio_vb_lamu', 1, 'multiple_elections', {
+         'en': 'en',
+         'nb': 'nb',
+         'nn': 'nn'
+     }),
      ]
 )
 def test_create_election_group_mutation(
@@ -43,11 +43,11 @@ def test_create_election_group_mutation(
     mutation ($ouId: UUID!,
               $template: Boolean!,
               $templateName: String!,
-              $name: [ElectionName]) {
+              $name: ElectionName) {
         createNewElectionGroup(ouId: $ouId,
                                template: $template,
                                templateName: $templateName,
-                               nameList: $name) {
+                               nameDict: $name) {
             ok
             electionGroup {
                 id
@@ -93,8 +93,7 @@ def test_create_election_group_mutation(
     assert not election_group_db.published
 
     if name:
-        internal_names = {n['language']: n['name'] for n in name}
-        assert internal_names == election_group['name']
+        assert name == election_group['name']
 
 
 @pytest.mark.parametrize(
@@ -142,3 +141,42 @@ def test_set_election_group_key_mutation(
     assert response['success'] == success
     election_group_db = ElectionGroup.query.get(election_group.id)
     assert (election_group_db.public_key == key) == success
+
+
+@pytest.mark.parametrize(
+    'name',
+    [{
+        'nb': 'bokmål',
+        'nn': 'nynorsk',
+        'en': 'english'
+    }]
+)
+def test_update_election_group_name_mutation(
+        name,
+        client,
+        election_group_generator,
+        logged_in_user):
+    """Test the UpdateElectionGroupName mutation"""
+    election_group = election_group_generator(owner=True)
+    variables = {
+        'id': str(election_group.id),
+        'name': name
+    }
+    mutation = """
+    mutation ($id: UUID!,
+              $name: ElectionName!) {
+        updateElectionGroupName(electionGroupId: $id,
+                                nameDict: $name) {
+            ok
+        }
+    }
+    """
+    assert election_group.name != name
+    execution = client.execute(
+        mutation,
+        variables=variables,
+        context=get_context())
+    response = execution['data']['updateElectionGroupName']
+    assert response['ok']
+    election_group_db = ElectionGroup.query.get(election_group.id)
+    assert election_group_db.name == name
