@@ -2,6 +2,9 @@
 
 pipeline {
     agent any
+    options {
+        copyArtifactPermission('python-publish');
+    }
     stages {
         stage('Build, test and deploy python package') {
             agent { label 'python3' }
