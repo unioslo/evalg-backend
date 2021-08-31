@@ -3,7 +3,7 @@
 pipeline {
     agent any
     options {
-        copyArtifactPermission('python-publish');
+        copyArtifactPermission('*');
     }
     stages {
         stage('Build, test and deploy python package') {
@@ -36,7 +36,7 @@ pipeline {
             post {
                 always {
                     junit '**/junit*.xml'
-                    publishCoverage adapters: [coberturaAdapter(path: '**/coverage*.xml')] 
+                    publishCoverage adapters: [coberturaAdapter(path: '**/coverage*.xml')] w
                 }
                 cleanup {
                     sh('rm -vf junit-*.xml')
