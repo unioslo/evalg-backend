@@ -8,9 +8,6 @@ pipeline {
     stages {
         stage('Build, test and deploy python package') {
             agent { label 'python3' }
-            options {
-                copyArtifactPermission('*');
-            }
             stages {
                 stage('Run unit tests') {
                     steps {
