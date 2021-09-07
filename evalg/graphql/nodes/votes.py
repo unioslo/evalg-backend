@@ -151,7 +151,8 @@ class AddVote(graphene.Mutation):
                 send_vote_confirmation_mail_task.delay(
                     user.person.email,
                     election_group_name)
-            except Exception as e:
-                logger.error('Could not send email to %s, rabbit down', user.person.email)
+            except Exception:
+                logger.error('Could not send email to %s, rabbit down',
+                             user.person.email)
 
         return node
