@@ -195,6 +195,7 @@ class Round:
                 total_stats[str(candidate.id)]['votes'] = str(candidate_count)
             else:
                 total_stats[str(candidate.id)]['percent_score'] = '0'
+                total_stats[str(candidate.id)]['votes'] = '0'
             logger.info("Alternative %s: %s", candidate, candidate_count)
         logger.info("Total score: %s", total_score)
         logger.info("Half score: %s", total_score / decimal.Decimal(2))
