@@ -96,12 +96,18 @@ def send_vote_confirmation_mail_task(self, email_addr, election_group_name):
                 email_addr, election_group_name)
     subject = 'Bekreftet mottatt stemme'
 
+    if app.config.get('MAIL_FROM_USIT'):
+        regards_from = 'USIT, leverandør av eValg3'
+    else:
+        regards_from = 'Valgstyret/The Election Board'
+
     evalg.mail.mailer.send_mail(
         template_name='vote_confirmation.tmpl',
         to_addrs=[email_addr],
         electiongroup_name=election_group_name,
         subject=subject,
-        voter_id=email_addr
+        voter_id=email_addr,
+        regards_from=regards_from
     )
     logger.info('Send vote confirmation mail task done. '
                 'email: %s, election_name: %s',
