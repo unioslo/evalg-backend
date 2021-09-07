@@ -138,9 +138,11 @@ class Round:
             if not ballot.candidates:
                 # blank ballot
                 continue
-            candidate_ballots[ballot.candidates[0]].append(ballot)
-            ballot_weights[ballot] = ballot.pollbook.weight_per_pollbook
-            total_score += ballot.pollbook.weight_per_pollbook
+            for candidate in ballot.candidates:
+                candidate_ballots[candidate].append(ballot)
+                ballot_weights[ballot] = ballot.pollbook.weight_per_pollbook
+                total_score += ballot.pollbook.weight_per_pollbook
+
         for candidate, ballots in candidate_ballots.items():
             results[candidate] = decimal.Decimal(0)
             for ballot in ballots:
