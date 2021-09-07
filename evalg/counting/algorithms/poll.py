@@ -192,6 +192,7 @@ class Round:
                     (decimal.Decimal(100) * candidate_count /
                      total_score).quantize(
                          decimal.Decimal('1.00'), decimal.ROUND_HALF_EVEN))
+                total_stats[str(candidate.id)]['votes'] = str(candidate_count)
             else:
                 total_stats[str(candidate.id)]['percent_score'] = '0'
             logger.info("Alternative %s: %s", candidate, candidate_count)
@@ -206,8 +207,10 @@ class Round:
                  'half_score': str(total_score / decimal.Decimal(2)),
                  'total_score': str(total_score)}))
         self._state.alternatives = {
-            candidate: stats['percent_score']
-            for candidate, stats in total_stats.items()
+            candidate: {
+                "votes": stats['votes'],
+                "percent": stats['percent_score'],
+            } for candidate, stats in total_stats.items()
         }
         self._state.final = True
         return self._state
