@@ -138,9 +138,11 @@ class Round:
             if not ballot.candidates:
                 # blank ballot
                 continue
-            candidate_ballots[ballot.candidates[0]].append(ballot)
-            ballot_weights[ballot] = ballot.pollbook.weight_per_pollbook
-            total_score += ballot.pollbook.weight_per_pollbook
+            for candidate in ballot.candidates:
+                candidate_ballots[candidate].append(ballot)
+                ballot_weights[ballot] = ballot.pollbook.weight_per_pollbook
+                total_score += ballot.pollbook.weight_per_pollbook
+
         for candidate, ballots in candidate_ballots.items():
             results[candidate] = decimal.Decimal(0)
             for ballot in ballots:
@@ -190,8 +192,10 @@ class Round:
                     (decimal.Decimal(100) * candidate_count /
                      total_score).quantize(
                          decimal.Decimal('1.00'), decimal.ROUND_HALF_EVEN))
+                total_stats[str(candidate.id)]['votes'] = str(candidate_count)
             else:
                 total_stats[str(candidate.id)]['percent_score'] = '0'
+                total_stats[str(candidate.id)]['votes'] = '0'
             logger.info("Alternative %s: %s", candidate, candidate_count)
         logger.info("Total score: %s", total_score)
         logger.info("Half score: %s", total_score / decimal.Decimal(2))
@@ -204,8 +208,10 @@ class Round:
                  'half_score': str(total_score / decimal.Decimal(2)),
                  'total_score': str(total_score)}))
         self._state.alternatives = {
-            candidate: stats['percent_score']
-            for candidate, stats in total_stats.items()
+            candidate: {
+                "votes": stats['votes'],
+                "percent": stats['percent_score'],
+            } for candidate, stats in total_stats.items()
         }
         self._state.final = True
         return self._state
