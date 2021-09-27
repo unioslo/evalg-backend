@@ -232,49 +232,6 @@ def test_feide_id_csv(feide_id_cvs_census_builder, feide_ids):
     assert sorted(result) == sorted(feide_ids)
 
 
-def test_nin_plane_text(nin_plane_text_census_builder, nins):
-    """Test parsing of plane text file with nins."""
-    file = nin_plane_text_census_builder.files['file']
-    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'nin'
-    result = list(parser.parse())
-    assert len(result) == len(nins)
-    assert sorted(result) == sorted(nins)
-
-
-def test_nin_csv_file(nin_csv_census_builder, nins):
-    """Test parsing of csv file with nins."""
-    file = nin_csv_census_builder.files['file']
-    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
-    assert parser is not None
-    assert isinstance(parser, cparser.CsvParser)
-    assert parser.id_type == 'nin'
-    result = list(parser.parse())
-    assert len(result) == len(nins)
-    assert sorted(result) == sorted(nins)
-
-
-def test_nin_10_plane_text(nin_10_plane_text_census_builder, nins):
-    """Test parsing of nins with missing leading zero."""
-    file = nin_10_plane_text_census_builder.files['file']
-    parser = cparser.CensusFileParser.factory(file.read(), file.mimetype)
-    assert parser is not None
-    assert isinstance(parser, cparser.PlainTextParser)
-    assert parser.id_type == 'nin'
-    result = list(parser.parse())
-    assert len(result) == len(nins)
-    assert sorted(result) == sorted(nins)
-
-
-def test_nin_error(nin_error_plane_text_census_builder):
-    """Test parsing of nins with error."""
-    file = nin_error_plane_text_census_builder.files['file']
-    with pytest.raises(ValueError):
-        cparser.CensusFileParser.factory(file.read(), file.mimetype)
-
-
 def test_student_parliament_file(uid_student_parliament_builder, feide_ids):
     """Test parsing of student parliament file."""
     file = uid_student_parliament_builder.files['file']
