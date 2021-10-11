@@ -20,14 +20,7 @@ class CensusFileParser(metaclass=abc.ABCMeta):
         if not self.id_type:
             return
 
-        if self.id_type == 'nin':
-            for fnr in self.fields:
-                fnr = self.check_and_rjust_fnr(fnr)
-                if fnr:
-                    yield fnr
-                else:
-                    continue
-        elif self.id_type == 'feide_id':
+        if self.id_type == 'feide_id':
             for field in self.fields:
 
                 # Remove whitespaces
@@ -78,15 +71,6 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 
         # Remove empty lines or lines with only whitespaces
         ids = [x.strip() for x in ids if len(x.strip()) > 0]
-        try:
-            [int(x) for x in ids]
-        except ValueError:
-            pass
-        else:
-            if len({s for s in [len(x) for x in ids]} -
-                   {s for s in [10, 11]}) == 0:
-                return 'nin'
-            raise ValueError('File contains invalid NINs')
 
         if all(['@' in x for x in ids]):
             return 'feide_id'
@@ -102,28 +86,6 @@ class CensusFileParser(metaclass=abc.ABCMeta):
             return 'uid'
 
         raise ValueError('No supported id type found in file')
-
-    @classmethod
-    def check_and_rjust_fnr(cls, fnr):
-        """
-        Preform some rudimentary checks on a fnr.
-
-        If the len is 10 we assume that a leading zero is missing.
-        TODO: Validate the fnrs
-        """
-        try:
-            int(fnr)
-        except ValueError:
-            return None
-
-        if len(fnr) == 10:
-            # Probably missing a leading zero.
-            fnr = fnr.rjust(11, '0')
-        elif len(fnr) < 10:
-            # Invalid fnr
-            return None
-
-        return fnr
 
     @classmethod
     def is_posix_uid(cls, uid):
