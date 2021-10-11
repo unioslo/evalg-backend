@@ -17,6 +17,10 @@ class CensusFileParser(metaclass=abc.ABCMeta):
 
     def parse(self):
         """Parse the current file and create a generator."""
+
+        # Remove duplicate values
+        self.fields = list(set(self.fields))
+
         if not self.id_type:
             return
 
