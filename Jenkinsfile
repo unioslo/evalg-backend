@@ -16,7 +16,7 @@ pipeline {
                 }
                 stage('Build source distribution') {
                     steps {
-                        sh 'python3.6 setup.py sdist'
+                        sh 'python3.8 setup.py sdist'
                         archiveArtifacts artifacts: 'dist/evalg-*.tar.gz'
                     }
                 }
