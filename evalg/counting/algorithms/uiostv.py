@@ -804,15 +804,19 @@ class RegularRound:
         :return: The candidates with lowest vcount from the last count
         :rtype: tuple
         """
-        ordered_results = self._vcount_results_remaining.most_common()
-        ordered_results.reverse()
+        vcount_results = collections.Counter(self._vcount_results_remaining)
         # some paranoia checks:
-        if not ordered_results:
+        if not vcount_results:
             logger.warning("No vcount entries left")
             return tuple()
-        if len(ordered_results) < 2:
+        if len(vcount_results) < 2:
             logger.warning("< 2 vcount entries. Breaking §16.4-C assumptions")
-            return tuple([ordered_results[0][0]])
+            return tuple([vcount_results[0][0]])
+
+        for protected_candidate in self._min_quota_protected:
+            vcount_results.pop(protected_candidate, None)
+        ordered_results = vcount_results.most_common()
+        ordered_results.reverse()
         bottom_candidates = []
         min_vcount = ordered_results[0][1]
         for result in ordered_results:
