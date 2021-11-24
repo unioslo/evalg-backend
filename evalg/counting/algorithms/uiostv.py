@@ -816,6 +816,14 @@ class RegularRound:
             return tuple([vcount_results[0][0]])
 
         for protected_candidate in self._min_quota_protected:
+            logger.info(
+                "Candidate %s must be elected in order to fulfill the "
+                "quota-rules. Skipping possible exclusion.",
+                protected_candidate)
+            self._state.add_event(
+                count.CountingEvent(
+                    count.CountingEventType.CANDIDATE_QUOTA_PROTECTED,
+                    {'candidate': str(protected_candidate.id)}))
             vcount_results.pop(protected_candidate, None)
         ordered_results = vcount_results.most_common()
         ordered_results.reverse()
