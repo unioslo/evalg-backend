@@ -718,8 +718,10 @@ class RegularRound:
         full_quota_groups = self._max_quota_full(candidate)
         excludable_candidates = []
         for full_quota_group in full_quota_groups:
-            unelected_members = self._get_unelected_quota_members(
+            all_unelected_members = self._get_unelected_quota_members(
                 full_quota_group)
+            unelected_members = tuple(
+                set(all_unelected_members) - set(self.excluded))
             msg = 'Max-value for quota group {quota} is reached'.format(
                 quota=full_quota_group.name)
             if not unelected_members:
@@ -2297,8 +2299,10 @@ class SubstituteRound(RegularRound):
                                                      self._elected_substitutes)
             excludable_candidates = []
             for full_quota_group in full_quota_groups:
-                unelected_members = self._get_unelected_quota_members(
+                all_unelected_members = self._get_unelected_quota_members(
                     full_quota_group)
+                unelected_members = tuple(
+                    set(all_unelected_members) - set(self.excluded))
                 msg = 'Max-value for quota group {quota} is reached'.format(
                     quota=full_quota_group.name)
                 if not unelected_members:
