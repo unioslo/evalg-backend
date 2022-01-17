@@ -16,23 +16,23 @@ IMAGE_TAG_WORKER="${WORKER_CONTAINER}:${GIT_BRANCH}-${GIT_SHA}-WORKER-${RANDOM}"
 echo "Building $IMAGE_TAG"
 docker build -f Dockerfile-k8s -t $IMAGE_TAG .
 
-echo "Building $IMAGE_TAG"
-docker build -f Dockerfile-k8s-worker -t $IMAGE_TAG_WORKER .
+#echo "Building $IMAGE_TAG"
+#docker build -f Dockerfile-k8s-worker -t $IMAGE_TAG_WORKER .
 
 echo "Pushing $IMAGE_TAG"
 docker push $IMAGE_TAG
 
-echo "Pushing $IMAGE_TAG"
-docker push $IMAGE_TAG_WORKER
+#echo "Pushing $IMAGE_TAG"
+#docker push $IMAGE_TAG_WORKER
 
-echo "Tagging $IMAGE_TAG $CONTAINER:openshift"
-docker tag $IMAGE_TAG_WORKER $WORKER_CONTAINER:latest
+echo "Tagging $IMAGE_TAG $CONTAINER:staging"
+docker tag $IMAGE_TAG_WORKER $WORKER_CONTAINER:staging
 
-echo "Tagging $IMAGE_TAG $CONTAINER:latest"
-docker tag $IMAGE_TAG $CONTAINER:latest
+#echo "Tagging $IMAGE_TAG $CONTAINER:latest"
+#docker tag $IMAGE_TAG $CONTAINER:latest
 
-echo "Pushing $WORKER_CONTAINER:openshift"
-docker push $WORKER_CONTAINER:latest
+#echo "Pushing $WORKER_CONTAINER:openshift"
+#docker push $WORKER_CONTAINER:latest
 
-echo "Pushing $CONTAINER:latest"
-docker push $CONTAINER:latest
+#echo "Pushing $CONTAINER:latest"
+#docker push $CONTAINER:latest

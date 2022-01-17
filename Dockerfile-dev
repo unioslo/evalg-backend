@@ -1,23 +1,32 @@
-FROM harbor.uio.no/library/docker.io-python:3.8-slim
+FROM harbor.uio.no/library/docker.io-python:3.9-slim
 
-MAINTAINER USITINT <bnt-int@usit.uio.no>
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
-WORKDIR /usr/src/evalg
-ADD . /usr/src/evalg
 
 RUN apt-get update && apt-get install -y \
     git \
+    libpq-dev \
+    gcc \
+    python3-psycopg2 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
- && pip config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
- && pip install -r /usr/src/evalg/requirements.txt \
- && pip install -r /usr/src/evalg/requirements-test.txt 
+ENV FLASK_ENV=development \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    POETRY_VIRTUALENVS_CREATE=false
 
-ENV FLASK_ENV=development
-RUN pip install --editable /usr/src/evalg
 
-RUN useradd --create-home evalg
-WORKDIR /home/evalg
-USER evalg
+RUN pip3 install poetry
+
+ADD . /evalg
+WORKDIR /evalg
+RUN poetry install
+
+#RUN pip install --editable /evalg
+
+#RUN useradd --create-home evalg
+#WORKDIR /home/evalg
+#USER evalg
+
+
