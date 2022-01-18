@@ -14,22 +14,11 @@ pipeline {
                         sh 'tox --recreate'
                     }
                 }
+                // TODO add linting etc
                 stage('Build source distribution') {
                     steps {
-                        sh 'python3.8 setup.py sdist'
+                        sh 'poetry build -f wheel'
                         archiveArtifacts artifacts: 'dist/evalg-*.tar.gz'
-                    }
-                }
-                stage('Deploy pkg to Nexus') {
-                    when { branch 'master' }
-                    steps {
-                        build(
-                            job: 'python-publish',
-                            parameters: [
-                                string(name: 'project', value: "${JOB_NAME}"),
-                                string(name: 'build', value: "${BUILD_ID}"),
-                            ]
-                        )
                     }
                 }
             }
@@ -60,15 +49,10 @@ pipeline {
                 IMAGE_TAG = "${CONTAINER}:${BRANCH_NAME}-${VERSION}"
             }
             stages {
-                stage('Wait for nexus') {
-                    steps {
-                        sleep(10)
-                    }
-                }
                 stage('Build docker image') {
                     steps {
                         script {
-                            docker_image = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-staging .')
+                            docker_image = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-old-env .')
                         }
                     }
                 }
