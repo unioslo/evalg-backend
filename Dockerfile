@@ -1,10 +1,10 @@
-FROM harbor.uio.no/library/docker.io-python:3.8-slim
+FROM harbor.uio.no/library/docker.io-python:3.9-slim
 
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
 # Proxy for updates during build
 ENV http_proxy="http://software-proxy.uio.no:3128"
-ENV https_proxy="https://software-proxy.uio.no:3128"
+ENV https_proxy="http://software-proxy.uio.no:3128"
 
 RUN apt-get update && apt-get install -y \
     git \
@@ -13,8 +13,7 @@ RUN apt-get update && apt-get install -y \
     python3-psycopg2 \
     && rm -rf /var/lib/apt/lists/*
 
-ENV FLASK_ENV=development \
-    PIP_DEFAULT_TIMEOUT=100 \
+ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VIRTUALENVS_CREATE=falsei \
@@ -24,25 +23,19 @@ ENV FLASK_ENV=development \
 
 RUN pip3 install poetry
 
+# Remove proxy_settings
 ENV http_proxy=""
 ENV https_proxy=""
 
 RUN mkdir /evalg
+WORKDIR /evalg
 COPY . /evalg
 
-RUN poetry install --no-dev --no-interaction
-
-#RUN useradd --create-home evalg
-#WORKDIR /home/evalg
-#USER evalg
-
-# Set instance path
+# Build and install evalg
+RUN poetry build -f wheel
+RUN pip3 install dist/evalg-*.whl
 
 # Support arbitrarily assigned UIDs by making the root group
 # # the owner of our directory.
 RUN chgrp -R 0 /evalg && \
     chmod -R g=u /evalg
-
-EXPOSE 8000
-
-CMD ["gunicorn", "--workers=1", "--bind=0.0.0.0:8000", "evalg.wsgi:app"]
