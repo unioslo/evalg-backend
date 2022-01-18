@@ -45,11 +45,19 @@ werkzeug = "1.0.0"
 # Faker = "*"
 black = "*"
 coverage = "*"
+flask-fixtures = "*"
 ipython = "*"
 mypy = "*"
 pylint = "*"
+pytest = "*"
+pytest-coverage = "*"
+pytest-flask = "*"
+pytest-flask-sqlalchemy = "*"
+pytest-pythonpath = "*"
+pytest-watch = "*"
+pytest-xdist = "*"
 rope = "*"
-
+tox = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
