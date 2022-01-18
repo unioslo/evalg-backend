@@ -1,5 +1,6 @@
-FROM harbor.uio.no/library/docker.io-python:3.8-alpine3.12
-MAINTAINER USITINT <bnt-int@usit.uio.no>
+# Dockerfile for the old docker-hotel
+
+FROM harbor.uio.no/library/docker.io-python:3.9-alpine
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
 # Add docker entrypoint
@@ -11,7 +12,7 @@ COPY evalg/migrations /usr/src/evalg/evalg/migrations
 
 # Proxy for updates during build
 ENV http_proxy="http://software-proxy.uio.no:3128"
-ENV https_proxy="https://software-proxy.uio.no:3128"
+ENV https_proxy="http://software-proxy.uio.no:3128"
 
 # Install build-deps, then install/build deps
 RUN set -ex \
@@ -32,9 +33,28 @@ RUN set -ex \
             postgresql-libs \
             rsyslog
 
+ENV PIP_DEFAULT_TIMEOUT=100 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    POETRY_VIRTUALENVS_CREATE=false \
+    EVALG_CONFIG="/usr/local/var/evalg-instance/evalg_config.py" \
+    FLASK_APP="evalg.wsgi"
+
+RUN pip install --upgrade pip
+RUN pip3 install setuptools_scm poetry
+
+RUN mkdir /evalg
+WORKDIR /evalg
+COPY . /evalg
+
 # Reset proxy -- we don't want the build image to have these
 ENV http_proxy=""
 ENV https_proxy=""
+
+# Build and install evalg
+RUN poetry build -f wheel
+RUN pip3 install dist/evalg-*.whl
+
 
 # Add rsyslog and logrotate config
 ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evalg.conf
@@ -48,14 +68,7 @@ RUN mkdir /var/log/evalg \
 # Disable kernel logs
 RUN sed -i 's/module(load="imklog")/#module(load="imklog")/g' /etc/rsyslog.conf
 
-RUN pip3 config set global.index-url https://repo.usit.uio.no/nexus/repository/pypi-usit/simple \
- && pip3 config set global.index https://repo.usit.uio.no/nexus/repository/pypi-usit/pypi \
- && pip3 install setuptools_scm 
-
-RUN pip3 install evalg --no-cache-dir \
- && apk del .evalg-build-deps
-
-# Set instance path
-ENV EVALG_CONFIG="/usr/local/var/evalg-instance"
+# Delete build deps
+RUN apk del .evalg-build-deps
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
