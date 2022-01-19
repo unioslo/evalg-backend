@@ -5,31 +5,61 @@ pipeline {
     options {
         copyArtifactPermission('*');
     }
+    environment {
+        POETRY = '/opt/python-3.9/bin/poetry'
+        VERSION = sh(
+            returnStdout: true,
+            script: 'git describe --tags --abbrev=0'
+        ).trim()
+    }
     stages {
-        stage('Build, test and deploy python package') {
+        stage('Test and build python package') {
             agent { label 'python3' }
             stages {
-                stage('Run unit tests') {
+                stage('Install dependencies') {
                     steps {
-                        sh 'tox --recreate'
+                        // Set version number from git tag
+                        sh "${POETRY} version ${VERSION}"
+                        sh "${POETRY} install"
                     }
                 }
-                // TODO add linting etc
-                stage('Build source distribution') {
-                    steps {
-                        sh 'poetry build -f wheel'
-                        archiveArtifacts artifacts: 'dist/evalg-*.tar.gz'
+                stage('Test, lint and build') {
+                    parallel {
+                        stage('Run linting') {
+                            steps {
+                                script {
+                                    // Allow linting to fail
+                                    // TODO remove catchError after cleaning up codet describe --tags --dirty=+
+                                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                        sh "${POETRY} -q check"
+                                        sh "${POETRY} run pylint evalg"
+                                        sh "${POETRY} run black --check --diff evalg"
+                                    }
+                                }
+                            }
+                        }
+                        stage('Run tests') {
+                            steps {
+                                sh "${POETRY} run pytest --junitxml=junit.xml --cov=evalg --cov-report xml:coverage.xml --cov-report term"
+                            }
+                        }
+                        stage('Build wheel') {
+                            steps {
+                                sh "${POETRY} build -f wheel"
+                                archiveArtifacts artifacts: 'dist/evalg-*.whl'
+                            }
+                        }
                     }
                 }
             }
             post {
                 always {
-                    junit '**/junit*.xml'
-                    publishCoverage adapters: [coberturaAdapter(path: '**/coverage*.xml')]
+                    junit '**/junit.xml'
+                    publishCoverage adapters: [coberturaAdapter(path: '**/coverage.xml')]
                 }
                 cleanup {
-                    sh('rm -vf junit-*.xml')
-                    sh('rm -vf coverage-*.xml')
+                    sh('rm -vf junit.xml')
+                    sh('rm -vf coverage.xml')
                     sh('rm -vrf build dist')
                 }
             }
@@ -38,38 +68,34 @@ pipeline {
             agent { label 'docker' }
             when { branch 'master' }
             environment {
-                VERSION = sh(
-                    returnStdout: true,
-                    script: 'git describe --dirty=+ --tags'
-                ).trim()
                 REPO = 'harbor.uio.no'
                 PROJECT = 'it-usit-int-drift'
                 APP_NAME = 'valg-backend'
+                APP_NAME_K8S = 'evalg-backend-k8s'
                 CONTAINER = "${REPO}/${PROJECT}/${APP_NAME}"
-                IMAGE_TAG = "${CONTAINER}:${BRANCH_NAME}-${VERSION}"
+                CONTAINER_K8S = "${REPO}/${PROJECT}/${APP_NAME_K8S}"
+                IMAGE_TAG = "${CONTAINER}:${VERSION}"
+                IMAGE_TAG_K8S = "${CONTAINER_K8S}:${VERSION}"
             }
             stages {
-                stage('Build docker image') {
-                    steps {
-                        script {
-                            docker_image = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-old-env .')
-                        }
-                    }
-                }
-                stage('Deploy') {
+                stage('Build docker images') {
                     parallel {
-                        stage('Push image to harbor') {
+                        stage('Build and push docker image for old env') {
                             steps {
                                 script {
-                                    docker_image.push()
+                                    docker_image_old = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-old-env .')
+                                    docker_image_old.push()
+                                    docker_image_old.push('latest')
+                                    docker_image_old.push('utv')
                                 }
                             }
                         }
-                        stage('Tag image as latest/utv') {
+                        stage('Build and push docker image for k8s') {
                             steps {
                                 script {
-                                    docker_image.push('latest')
-                                    docker_image.push('utv')
+                                    docker_image_k8s = docker.build("${IMAGE_TAG_K8S}", '--pull --no-cache -f ./Dockerfile .')
+                                    docker_image_k8s.push()
+                                    docker_image_k8s.push('latest')
                                 }
                             }
                         }
