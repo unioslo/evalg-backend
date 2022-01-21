@@ -57,6 +57,9 @@ pytest-pythonpath = "*"
 pytest-watch = "*"
 pytest-xdist = "*"
 rope = "*"
+sqlalchemy-stubs = "*"
+types-Flask = "*" # Remove when upgrading to flask >= 2
+types-Flask-SQLAlchemy = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
