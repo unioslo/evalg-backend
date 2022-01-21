@@ -23,10 +23,6 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
 
 RUN pip3 install poetry
 
-# Remove proxy_settings
-ENV http_proxy=""
-ENV https_proxy=""
-
 RUN mkdir /evalg
 WORKDIR /evalg
 COPY . /evalg
@@ -34,6 +30,10 @@ COPY . /evalg
 # Build and install evalg
 RUN poetry build -f wheel
 RUN pip3 install dist/evalg-*.whl
+
+# Remove proxy_settings
+ENV http_proxy=""
+ENV https_proxy=""
 
 # Support arbitrarily assigned UIDs by making the root group
 # # the owner of our directory.

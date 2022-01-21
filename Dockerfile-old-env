@@ -47,14 +47,13 @@ RUN mkdir /evalg
 WORKDIR /evalg
 COPY . /evalg
 
-# Reset proxy -- we don't want the build image to have these
-ENV http_proxy=""
-ENV https_proxy=""
-
 # Build and install evalg
 RUN poetry build -f wheel
 RUN pip3 install dist/evalg-*.whl
 
+# Reset proxy -- we don't want the build image to have these
+ENV http_proxy=""
+ENV https_proxy=""
 
 # Add rsyslog and logrotate config
 ADD instance/evalg_rsyslog.conf /etc/rsyslog.d/evalg.conf
