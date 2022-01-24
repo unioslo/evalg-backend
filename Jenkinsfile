@@ -38,6 +38,11 @@ pipeline {
                                 }
                             }
                         }
+                        stage('Run type checks') {
+                            steps {
+                                sh "${POETRY} run mypy -p evalg"
+                            }
+                        }
                         stage('Run tests') {
                             steps {
                                 sh "${POETRY} run pytest --junitxml=junit.xml --cov=evalg --cov-report xml:coverage.xml --cov-report term"
