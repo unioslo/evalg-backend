@@ -1,3 +1,4 @@
+from typing import Dict
 import uuid
 
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -11,7 +12,7 @@ from .base import ModelBase
 class CensusFileImport(ModelBase):
     """Database model for importing census files."""
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
     __tablename__ = 'census_file_import'
 
     id = schema.Column(
@@ -60,7 +61,7 @@ class CensusFileImport(ModelBase):
             return 'finished'
         return 'ongoing'
 
-    @status.expression
+    @status.expression # type: ignore
     def status(self):
         return case(
             [(self.finished_at.isnot(None), 'finished')],

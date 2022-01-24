@@ -28,7 +28,7 @@ make_versioned(
 )
 
 
-class ModelBase(db.Model):
+class ModelBase(db.Model): # type: ignore
     __abstract__ = True
 
     # TODO: Do not inherit from `db.Model` - we should de-couple our models

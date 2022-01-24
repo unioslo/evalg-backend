@@ -3,6 +3,9 @@
 #
 # Flask settings
 #
+from typing import Dict, List
+
+
 DEBUG = False
 
 #
@@ -59,7 +62,7 @@ AUTH_METHOD = 'feide'
 
 FEIDE_BASIC_REQUIRE = True
 FEIDE_BASIC_REALM = None
-FEIDE_BASIC_USERS = []
+FEIDE_BASIC_USERS: List = []
 
 #
 # Permissions
@@ -239,7 +242,7 @@ PERMISSIONS = {
 
 FEIDE_ENTITLEMENT_MAPPING_ENABLED = True
 
-FEIDE_ENTITLEMENT_MAPPING = {
+FEIDE_ENTITLEMENT_MAPPING: Dict = {
     'publisher': [],
     'global_admin': [],
 }

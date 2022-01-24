@@ -1,6 +1,7 @@
 """
 Database model for election group count
 """
+from typing import Dict
 import uuid
 
 from sqlalchemy.sql import case
@@ -13,7 +14,7 @@ from .base import ModelBase
 
 class ElectionGroupCount(ModelBase):
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = db.Column(
         evalg.database.types.UuidType,
@@ -43,7 +44,7 @@ class ElectionGroupCount(ModelBase):
             return 'finished'
         return 'ongoing'
 
-    @status.expression
+    @status.expression # type: ignore
     def status(cls):
         return case(
             [(cls.finished_at.isnot(None), 'finished')],

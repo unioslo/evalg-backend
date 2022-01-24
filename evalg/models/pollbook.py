@@ -14,6 +14,7 @@ NOTE: There are no constraints that prevents a voter object from being
 represented in multiple poll books for a given election.
 """
 
+from typing import Dict
 import uuid
 
 from evalg import db
@@ -27,7 +28,7 @@ from .voter import Voter
 class Pollbook(ModelBase):
     """Pollbook model, stores one election census."""
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
     __tablename__ = 'pollbook_meta'
 
     id = db.Column(

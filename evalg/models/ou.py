@@ -2,6 +2,7 @@
 Database models for organizational units
 """
 
+from typing import Dict
 import uuid
 
 from evalg import db
@@ -13,7 +14,7 @@ from .base import ModelBase
 class OrganizationalUnit(ModelBase):
     """ Organizational unit. """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = db.Column(
         UuidType,

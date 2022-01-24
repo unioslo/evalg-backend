@@ -6,6 +6,7 @@ Representation of the currently logged in user.
 import datetime
 import functools
 import logging
+from typing import Dict, List
 import requests
 
 from flask import current_app, request
@@ -42,8 +43,8 @@ class EvalgUser(object):
         'dp_user_id': 'feide_user_id',
     }
 
-    _entitlement_mapping = {}
-    _entitlement_groups = []
+    _entitlement_mapping: Dict = {}
+    _entitlement_groups: List = []
 
     gk_user = ContextAttribute('gk_user')
     feide_api = ContextAttribute('feide_api')

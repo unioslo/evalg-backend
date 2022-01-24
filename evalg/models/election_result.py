@@ -1,6 +1,7 @@
 """
 Database model for election results
 """
+from typing import Dict
 import uuid
 
 from sqlalchemy.orm import deferred
@@ -14,7 +15,7 @@ from .base import ModelBase
 
 class ElectionResult(ModelBase):
     """The ElectionResult class"""
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = db.Column(
         evalg.database.types.UuidType,

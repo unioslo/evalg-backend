@@ -8,6 +8,7 @@ Note that voter objects are not re-used across different elections. Each person
 should be represented by a *unique* voter object for each election they are
 entitled to vote in.
 """
+from typing import Dict
 import uuid
 
 import sqlalchemy.types
@@ -58,7 +59,7 @@ VERIFIED_STATUS_NO_MAP = (
 class Voter(ModelBase):
     """Voter / census member model."""
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
     __tablename__ = 'pollbook_voters'
 
     id = sqlalchemy.schema.Column(
@@ -141,7 +142,7 @@ class Voter(ModelBase):
         """Has the voter voted."""
         return len(self.votes) > 0
 
-    @has_voted.expression
+    @has_voted.expression # type: ignore
     def has_voted(cls):
         """has_voted sqlalchemy expression."""
         return (
