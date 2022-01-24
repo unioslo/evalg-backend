@@ -11,6 +11,7 @@ pipeline {
             returnStdout: true,
             script: 'git describe --tags --abbrev=0'
         ).trim()
+        no_proxy = "bitbucket.usit.uio.no"
     }
     stages {
         stage('Test and build python package') {
@@ -100,6 +101,7 @@ pipeline {
                                 script {
                                     docker_image_k8s = docker.build("${IMAGE_TAG_K8S}", '--pull --no-cache -f ./Dockerfile .')
                                     docker_image_k8s.push()
+                                    docker_image_k8s.push('staging')
                                     docker_image_k8s.push('latest')
                                 }
                             }

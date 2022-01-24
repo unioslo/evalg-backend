@@ -5,6 +5,7 @@ LABEL no.uio.contact=bnt-int@usit.uio.no
 # Proxy for updates during build
 ENV http_proxy="http://software-proxy.uio.no:3128"
 ENV https_proxy="http://software-proxy.uio.no:3128"
+ENV no_proxy="bitbucket.usit.uio.no"
 
 RUN apt-get update && apt-get install -y \
     git \

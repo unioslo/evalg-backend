@@ -1,6 +1,6 @@
 # Dockerfile for the old docker-hotel
 
-FROM harbor.uio.no/library/docker.io-python:3.9-alpine
+FROM harbor.uio.no/library/docker.io-python:3.8-alpine3.12
 LABEL no.uio.contact=bnt-int@usit.uio.no
 
 # Add docker entrypoint
@@ -13,6 +13,7 @@ COPY evalg/migrations /usr/src/evalg/evalg/migrations
 # Proxy for updates during build
 ENV http_proxy="http://software-proxy.uio.no:3128"
 ENV https_proxy="http://software-proxy.uio.no:3128"
+ENV no_proxy="bitbucket.usit.uio.no"
 
 # Install build-deps, then install/build deps
 RUN set -ex \
@@ -41,7 +42,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     FLASK_APP="evalg.wsgi"
 
 RUN pip install --upgrade pip
-RUN pip3 install setuptools_scm poetry
+RUN pip install setuptools_scm poetry
 
 RUN mkdir /evalg
 WORKDIR /evalg
@@ -49,7 +50,7 @@ COPY . /evalg
 
 # Build and install evalg
 RUN poetry build -f wheel
-RUN pip3 install dist/evalg-*.whl
+RUN pip install dist/evalg-*.whl
 
 # Reset proxy -- we don't want the build image to have these
 ENV http_proxy=""
