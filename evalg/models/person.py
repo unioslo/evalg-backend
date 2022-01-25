@@ -1,6 +1,7 @@
 """
 Database models for users
 """
+from typing import Dict
 import uuid
 
 from sqlalchemy.sql import and_, or_
@@ -15,7 +16,7 @@ from .base import ModelBase
 class Person(ModelBase):
     """ Person. """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     # Prioritized order of external ids to use when eg creating a voter object
     PREFERRED_IDS = ('feide_id', 'nin')
@@ -88,7 +89,7 @@ PersonIdType = make_descriptive_enum(
 class PersonExternalId(ModelBase):
     """ Person external ID. """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
     __tablename__ = 'person_external_id'
 
     person_id = db.Column(

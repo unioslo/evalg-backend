@@ -44,6 +44,6 @@ def init_app(app):
         gk_user = mock.gatekeeper.MockGatekeeperData(basic)
         feide_api = mock.client.MockDataportenApi(gk_user)
     else:
-        raise NotImplementedError('Unknown AUTH_METHOD %r'.format(auth_method))
+        raise NotImplementedError('Unknown AUTH_METHOD {0}'.format(auth_method))
 
     user.init_app(app, gk_user, feide_api)

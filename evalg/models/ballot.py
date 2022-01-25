@@ -17,6 +17,7 @@ The ``Envelope.id`` can later be used to commit the vote by using a
 py:class:`evalg.models.votes.Vote` to bind the ballot to a voter.
 
 """
+from typing import Dict
 import uuid
 
 from sqlalchemy.sql import schema
@@ -28,7 +29,7 @@ from .base import ModelBase
 
 class Envelope(ModelBase):
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
     __tablename__ = 'ballots'
 
     # a unique vote id - this is the ballot_id in the evalg.models.votes

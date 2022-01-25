@@ -1,3 +1,4 @@
+from typing import Dict
 import evalg
 
 import abc
@@ -6,7 +7,7 @@ import abc
 class UnitImporter(metaclass=abc.ABCMeta):
     """Abstract class used to create OU importers."""
 
-    subclasses = {}
+    subclasses: Dict = {}
 
     def __init__(self, config):
         self.config = config

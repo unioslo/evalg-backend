@@ -8,7 +8,7 @@ CONTAINER="${REPO}/${PROJECT}/${APP_NAME}"
 IMAGE_TAG="${CONTAINER}:${GIT_BRANCH}-${GIT_SHA}"
 
 echo "Building $IMAGE_TAG"
-docker build -f Dockerfile-staging -t $IMAGE_TAG .
+docker build -f Dockerfile-old-env -t $IMAGE_TAG .
 
 echo "Pushing $IMAGE_TAG"
 docker push $IMAGE_TAG

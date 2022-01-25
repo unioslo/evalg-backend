@@ -56,6 +56,8 @@ These fields are:
 import collections.abc
 import logging
 import reprlib
+from tkinter.dialog import DIALOG_ICON
+from typing import Dict
 
 import sqlalchemy.event
 from sqlalchemy.sql import schema, sqltypes
@@ -147,7 +149,7 @@ class Vote(ModelBase):
     The Vote object represents the *current* ballot for a given voter.
     """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
     __tablename__ = 'vote'
 
     # TODO: Find out what other constraints we'd need? One vote per election?
@@ -177,7 +179,7 @@ class Vote(ModelBase):
 class VoteRecord(ModelBase):
     """The VoteRecord represents *all* votes left by a given voter."""
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
     __tablename__ = 'vote_log'
 
     # ballot_id is a reference to a ballot.

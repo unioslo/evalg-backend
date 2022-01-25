@@ -2,6 +2,7 @@
 Database models for election candidates.
 """
 
+from typing import Dict
 import uuid
 
 from evalg import db
@@ -13,7 +14,7 @@ from .base import ModelBase
 
 class Candidate(ModelBase):
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = db.Column(
         UuidType,

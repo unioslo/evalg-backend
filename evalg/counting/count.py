@@ -575,7 +575,7 @@ class ElectionCountPath:
         """drawing-property"""
         return self._current_drawing_branch is not None
 
-    @current_drawing_branch.setter
+    @current_drawing_branch.setter # type: ignore
     def current_drawing_branch(self, value):
         """current_drawing_branch-property setter"""
         self._current_drawing_branch = value

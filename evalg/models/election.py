@@ -2,6 +2,7 @@
 Database models for elections.
 """
 import math
+from typing import Dict
 import uuid
 
 from sqlalchemy.sql import select, func, case, and_
@@ -66,7 +67,7 @@ class AbstractElection(ModelBase):
 
 class ElectionGroup(AbstractElection):
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     ou_id = db.Column(
         evalg.database.types.UuidType,
@@ -117,7 +118,7 @@ class ElectionGroup(AbstractElection):
     def announced(self):
         return self.announced_at is not None
 
-    @announced.expression
+    @announced.expression # type: ignore
     def announced(cls):
         return cls.announced_at.isnot(None)
 
@@ -133,7 +134,7 @@ class ElectionGroup(AbstractElection):
     def published(self):
         return self.published_at is not None
 
-    @published.expression
+    @published.expression # type: ignore
     def published(cls):
         return cls.published_at.isnot(None)
 
@@ -153,7 +154,7 @@ class ElectionGroup(AbstractElection):
     def deleted(self):
         return self.deleted_at is not None
 
-    @deleted.expression
+    @deleted.expression # type: ignore
     def deleted(cls):
         return cls.deleted_at.isnot(None)
 
@@ -207,7 +208,7 @@ class ElectionGroup(AbstractElection):
 class Election(AbstractElection):
     """Election."""
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     # Some ID for the UI
     sequence = db.Column(db.Text)
@@ -250,7 +251,7 @@ class Election(AbstractElection):
     def announced_at(self):
         return self.election_group.announced_at
 
-    @announced_at.expression
+    @announced_at.expression # type: ignore
     def announced_at(cls):
         return select([ElectionGroup.announced_at]).where(
             cls.group_id == ElectionGroup.id).as_scalar()
@@ -259,7 +260,7 @@ class Election(AbstractElection):
     def published_at(self):
         return self.election_group.published_at
 
-    @published_at.expression
+    @published_at.expression # type: ignore
     def published_at(cls):
         return select([ElectionGroup.published_at]).where(
             cls.group_id == ElectionGroup.id).as_scalar()
@@ -268,7 +269,7 @@ class Election(AbstractElection):
     def cancelled_at(self):
         return self.election_group.cancelled_at
 
-    @cancelled_at.expression
+    @cancelled_at.expression # type: ignore
     def cancelled_at(cls):
         return select([ElectionGroup.cancelled_at]).where(
             cls.group_id == ElectionGroup.id).as_scalar()
@@ -292,7 +293,7 @@ class Election(AbstractElection):
             return 'announced'
         return 'draft'
 
-    @status.expression
+    @status.expression # type: ignore
     def status(cls):
         return case([
             (cls.active is False, 'inactive'),
@@ -310,7 +311,7 @@ class Election(AbstractElection):
         """Check if an election is past its start time."""
         return bool(self.start and self.start <= utcnow())
 
-    @has_started.expression
+    @has_started.expression # type: ignore
     def has_started(cls):
         return case([
             (and_(cls.start.isnot(None),
@@ -351,7 +352,7 @@ class Election(AbstractElection):
                     self.start <= utcnow() and
                     self.end >= utcnow())
 
-    @is_ongoing.expression
+    @is_ongoing.expression # type: ignore
     def is_ongoing(cls):
         return case([
             (and_(cls.published_at.isnot(None),

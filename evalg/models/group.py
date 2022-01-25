@@ -2,6 +2,7 @@
 Database models for groups of users.
 """
 
+from typing import Dict
 import uuid
 
 # from sqlalchemy.orm import relationship
@@ -17,7 +18,7 @@ from .base import ModelBase
 class Group(ModelBase):
     """ Group of persons. """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = db.Column(
         evalg.database.types.UuidType,
@@ -47,7 +48,7 @@ class Group(ModelBase):
 class GroupExternalIDType(ModelBase):
     """ Group external ID type. """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     code = db.Column(
         db.UnicodeText,
@@ -59,7 +60,7 @@ class GroupExternalIDType(ModelBase):
 class GroupExternalID(ModelBase):
     """ Group external ID. """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
     __tablename__ = 'group_external_id'
 
     group_id = db.Column(
@@ -86,7 +87,7 @@ class GroupExternalID(ModelBase):
 class GroupMembership(ModelBase):
     """ Group memberships. """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = db.Column(
         evalg.database.types.UuidType,

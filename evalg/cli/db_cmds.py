@@ -4,6 +4,7 @@ Commands for interacting with the evalg database.
 This module extend the existing flask cli with custom commands for interacting
 with the evalg database.
 """
+from typing import Tuple
 from flask import current_app, g
 
 
@@ -116,7 +117,7 @@ def shell_context():
     return context
 
 
-commands = tuple((
+commands: Tuple = tuple((
 ))
 
 

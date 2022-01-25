@@ -11,6 +11,7 @@ Basic idea:
 * When doing a task, a permission is checked.
 """
 
+from typing import Dict
 import uuid
 
 from sqlalchemy import types
@@ -35,7 +36,7 @@ class Principal(ModelBase):
     """
 
     __tablename__ = 'principal'
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = schema.Column(
         UuidType,
@@ -60,7 +61,7 @@ class PersonPrincipal(Principal):
     """ Security principal based on a person/user entity. """
 
     __tablename__ = 'person_principal'
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = schema.Column(
         UuidType,
@@ -91,7 +92,7 @@ class PersonIdentifierPrincipal(Principal):
     """
 
     __tablename__ = 'person_identifier_principal'
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = schema.Column(
         UuidType,
@@ -125,7 +126,7 @@ class GroupPrincipal(Principal):
     """ Security principal based on membership in a group. """
 
     __tablename__ = 'group_principal'
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = schema.Column(
         UuidType,
@@ -163,7 +164,7 @@ class Role(ModelBase):
     """ Roles granted to a principal. """
 
     __tablename__ = 'role'
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     grant_id = schema.Column(
         UuidType,
@@ -206,7 +207,7 @@ class ElectionGroupRole(Role):
     """ Roles granted on election. """
 
     __tablename__ = 'election_group_role'
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     grant_id = schema.Column(
         UuidType,

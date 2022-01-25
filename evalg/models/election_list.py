@@ -1,6 +1,7 @@
 """
 Database models for candidate lists.
 """
+from typing import Dict
 import uuid
 
 from evalg import db
@@ -13,7 +14,7 @@ from .base import ModelBase
 class ElectionList(ModelBase):
     """ List of electable candidates in an election. """
 
-    __versioned__ = {}
+    __versioned__: Dict = {}
 
     id = db.Column(
         UuidType,
