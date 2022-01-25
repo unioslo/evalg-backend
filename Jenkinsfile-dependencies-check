@@ -19,7 +19,10 @@ pipeline {
               value: 'python3.9'),
             string(
               name: 'credentialsId',
-              value: 'evalg_backend_deploy_key')
+              value: 'evalg_backend_deploy_key'),
+            string(
+              name: 'branch',
+              value: 'main')
           ]
         )
       }
