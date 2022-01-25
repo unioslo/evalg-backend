@@ -16,7 +16,7 @@ pipeline {
               value: "${GIT_URL}"),
             string(
               name: 'pythonVersion',
-              value: 'python3.7')
+              value: 'python3.9')
           ]
         )
       }
