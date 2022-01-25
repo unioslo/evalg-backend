@@ -72,7 +72,7 @@ pipeline {
         }
         stage('Build and deploy docker image') {
             agent { label 'docker' }
-            when { branch 'master' }
+            when { branch 'main' }
             environment {
                 REPO = 'harbor.uio.no'
                 PROJECT = 'it-usit-int-drift'
