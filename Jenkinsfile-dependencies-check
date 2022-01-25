@@ -16,7 +16,10 @@ pipeline {
               value: "${GIT_URL}"),
             string(
               name: 'pythonVersion',
-              value: 'python3.9')
+              value: 'python3.9'),
+            string(
+              name: 'credentialsId',
+              value: 'evalg_backend_deploy_key')
           ]
         )
       }
