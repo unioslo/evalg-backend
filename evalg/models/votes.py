@@ -56,7 +56,6 @@ These fields are:
 import collections.abc
 import logging
 import reprlib
-from tkinter.dialog import DIALOG_ICON
 from typing import Dict
 
 import sqlalchemy.event
