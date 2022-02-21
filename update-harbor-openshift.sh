@@ -17,9 +17,9 @@ echo "Tagging $IMAGE_TAG $CONTAINER:staging"
 docker tag $IMAGE_TAG $CONTAINER:staging
 docker push $CONTAINER:staging
 
-if [[ $GIT_BRANCH = "master" ]]
+if [[ $GIT_BRANCH = "main" ]]
 then
-  echo "On master-branch, setting $IMAGE_TAG as $CONTAINER:latest"
+  echo "On main-branch, setting $IMAGE_TAG as $CONTAINER:latest"
   docker tag $IMAGE_TAG $CONTAINER:latest
   docker push $CONTAINER:latest
 fi
