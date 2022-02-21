@@ -17,12 +17,12 @@ RUN apt-get update && apt-get install -y \
 ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
-    POETRY_VIRTUALENVS_CREATE=falsei \
+    POETRY_VIRTUALENVS_CREATE=false \
     EVALG_CONFIG="/usr/local/var/evalg-instance/evalg_config.py" \
     FLASK_APP="evalg.wsgi"
 
-
-RUN pip3 install poetry
+RUN pip install --upgrade pip
+RUN pip install poetry
 
 RUN mkdir /evalg
 WORKDIR /evalg
@@ -30,7 +30,7 @@ COPY . /evalg
 
 # Build and install evalg
 RUN poetry build -f wheel
-RUN pip3 install dist/evalg-*.whl
+RUN pip install dist/evalg-*.whl
 
 # Remove proxy_settings
 ENV http_proxy=""
