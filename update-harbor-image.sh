@@ -13,9 +13,9 @@ docker build -f Dockerfile-old-env -t $IMAGE_TAG .
 echo "Pushing $IMAGE_TAG"
 docker push $IMAGE_TAG
 
-if [[ $GIT_BRANCH = "master" ]]
+if [[ $GIT_BRANCH = "main" ]]
 then
-  echo "On master-branch, setting $IMAGE_TAG as $CONTAINER:latest and $CONTAINER:utv"
+  echo "On main-branch, setting $IMAGE_TAG as $CONTAINER:latest and $CONTAINER:utv"
   docker tag $IMAGE_TAG $CONTAINER:latest
   docker tag $IMAGE_TAG $CONTAINER:utv
   docker push $CONTAINER:latest

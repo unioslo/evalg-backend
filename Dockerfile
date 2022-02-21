@@ -28,9 +28,10 @@ RUN mkdir /evalg
 WORKDIR /evalg
 COPY . /evalg
 
-# Build and install evalg
-RUN poetry build -f wheel
-RUN pip install dist/evalg-*.whl
+COPY pyproject.toml /evalg
+COPY poetry.lock /evalg
+# install evalg
+RUN poetry install --no-dev --no-interaction
 
 # Remove proxy_settings
 ENV http_proxy=""
