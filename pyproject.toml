@@ -10,8 +10,9 @@ alembic = "1.4.2"
 aniso8601 = "~7.0"
 blinker = "1.4"
 celery = "4.4.1"
-click = "7.1.1"
-Flask = "1.0.2"
+click = "~8"
+Flask = "~1.0"
+itsdangerous = "2.0.1" # pinned because of no upper bound on flask dependency giving import error
 flask-allows = "0.7.1"
 flask-cors = "3.0.9"
 flask-feide-gatekeeper = {git = "https://bitbucket.usit.uio.no/scm/int/flask-feide-gatekeeper.git", rev = "v0.0.7"}
@@ -28,7 +29,7 @@ graphql-server-core = "1.1.1"
 gunicorn = "^20.1"
 psycopg2-binary = "2.8.4"
 pynacl = "1.3.0"
-python = "^3.8"
+python = "^3.8 <3.10"
 python-json-logger = "~2.0"
 pytz = "2019.3"
 sap-client = {git = "https://bitbucket.usit.uio.no/scm/int/sap-client.git", rev = "v2.0.3"}
@@ -38,7 +39,7 @@ sqlalchemy = "1.3.15"
 sqlalchemy-continuum = "1.3.9"
 sqlalchemy-json = "0.4.0"
 sqlalchemy-utils = "0.36.3"
-werkzeug = "1.0.0"
+werkzeug = "~1.0"
 
 
 [tool.poetry.dev-dependencies]
