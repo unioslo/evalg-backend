@@ -1,4 +1,5 @@
 """GraphQL ObjectTypes for candidates and candidate lists."""
+from __future__ import annotations
 import logging
 
 import graphene
@@ -290,21 +291,21 @@ class AddListElecCandidate(graphene.Mutation):
 
     class Arguments:
         name = graphene.String(required=True)
-        gender = graphene.String(required=True)
         list_id = graphene.UUID(required=True)
         priority = graphene.Int(required=True)
         pre_cumulated = graphene.Boolean(required=True)
         information_url = graphene.String()
+        field_of_study = graphene.String()
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **kwargs):
+    def mutate(self, info, **kwargs) -> AddListElecCandidate:
         session = get_session(info)
         user = get_current_user(info)
         if not can_manage_election_list(session, user, **kwargs):
-            return AddPrefElecCandidate(ok=False)
+            return AddListElecCandidate(ok=False)
 
-        meta = {'gender': kwargs.get('gender')}
+        meta = {'field_of_study': kwargs.get('field_of_study')}
         result = add_candidate(
             session=session,
             name=kwargs.get('name'),
@@ -314,7 +315,7 @@ class AddListElecCandidate(graphene.Mutation):
             priority=kwargs.get('priority'),
             pre_cumulated=kwargs.get('pre_cumulated')
         )
-        return AddPrefElecCandidate(ok=result)
+        return AddListElecCandidate(ok=result)
 
 
 class UpdateListElecCandidate(graphene.Mutation):
@@ -323,21 +324,21 @@ class UpdateListElecCandidate(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)
         name = graphene.String(required=True)
-        gender = graphene.String(required=True)
         list_id = graphene.UUID(required=True)
         priority = graphene.Int(required=True)
         pre_cumulated = graphene.Boolean(required=True)
         information_url = graphene.String()
+        field_of_study = graphene.String()
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **kwargs):
+    def mutate(self, info, **kwargs) -> UpdateListElecCandidate:
         session = get_session(info)
         user = get_current_user(info)
         if not can_manage_election_list(session, user, **kwargs):
-            return UpdatePrefElecCandidate(ok=False)
+            return UpdateListElecCandidate(ok=False)
 
-        meta = {'gender': kwargs.get('gender')}
+        meta = {'field_of_study': kwargs.get('field_of_study')}
         result = update_candidate(
             session=session,
             name=kwargs.get('name'),
@@ -348,4 +349,4 @@ class UpdateListElecCandidate(graphene.Mutation):
             priority=kwargs.get('priority'),
             pre_cumulated=kwargs.get('pre_cumulated')
         )
-        return UpdatePrefElecCandidate(ok=result)
+        return UpdateListElecCandidate(ok=result)

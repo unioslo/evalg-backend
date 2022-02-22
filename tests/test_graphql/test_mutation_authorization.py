@@ -435,11 +435,13 @@ def test_auth_delete_election_list(db_session,
 @reg.add_scenario('updateListElecCandidate', 'allow')
 @reg.add_scenario('updateListElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_update_list_elec_candidate(db_session,
-                                         is_owner,
-                                         is_allowed,
-                                         client,
-                                         election_group_generator):
+def test_auth_update_list_elec_candidate(
+    db_session,
+    is_owner,
+    is_allowed,
+    client,
+    election_group_generator
+) -> None:
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
     election_group = election_group_generator(
         owner=is_owner,
@@ -450,21 +452,25 @@ def test_auth_update_list_elec_candidate(db_session,
     variables = {
         'id': str(candidate.id),
         'name': new_name,
-        'gender': candidate.meta['gender'],
         'listId': str(election_list.id),
         'priority': 0,
         'preCumulated': True
     }
     mutation = """
-    mutation ($gender: String!, $listId: UUID!, $id: UUID!, $name: String!,
-              $priority: Int!, $preCumulated: Boolean!) {
-        updateListElecCandidate(gender: $gender,
-                                listId: $listId,
-                                id: $id,
-                                name: $name,
-                                preCumulated: $preCumulated,
-                                priority: $priority
+    mutation (
+        $listId: UUID!,
+        $id: UUID!,
+        $name: String!,
+        $priority: Int!,
+        $preCumulated: Boolean!
     ) {
+        updateListElecCandidate(
+            listId: $listId,
+            id: $id,
+            name: $name,
+            preCumulated: $preCumulated,
+            priority: $priority
+        ) {
             ok
         }
     }
@@ -478,11 +484,13 @@ def test_auth_update_list_elec_candidate(db_session,
 @reg.add_scenario('addListElecCandidate', 'allow')
 @reg.add_scenario('addListElecCandidate', 'deny')
 @pytest.mark.parametrize("is_owner,is_allowed", [(True, True), (False, False)])
-def test_auth_add_list_elec_candidate(db_session,
-                                      is_owner,
-                                      is_allowed,
-                                      client,
-                                      election_group_generator):
+def test_auth_add_list_elec_candidate(
+    db_session,
+    is_owner,
+    is_allowed,
+    client,
+    election_group_generator
+) -> None:
     """Allowed and denied scenario tests of updatePrefElecCandidate."""
     election_group = election_group_generator(
         owner=is_owner,
@@ -490,20 +498,23 @@ def test_auth_add_list_elec_candidate(db_session,
     election_list = election_group.elections[0].lists[0]
     variables = {
         'name': "Test Testesen",
-        'gender': 'male',
         'listId': str(election_list.id),
         'priority': 1,
         'preCumulated': False
     }
     mutation = """
-    mutation ($gender: String!, $listId: UUID!, $name: String!,
-              $priority: Int!, $preCumulated: Boolean!) {
-        addListElecCandidate(gender: $gender,
-                             listId: $listId,
-                             name: $name,
-                             preCumulated: $preCumulated,
-                             priority: $priority
+    mutation (
+        $listId: UUID!,
+        $name: String!,
+        $priority: Int!,
+        $preCumulated: Boolean!
     ) {
+        addListElecCandidate(
+            listId: $listId,
+            name: $name,
+            preCumulated: $preCumulated,
+            priority: $priority
+        ) {
             ok
         }
     }
