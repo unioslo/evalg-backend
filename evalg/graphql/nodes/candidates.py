@@ -61,6 +61,7 @@ class Candidate(graphene_sqlalchemy.SQLAlchemyObjectType):
 # Mutations
 #
 
+
 class LangDict(graphene.InputObjectType):
     """Tuple of name and language"""
 
@@ -83,17 +84,19 @@ class AddElectionList(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        election = session.query(
-            evalg.models.election.Election).get(kwargs['election_id'])
+        election = session.query(evalg.models.election.Election).get(
+            kwargs["election_id"]
+        )
         if not can_manage_election(session, user, election, **kwargs):
             return AddElectionList(ok=False)
 
         result = add_election_list(
             session=session,
-            name=convert_json(kwargs.get('name')),
-            election_id=kwargs.get('election_id'),
-            description=convert_json(kwargs.get('description')),
-            information_url=kwargs.get('information_url'))
+            name=convert_json(kwargs.get("name")),
+            election_id=kwargs.get("election_id"),
+            description=convert_json(kwargs.get("description")),
+            information_url=kwargs.get("information_url"),
+        )
         return AddElectionList(ok=result)
 
 
@@ -112,18 +115,19 @@ class UpdateElectionList(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        election = session.query(
-            evalg.models.election.Election).get(kwargs['election_id'])
+        election = session.query(evalg.models.election.Election).get(
+            kwargs["election_id"]
+        )
         if not can_manage_election(session, user, election, **kwargs):
             return UpdateElectionList(ok=False)
 
         result = update_election_list(
             session=session,
-            name=convert_json(kwargs.get('name')),
-            election_list_id=kwargs.get('id'),
-            election_id=kwargs.get('election_id'),
-            description=convert_json(kwargs.get('description')),
-            information_url=kwargs.get('information_url')
+            name=convert_json(kwargs.get("name")),
+            election_list_id=kwargs.get("id"),
+            election_id=kwargs.get("election_id"),
+            description=convert_json(kwargs.get("description")),
+            information_url=kwargs.get("information_url"),
         )
         return UpdateElectionList(ok=result)
 
@@ -139,8 +143,9 @@ class DeleteElectionList(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        e_list = session.query(
-            evalg.models.election_list.ElectionList).get(kwargs.get('id'))
+        e_list = session.query(evalg.models.election_list.ElectionList).get(
+            kwargs.get("id")
+        )
         if not can_manage_election(session, user, e_list.election, **kwargs):
             return DeleteElectionList(ok=False)
         result = delete_election_list(session, e_list.id)
@@ -164,13 +169,14 @@ class AddPrefElecCandidate(graphene.Mutation):
         if not can_manage_election_list(session, user, **kwargs):
             return AddPrefElecCandidate(ok=False)
 
-        meta = {'gender': kwargs.get('gender')}
+        meta = {"gender": kwargs.get("gender")}
         result = add_candidate(
             session=session,
-            name=kwargs.get('name'),
+            name=kwargs.get("name"),
             meta=meta,
-            election_list_id=kwargs.get('list_id'),
-            information_url=kwargs.get('information_url'))
+            election_list_id=kwargs.get("list_id"),
+            information_url=kwargs.get("information_url"),
+        )
         return AddPrefElecCandidate(ok=result)
 
 
@@ -192,14 +198,14 @@ class UpdatePrefElecCandidate(graphene.Mutation):
         if not can_manage_election_list(session, user, **kwargs):
             return UpdatePrefElecCandidate(ok=False)
 
-        meta = {'gender': kwargs.get('gender')}
+        meta = {"gender": kwargs.get("gender")}
         result = update_candidate(
             session=session,
-            name=kwargs.get('name'),
+            name=kwargs.get("name"),
             meta=meta,
-            candidate_id=kwargs.get('id'),
-            election_list_id=kwargs.get('list_id'),
-            information_url=kwargs.get('information_url')
+            candidate_id=kwargs.get("id"),
+            election_list_id=kwargs.get("list_id"),
+            information_url=kwargs.get("information_url"),
         )
         return UpdatePrefElecCandidate(ok=result)
 
@@ -227,13 +233,14 @@ class AddTeamPrefElecCandidate(graphene.Mutation):
         if not can_manage_election_list(session, user, **kwargs):
             return AddTeamPrefElecCandidate(ok=False)
 
-        meta = {'co_candidates': kwargs.get('co_candidates')}
+        meta = {"co_candidates": kwargs.get("co_candidates")}
         result = add_candidate(
             session=session,
-            name=kwargs.get('name'),
+            name=kwargs.get("name"),
             meta=meta,
-            election_list_id=kwargs.get('list_id'),
-            information_url=kwargs.get('information_url'))
+            election_list_id=kwargs.get("list_id"),
+            information_url=kwargs.get("information_url"),
+        )
         return AddTeamPrefElecCandidate(ok=result)
 
 
@@ -255,14 +262,15 @@ class UpdateTeamPrefElecCandidate(graphene.Mutation):
         if not can_manage_election_list(session, user, **kwargs):
             return UpdateTeamPrefElecCandidate(ok=False)
 
-        meta = {'co_candidates': kwargs.get('co_candidates')}
+        meta = {"co_candidates": kwargs.get("co_candidates")}
         result = update_candidate(
             session=session,
-            name=kwargs.get('name'),
+            name=kwargs.get("name"),
             meta=meta,
-            candidate_id=kwargs.get('id'),
-            election_list_id=kwargs.get('list_id'),
-            information_url=kwargs.get('information_url'))
+            candidate_id=kwargs.get("id"),
+            election_list_id=kwargs.get("list_id"),
+            information_url=kwargs.get("information_url"),
+        )
         return UpdateTeamPrefElecCandidate(ok=result)
 
 
@@ -278,8 +286,9 @@ class DeleteCandidate(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         candidate = session.query(evalg.models.candidate.Candidate).get(
-            kwargs.get('id'))
-        kwargs['list_id'] = candidate.list_id
+            kwargs.get("id")
+        )
+        kwargs["list_id"] = candidate.list_id
         if not can_manage_election_list(session, user, **kwargs):
             return DeleteCandidate(ok=False)
         result = delete_candidate(session, candidate.id)
@@ -299,21 +308,30 @@ class AddListElecCandidate(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **kwargs) -> AddListElecCandidate:
+    def mutate(
+        self,
+        info,
+        name: str,
+        list_id: str,
+        priority: int,
+        pre_cumulated: bool,
+        information_url: str = "",
+        field_of_study: str = "",
+    ) -> AddListElecCandidate:
         session = get_session(info)
         user = get_current_user(info)
-        if not can_manage_election_list(session, user, **kwargs):
+        if not can_manage_election_list(session, user, list_id=list_id):
             return AddListElecCandidate(ok=False)
 
-        meta = {'field_of_study': kwargs.get('field_of_study')}
+        meta = {"field_of_study": field_of_study}
         result = add_candidate(
             session=session,
-            name=kwargs.get('name'),
+            name=name,
             meta=meta,
-            election_list_id=kwargs.get('list_id'),
-            information_url=kwargs.get('information_url'),
-            priority=kwargs.get('priority'),
-            pre_cumulated=kwargs.get('pre_cumulated')
+            election_list_id=list_id,
+            information_url=information_url,
+            priority=priority,
+            pre_cumulated=pre_cumulated,
         )
         return AddListElecCandidate(ok=result)
 
@@ -332,21 +350,31 @@ class UpdateListElecCandidate(graphene.Mutation):
 
     ok = graphene.Boolean()
 
-    def mutate(self, info, **kwargs) -> UpdateListElecCandidate:
+    def mutate(
+        self,
+        info,
+        id: str,
+        name: str,
+        list_id: str,
+        priority: int,
+        pre_cumulated: bool,
+        information_url: str = "",
+        field_of_study: str = "",
+    ) -> UpdateListElecCandidate:
         session = get_session(info)
         user = get_current_user(info)
-        if not can_manage_election_list(session, user, **kwargs):
+        if not can_manage_election_list(session, user, list_id=list_id):
             return UpdateListElecCandidate(ok=False)
 
-        meta = {'field_of_study': kwargs.get('field_of_study')}
+        meta = {"field_of_study": field_of_study}
         result = update_candidate(
             session=session,
-            name=kwargs.get('name'),
+            name=name,
             meta=meta,
-            candidate_id=kwargs.get('id'),
-            election_list_id=kwargs.get('list_id'),
-            information_url=kwargs.get('information_url'),
-            priority=kwargs.get('priority'),
-            pre_cumulated=kwargs.get('pre_cumulated')
+            candidate_id=id,
+            election_list_id=list_id,
+            information_url=information_url,
+            priority=priority,
+            pre_cumulated=pre_cumulated,
         )
         return UpdateListElecCandidate(ok=result)

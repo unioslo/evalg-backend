@@ -43,7 +43,7 @@ werkzeug = "~1.0"
 
 
 [tool.poetry.dev-dependencies]
-# Faker = "*"
+Faker = "*"
 black = "*"
 coverage = "*"
 flask-fixtures = "*"
