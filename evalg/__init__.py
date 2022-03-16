@@ -38,6 +38,7 @@ class SQLAlchemy(flask_sqlalchemy.SQLAlchemy):
 
 
 APP_CONFIG_ENVIRON_NAME = 'EVALG_CONFIG'
+APP_TEMPLATE_CONFIG_ENVIRON_NAME = 'EVALG_TEMPLATE_CONFIG'
 """
 Name of an environment variable to read config file name from.
 
@@ -96,7 +97,7 @@ def create_app(config=None, config_file=None, flask_class=Flask):
     # Load evalg_templates as config.
     # TODO: Do this another way?
     init_config(app,
-                environ_name=APP_CONFIG_ENVIRON_NAME,
+                environ_name=APP_TEMPLATE_CONFIG_ENVIRON_NAME,
                 default_file_name=APP_TEMPLATE_CONFIG_FILE_NAME,
                 default_config=default_election_template_config)
 

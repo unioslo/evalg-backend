@@ -19,6 +19,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VIRTUALENVS_CREATE=false \
     EVALG_CONFIG="/usr/local/var/evalg-instance/evalg_config.py" \
+    EVALG_TEMPLATE_CONFIG="/usr/local/var/evalg-instance/evalg_template_config.py" \
     FLASK_APP="evalg.wsgi"
 
 RUN pip install --upgrade pip
@@ -27,6 +28,9 @@ RUN pip install poetry
 RUN mkdir /evalg
 WORKDIR /evalg
 COPY . /evalg
+
+# Remove any local config
+RUN rm -r /evalg/instance/*.py
 
 COPY pyproject.toml /evalg
 COPY poetry.lock /evalg
