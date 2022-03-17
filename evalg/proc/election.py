@@ -39,6 +39,7 @@ def set_counting_method(session, election):
     """Set the counting method for an election."""
     # TODO: Make more dynamic... Remove hardcoded counting methods.
     if election.election_group.template_name in (
+        "uib_leader",
         "uio_principal",
         "uio_dean",
         "uio_department_leader",
