@@ -132,7 +132,8 @@ Verdien brukes til å vise frem ulike stemmesider.
 
 * party_list
 
-  Stemme for listevalg. Ikke implementer i dag.
+  Stemme for listevalg.
+  
 
 ### candidate_rules
 
@@ -161,7 +162,7 @@ Definerer regler for hva som er lov med
   Bestemmer hvordan en skal stemme på kandidater.
   * ``no_rank``: Velg en eller flere kandidater. Ingen rangering.
   * ``rank_candidate``: Ranger kandidatene i preferert rekkefølge.
-  * ``list``: Listevalg. Ikke implementert.
+  * ``list``: Listevalg.
 
 * votes: ``Int`` | ``'all'`` | ``'nr_of_seats'``
 
@@ -183,10 +184,6 @@ Definerer regler for hva som er lov med
 
   Listevalg. Bestemmer om det er mulig å endre på rekkefølgen på kandidatene i en liste.
 
-* number_of_votes: ``'seats'``
-
-  Listevalg. Antall plasser som skal velges. **TODO**: Overlapp mot ``votes``. Se på om disse kan kombineres.
-
 * other_list_candidate_votes: ``Boolean``
 
   Listevalg. Bestemmer om det skal være mulig å ha med slengere fra andre lister.
@@ -195,13 +192,30 @@ Definerer regler for hva som er lov med
 
 Definerer regler for opptelling.
 
-* method: ``'uio_stv'`` | ``'uio_mv'`` | ``'mntv'`` | ``'poll'``
+* method: ``'uio_stv'`` | ``'uio_mv'`` | ``'mntv'`` | ``'poll'`` | ``'sainte_lague'``
 
-  Hvilken metode skal benyttes ved opptelling.
+  Hvilken metode skal benyttes ved opptelling. TODO: Legg til nye for listeopptelling
 
 * affirmative_action: ``['gender_40]``
   
   Hvilke kvoteringsregler skal benyttes ved opptelling.
+  
+* first_divisor: ``Int``
+
+  Første delingstall
+
+* precumulate: ``Int``
+
+  Usikker?
+
+* list_votes: ``'seats'`` | ``'nr_of_seats'``
+  
+  Hvor mange listestemmer en liste har.
+
+* other_list_candidate_votes: ``Boolean``
+  
+  Tillat slengere
+  
 
 ## OU-tags
 
