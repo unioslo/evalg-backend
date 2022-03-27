@@ -14,8 +14,7 @@
     [
         {
             "candidate": "candidateId",
-            "cumulated": bool,
-            "precumulated": bool
+            "cumulated": bool
         }
     ]
 }
