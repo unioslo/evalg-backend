@@ -6,14 +6,14 @@
     "personalVotesOtherParty":
     [
         {
-            "person": "personId",
+            "candiate": "candidateId",
             "list": "listId"
         }
     ]
     "personalVotesSameParty":
     [
         {
-            "person": "personId",
+            "candidate": "candidateId",
             "cumulated": bool,
             "precumulated": bool
         }
