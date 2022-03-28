@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 
+from flask import current_app
 from werkzeug.local import LocalProxy
 
 from sentry_sdk import capture_exception
@@ -32,8 +33,10 @@ def import_census_file_task(self, pollbook_id, census_file_id):
     ).get(census_file_id)
 
     pollbook = db.session.query(evalg.models.pollbook.Pollbook).get(pollbook_id)
-
-    parser = CensusFileParser.factory(census_file.census_file, census_file.mime_type)
+    feide_postfix = current_app.config.get("FEIDE_POSTFIX", "uio.no")
+    parser = CensusFileParser.factory(
+        census_file.census_file, census_file.mime_type, feide_postfix=feide_postfix
+    )
 
     id_type = parser.id_type
     voter_policy = evalg.proc.pollbook.CachedPollbookVoterPolicy(db.session, pollbook)
