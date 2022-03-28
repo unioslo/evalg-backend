@@ -254,6 +254,11 @@ ENVELOPE_TYPE = "base64-nacl"
 ENVELOPE_PADDED_LEN = 1000
 
 #
+# Pollbook file import
+#
+FEIDE_POSTFIX = "uio.no"
+
+#
 # Sentry config
 #
 SENTRY = {
