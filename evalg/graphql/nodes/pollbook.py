@@ -18,8 +18,11 @@ import evalg.models.voter
 import evalg.proc.pollbook
 from evalg.graphql.types import PersonIdType
 from evalg.file_parser.parser import CensusFileParser
-from evalg.graphql.nodes.utils.base import (get_session, get_current_user,
-                                            MutationResponse)
+from evalg.graphql.nodes.utils.base import (
+    get_session,
+    get_current_user,
+    MutationResponse,
+)
 from evalg.graphql.nodes.person import Person
 from evalg.graphql.nodes.utils.permissions import (
     permission_controlled_default_resolver,
@@ -41,8 +44,7 @@ class Voter(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = evalg.models.voter.Voter
         default_resolver = permission_controlled_default_resolver
 
-    verified_status = graphene.Enum.from_enum(
-        evalg.models.voter.VerifiedStatus)()
+    verified_status = graphene.Enum.from_enum(evalg.models.voter.VerifiedStatus)()
     person = graphene.Field(Person)
     has_voted = graphene.Field(graphene.types.Boolean)
 
@@ -103,8 +105,10 @@ class Pollbook(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     @permission_controller
     def resolve_voter_dump(self, info):
-        return [[x.id_type, x.id_value, x.has_voted, x.verified_status.value]
-                for x in self.voters]
+        return [
+            [x.id_type, x.id_value, x.has_voted, x.verified_status.value]
+            for x in self.voters
+        ]
 
 
 @permission_controller.control_object_type
@@ -112,23 +116,28 @@ class CensusFileImport(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = evalg.models.census_file_import.CensusFileImport
         # Binary blob not supported by graphql
-        exclude_fields = ('census_file',)
+        exclude_fields = ("census_file",)
         default_resolver = permission_controlled_default_resolver
 
 
 def resolve_search_voters(_, info, **kwargs):
-    election_group_id = kwargs.pop('election_group_id')
+    election_group_id = kwargs.pop("election_group_id")
     session = get_session(info)
 
-    if 'search' in kwargs and kwargs.get('search') == '':
+    if "search" in kwargs and kwargs.get("search") == "":
         # Return nothing if the search string is empty
         return []
 
-    if 'limit' in kwargs:
-        limit = kwargs.pop('limit')
-        return evalg.proc.pollbook.get_voters_in_election_group(
-            session, election_group_id, **kwargs
-        ).order_by('id').limit(limit).all()
+    if "limit" in kwargs:
+        limit = kwargs.pop("limit")
+        return (
+            evalg.proc.pollbook.get_voters_in_election_group(
+                session, election_group_id, **kwargs
+            )
+            .order_by("id")
+            .limit(limit)
+            .all()
+        )
 
     return evalg.proc.pollbook.get_voters_in_election_group(
         session, election_group_id, **kwargs
@@ -136,7 +145,7 @@ def resolve_search_voters(_, info, **kwargs):
 
 
 def resolve_voters_by_person_id(_, info, **kwargs):
-    person_id = kwargs['id']
+    person_id = kwargs["id"]
     session = get_session(info)
     person = session.query(evalg.models.person.Person).get(person_id)
     return evalg.proc.pollbook.get_voters_for_person(session, person).all()
@@ -160,12 +169,14 @@ search_voters_query = graphene.List(
 find_voters_query = graphene.List(
     Voter,
     resolver=resolve_voters_by_person_id,
-    id=graphene.Argument(graphene.UUID, required=True))
+    id=graphene.Argument(graphene.UUID, required=True),
+)
 
 
 #
 # Mutations
 #
+
 
 class UpdateVoterPollbook(graphene.Mutation):
     """
@@ -183,13 +194,14 @@ class UpdateVoterPollbook(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get("id"))
 
         if not can_manage_voter(session, user, voter):
             return UpdateVoterPollbook(ok=False)
 
         pollbook = session.query(evalg.models.pollbook.Pollbook).get(
-            kwargs.get('pollbook_id'))
+            kwargs.get("pollbook_id")
+        )
 
         if not can_manage_pollbook(session, user, pollbook):
             return UpdateVoterPollbook(ok=False)
@@ -201,7 +213,7 @@ class UpdateVoterPollbook(graphene.Mutation):
             # Do not move voters between election_groups
             return UpdateVoterPollbook(ok=False)
 
-        voter.pollbook_id = kwargs.get('pollbook_id')
+        voter.pollbook_id = kwargs.get("pollbook_id")
         session.add(voter)
         session.commit()
         return UpdateVoterPollbook(ok=True)
@@ -219,10 +231,10 @@ class UpdateVoterReason(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get("id"))
         if not can_vote(session, user, voter):
             return UpdateVoterReason(ok=False)
-        voter.reason = kwargs.get('reason')
+        voter.reason = kwargs.get("reason")
         # A new review is needed if the reason is updated
         voter.ensure_rereview()
         session.add(voter)
@@ -239,7 +251,7 @@ class UndoReviewVoter(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get("id"))
         if not can_manage_voter(session, user, voter):
             return UndoReviewVoter(ok=False)
 
@@ -259,11 +271,11 @@ class ReviewVoter(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get("id"))
         if not can_manage_voter(session, user, voter):
             return ReviewVoter(ok=False)
         voter.reviewed = True
-        voter.verified = kwargs.get('verify')
+        voter.verified = kwargs.get("verify")
         session.add(voter)
         session.commit()
         return ReviewVoter(ok=True)
@@ -280,8 +292,7 @@ class DeleteVotersInPollbook(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        pollbook = session.query(evalg.models.pollbook.Pollbook).get(
-            kwargs.get('id'))
+        pollbook = session.query(evalg.models.pollbook.Pollbook).get(kwargs.get("id"))
         if not can_manage_pollbook(session, user, pollbook):
             return DeleteVotersInPollbook(ok=False)
         for voter in pollbook.voters:
@@ -299,10 +310,10 @@ class AddVoterByIdentifier(graphene.Mutation):
         id_value = graphene.String(required=True)
         pollbook_id = graphene.UUID(required=True)
         approved = graphene.Boolean(
-            description='add a pre-approved voter to the poll book',
+            description="add a pre-approved voter to the poll book",
         )
         reason = graphene.String(
-            description='reason for adding voter to the poll book',
+            description="reason for adding voter to the poll book",
         )
 
     Output = Voter
@@ -311,24 +322,20 @@ class AddVoterByIdentifier(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
-        id_type = kwargs['id_type']
-        id_value = kwargs['id_value']
-        pollbook_id = kwargs['pollbook_id']
-        self_added = not kwargs.get('approved', False)
-        reason = kwargs.get('reason')
+        id_type = kwargs["id_type"]
+        id_value = kwargs["id_value"]
+        pollbook_id = kwargs["pollbook_id"]
+        self_added = not kwargs.get("approved", False)
+        reason = kwargs.get("reason")
 
-        pollbook = session.query(evalg.models.pollbook.Pollbook).get(
-            pollbook_id)
+        pollbook = session.query(evalg.models.pollbook.Pollbook).get(pollbook_id)
 
         if not can_manage_pollbook(session, user, pollbook):
             return None
 
         voter = policy.add_voter_id(
-            pollbook,
-            id_type,
-            id_value,
-            self_added=self_added,
-            reason=reason)
+            pollbook, id_type, id_value, self_added=self_added, reason=reason
+        )
 
         session.commit()
         return voter
@@ -345,7 +352,7 @@ class AddVoterByPersonId(graphene.Mutation):
         person_id = graphene.UUID(required=True)
         pollbook_id = graphene.UUID(required=True)
         reason = graphene.String(
-            description='reason for adding voter to the poll book',
+            description="reason for adding voter to the poll book",
         )
 
     Output = Voter
@@ -354,25 +361,22 @@ class AddVoterByPersonId(graphene.Mutation):
         session = get_session(info)
         user = get_current_user(info)
         policy = evalg.proc.pollbook.ElectionVoterPolicy(session)
-        person_id = kwargs['person_id']
-        pollbook_id = kwargs['pollbook_id']
-        reason = kwargs.get('reason')
+        person_id = kwargs["person_id"]
+        pollbook_id = kwargs["pollbook_id"]
+        reason = kwargs.get("reason")
 
         person = session.query(evalg.models.person.Person).get(person_id)
 
-        pollbook = session.query(evalg.models.pollbook.Pollbook).get(
-            pollbook_id)
+        pollbook = session.query(evalg.models.pollbook.Pollbook).get(pollbook_id)
 
-        if (not can_manage_pollbook(session, user, pollbook)
-                and user.person.id != person_id):
+        if (
+            not can_manage_pollbook(session, user, pollbook)
+            and user.person.id != person_id
+        ):
             # Only allow users to add themselves to a pollbook they do not own
             return None
 
-        voter = policy.add_voter(
-            pollbook,
-            person,
-            self_added=True,
-            reason=reason)
+        voter = policy.add_voter(pollbook, person, self_added=True, reason=reason)
 
         session.commit()
         return voter
@@ -389,7 +393,7 @@ class DeleteVoter(graphene.Mutation):
     def mutate(self, info, **kwargs):
         session = get_session(info)
         user = get_current_user(info)
-        voter = session.query(evalg.models.voter.Voter).get(kwargs.get('id'))
+        voter = session.query(evalg.models.voter.Voter).get(kwargs.get("id"))
         if not can_manage_pollbook(session, user, voter.pollbook):
             return DeleteVoter(ok=False)
         if voter.self_added:
@@ -418,51 +422,52 @@ class UploadCensusFile(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         user = get_current_user(info)
-        pollbook_id = kwargs['pollbook_id']
-        census_file = kwargs['census_file']
+        pollbook_id = kwargs["pollbook_id"]
+        census_file = kwargs["census_file"]
         session = get_session(info)
 
         try:
-            pollbook = session.query(evalg.models.pollbook.Pollbook).get(
-                pollbook_id)
+            pollbook = session.query(evalg.models.pollbook.Pollbook).get(pollbook_id)
         except Exception as e:
             capture_exception(e)
             return UploadCensusFileResponse(
                 success=False,
-                code='pollbook-not-found',
-                message='No pollbook with id {!r}'.format(pollbook_id))
+                code="pollbook-not-found",
+                message="No pollbook with id {!r}".format(pollbook_id),
+            )
 
         if not can_manage_pollbook(session, user, pollbook):
             return UploadCensusFileResponse(
                 success=False,
-                code='permission-denied',
-                message='No access to pollbook id {!r}'.format(pollbook_id))
+                code="permission-denied",
+                message="No access to pollbook id {!r}".format(pollbook_id),
+            )
 
-        logger.info('Updating %r from %r', pollbook, census_file)
+        logger.info("Updating %r from %r", pollbook, census_file)
         file_content = census_file.read()
-        parser = CensusFileParser.factory(file_content,
-                                          census_file.mimetype)
+        parser = CensusFileParser.factory(file_content, census_file.mimetype)
         if not parser:
             return UploadCensusFileResponse(
                 success=False,
-                code='unsupported-file-type',
-                message='Unsupported file type {!r}'.format(
-                    census_file.mimetype))
+                code="unsupported-file-type",
+                message="Unsupported file type {!r}".format(census_file.mimetype),
+            )
 
         file_import = evalg.models.census_file_import.CensusFileImport(
             initiated_at=datetime.datetime.now(datetime.timezone.utc),
             file_name=census_file.filename,
             census_file=file_content,
             mime_type=census_file.mimetype,
-            pollbook_id=pollbook_id
+            pollbook_id=pollbook_id,
         )
 
         session.add(file_import)
         session.commit()
 
         from evalg.tasks.celery_worker import import_census_file_task
+
         import_census_file_task.delay(pollbook_id, file_import.id)
 
-        logger.info('Started file import as celery job')
+        logger.info("Started file import as celery job")
 
         return UploadCensusFileResponse(success=True)
