@@ -2,6 +2,7 @@
 import datetime
 import logging
 
+from flask import current_app
 import graphene
 import graphene_sqlalchemy
 from graphene_file_upload.scalars import Upload
@@ -445,7 +446,11 @@ class UploadCensusFile(graphene.Mutation):
 
         logger.info("Updating %r from %r", pollbook, census_file)
         file_content = census_file.read()
-        parser = CensusFileParser.factory(file_content, census_file.mimetype)
+
+        feide_postfix = current_app.config.get("FEIDE_POSTFIX", "uio.no")
+        parser = CensusFileParser.factory(
+            file_content, census_file.mimetype, feide_postfix=feide_postfix
+        )
         if not parser:
             return UploadCensusFileResponse(
                 success=False,
