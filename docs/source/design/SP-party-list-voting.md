@@ -6,7 +6,7 @@
     "personalVotesOtherParty":
     [
         {
-            "candiate": "candidateId",
+            "candidate": "candidateId",
             "list": "listId"
         }
     ]
