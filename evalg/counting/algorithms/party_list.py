@@ -27,16 +27,16 @@ def get_list_counts(election_lists, ballots, num_choosable, pre_cumulate_weight)
             ballot.personal_votes_other
         )
 
-        for candidate in ballot.personal_votes_same:
+        for vote in ballot.personal_votes_same:
             # Kan vurdere å sjekke at antall er ok her? Hvis det ikke fikses på forhånd (det er nok best å gjøre før)
-            if candidate["cumulated"]:
-                person_votes[ballot.chosen_list.id][candidate["id"]] += 2
+            if vote["cumulated"]:
+                person_votes[ballot.chosen_list.id][vote["candidate"].id] += 2
             else:
-                person_votes[ballot.chosen_list.id][candidate["id"]] += 1
+                person_votes[ballot.chosen_list.id][vote["candidate"].id] += 1
 
-        for other_candidate in ballot.personal_votes_other:
-            list_votes[other_candidate["listId"]] += 1
-            person_votes[other_candidate["listId"]][other_candidate["id"]] += 1
+        for other_vote in ballot.personal_votes_other:
+            list_votes[other_vote["list"].id] += 1
+            person_votes[other_vote["list"].id][other_vote["candidate"].id] += 1
 
         for candidate in ballot.chosen_list.candidates:
             if candidate.pre_cumulated:
@@ -80,20 +80,23 @@ def count(election_lists, list_votes, num_mandates, quotient_func):
     for i in range(num_mandates):
         if num_mandates - i < len(vote_number_lists):
             if vote_number_lists[-1 - num_mandates + i][1] == vote_number_lists[-1][1]:
-                raise Exception("Random draw needed, but not yet implemented")
-            # TODO: Protokoll_event, random draw
+                logger.error(f"random draw needed, not implemented!")  # TODO
 
         election_list, vote_number = vote_number_lists.pop()
         mandates[election_list.id] += 1
         vote_number *= quotient_ratio(quotient_func, mandates[election_list.id])
-        # TODO: Protokoll_event, mandate given to X list
+        logger.info(f"mandate given to {election_list.id}")
 
         if mandates[election_list.id] < len(election_list.candidates):
             vote_number_lists.append((election_list, vote_number))
             vote_number_lists.sort(key=lambda x: x[1])
         else:
-            # TODO: Protokoll_event, list emptied
-            pass
+            if vote_number_lists:
+                logger.info(f"list {election_list.id} emptied")
+                pass
+            else:
+                logger.info("all lists emptied")
+                break
 
     # TODO: Protokoll_event, sluttinfo
     # TODO: finne antall vara. Ofte ser det ut til å bare være samme som antall kandidater, evt pluss en konstant.
@@ -108,7 +111,7 @@ def sort_list(list_candidates, person_votes):
     Sort first based on number of votes, then priority if equal
     Votes are made negative since python sorting goes from smallest to largest value
     """
-    return sorted(list_candidates, key=lambda c:(-person_votes[c.id], c.priority))
+    return sorted(list_candidates, key=lambda c: (-person_votes[c.id], c.priority))
 
 
 def get_result(election):
@@ -123,27 +126,30 @@ def get_result(election):
     """
     # TODO: Sjekk hvilket type listevalg, fikse riktig
     # TODO: hent ting fra counting_rules
-    if election.type_str == "party_list":
-        person_votes, list_votes = get_list_counts(election.ballots, election, 4, 0.25)
+    if election.type_str == "sainte_lague":
+
+        person_votes, list_votes = get_list_counts(
+            election.lists, election.ballots, election.num_choosable, 0.25
+        )
         mandates = count(
-            election.election_lists,
+            election.lists,
             list_votes,
             election.num_choosable,
             sainte_lagues_quotient,
         )
         result = {}
-        for el in election.election_lists:
+        for el in election.lists:
             sorted_candidates = sort_list(el.candidates, person_votes[el.id])
 
             # TODO: statistikk på hvor stemmer kommer fra. altså slengere+personstemmer
             #       Kan kanskje løses fint med en enkel struct med kandidat+stemmer+slengere+personstemmer
-            result[el.id] = {
+            result[str(el.id)] = {
                 "mandates": mandates[el.id],
                 "list_votes": list_votes[el.id],
                 "sorted_candidates_with_votes": [
-                    (candidate.id, person_votes[el.id][candidate.id])
+                    (str(candidate.id), person_votes[el.id][candidate.id])
                     for candidate in sorted_candidates
-                ]
+                ],
             }
         return result
     # TODO: finn kandidatene som har fått plasser?, evt i egen funksjon

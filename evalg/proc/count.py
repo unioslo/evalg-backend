@@ -26,20 +26,23 @@ logger = logging.getLogger(__name__)
 
 
 class ListBallot:
-    def __init__(self, ballot_data, id2pollbook, id2list):
+    def __init__(self, ballot_data, id2pollbook, id2list, id2candidate):
         self.ballot_data = ballot_data
         self.pollbook = id2pollbook[ballot_data['pollbookId']]
         self.chosen_list = id2list[ballot_data['chosenListId']]
 
         self.personal_votes_same = [{
-            "id": vote['candidate'],
+            "candidate": id2candidate[vote['candidate']],
             "cumulated": vote['cumulated']
-        } for candidate in ballot_data['personalVotesSameList']]
+        } for vote in ballot_data['personalVotesSameParty']]
 
         self.personal_votes_other = [{
-            "id": vote['candidate'],
-            "listId": vote['list']
-        } for vote in ballot_data['personalVotesOtherList']]
+            "candidate": id2candidate[vote['candidate']],
+            "list": id2list[vote['list']]
+        } for vote in ballot_data['personalVotesOtherParty']]
+
+        #TODO dette er en hack for å få get_counting_ballots til åfunke
+        self.candidates = [self.chosen_list]
 
 
     @property
@@ -248,11 +251,13 @@ class ElectionGroupCounter:
                         ballot_data = self.ballot_serializer.deserialize(
                             envelope.ballot_data
                         )
-                        if election.type_str == 'uib_sp_list':
+                        logger.error(election.type_str)
+                        if election.type_str == 'sainte_lague':
                             ballot = ListBallot(
                                 ballot_data,
                                 self.id2pollbook,
-                                self.id2list
+                                self.id2list,
+                                self.id2candidate
                             )
                         else:
                             ballot = Ballot(
@@ -285,9 +290,13 @@ class ElectionGroupCounter:
     def generate_results(self, count, counted_by=None):
         for election in self.group.elections:
             if election.status == 'closed':
-                if election.type_str == 'uib_sp_list':
+                if election.type_str == 'sainte_lague':
                     result = party_list.get_result(election)
-                    election_protocol_dict = {}
+                    logger.info(result)
+                    election_protocol_dict = {
+                        'meta': {
+                        }
+                    }
                 else:
                     counter = Counter(election,
                                       election.ballots,
