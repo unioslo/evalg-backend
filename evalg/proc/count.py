@@ -19,9 +19,37 @@ from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.voter import Voter
 from evalg.proc.pollbook import get_verified_voters_count
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
+from evalg.counting.algorithms import party_list
 from evalg.counting.count import Counter
 
 logger = logging.getLogger(__name__)
+
+
+class ListBallot:
+    def __init__(self, ballot_data, id2pollbook, id2list):
+        self.ballot_data = ballot_data
+        self.pollbook = id2pollbook[ballot_data['pollbookId']]
+        self.chosen_list = id2list[ballot_data['chosenListId']]
+
+        self.personal_votes_same = [{
+            "id": vote['candidate'],
+            "cumulated": vote['cumulated']
+        } for candidate in ballot_data['personalVotesSameList']]
+
+        self.personal_votes_other = [{
+            "id": vote['candidate'],
+            "listId": vote['list']
+        } for vote in ballot_data['personalVotesOtherList']]
+
+
+    @property
+    def raw_string(self):
+        return ' '.join(
+            [str(self.pollbook.id)] + [str(self.chosen_list.id)] +
+            [str(candidate["id"]) for candidate in self.personal_votes_same] +
+            ['other list:'] +
+            [str(candidate["id"]) for candidate in self.personal_votes_other]
+        )
 
 
 class Ballot:
@@ -120,6 +148,7 @@ class ElectionGroupCounter:
         self.ballot_serializer = self._init_ballot_serializer(election_key)
         self.id2candidate = self._init_id2candidate()
         self.id2pollbook = self._init_id2pollbook()
+        self.id2list = self._init_id2list()
 
     def _init_id2candidate(self):
         id2candidate = {}
@@ -134,6 +163,13 @@ class ElectionGroupCounter:
             for pollbook in election.pollbooks:
                 id2pollbook[str(pollbook.id)] = pollbook
         return id2pollbook
+
+    def _init_id2list(self):
+        id2list = {}
+        for election in self.group.elections:
+            for election_list in election.lists:
+                id2list[str(election_list.id)] = election_list
+        return id2list
 
     def _init_ballot_serializer(self, election_key):
         try:
@@ -212,11 +248,18 @@ class ElectionGroupCounter:
                         ballot_data = self.ballot_serializer.deserialize(
                             envelope.ballot_data
                         )
-                        ballot = Ballot(
-                            ballot_data,
-                            self.id2pollbook,
-                            self.id2candidate
-                        )
+                        if election.type_str == 'uib_sp_list':
+                            ballot = ListBallot(
+                                ballot_data,
+                                self.id2pollbook,
+                                self.id2list
+                            )
+                        else:
+                            ballot = Ballot(
+                                ballot_data,
+                                self.id2pollbook,
+                                self.id2candidate
+                            )
                         pollbook.ballots.append(ballot)
 
     def process_for_count(self):
@@ -242,14 +285,19 @@ class ElectionGroupCounter:
     def generate_results(self, count, counted_by=None):
         for election in self.group.elections:
             if election.status == 'closed':
-                counter = Counter(election,
-                                  election.ballots,
-                                  test_mode=self.test_mode)
-                election_count_tree = counter.count()
-                election_path = election_count_tree.default_path
+                if election.type_str == 'uib_sp_list':
+                    result = party_list.get_result(election)
+                    election_protocol_dict = {}
+                else:
+                    counter = Counter(election,
+                                      election.ballots,
+                                      test_mode=self.test_mode)
+                    election_count_tree = counter.count()
+                    election_path = election_count_tree.default_path
 
-                result = election_path.get_result().to_dict()
-                election_protocol_dict = election_path.get_protocol().to_dict()
+                    result = election_path.get_result().to_dict()
+                    election_protocol_dict = election_path.get_protocol().to_dict()
+
                 # insert the name of the one who triggered the counting
                 election_protocol_dict['meta']['counted_by'] = counted_by
                 ballots = [ballot.ballot_data for ballot in election.ballots]
