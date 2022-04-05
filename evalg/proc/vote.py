@@ -14,7 +14,10 @@ from evalg.models.votes import Vote
 from evalg.models.candidate import Candidate
 from evalg.models.election_list import ElectionList
 from evalg.models.person import PersonExternalId
-from evalg.proc.ballot_verification import ListBallotVerifier
+from evalg.proc.ballot_verification import (
+    BallotVerificationException,
+    ListBallotVerifier,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -88,10 +91,13 @@ class ElectionVotePolicy(object):
     def verify_ballot_content(self, ballot_data):
 
         if ballot_data["voteType"] == "SPListElecVote":
-            return ListBallotVerifier(self.session, self.voter).validate_ballot(
-                ballot_data
-            )
-
+            try:
+                ListBallotVerifier(self.session, self.voter).validate_ballot(
+                    ballot_data
+                )
+            except BallotVerificationException as e:
+                logger.error("Ballot verification failed!")
+                return False
         # TODO move the rest of ballot verification into new BallotVerifier classes.
         ranked_candidate_ids = ballot_data["rankedCandidateIds"]
         if (
