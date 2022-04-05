@@ -6,6 +6,7 @@ from flask import current_app
 from sqlalchemy.sql import and_, select, func
 
 import evalg.database.query
+from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
 from evalg.models.ballot import Envelope
 from evalg.models.pollbook import Pollbook
 from evalg.models.voter import Voter, VERIFIED_STATUS_MAP
@@ -13,7 +14,7 @@ from evalg.models.votes import Vote
 from evalg.models.candidate import Candidate
 from evalg.models.election_list import ElectionList
 from evalg.models.person import PersonExternalId
-from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
+from evalg.proc.ballot_verification import ListBallotVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -87,16 +88,11 @@ class ElectionVotePolicy(object):
     def verify_ballot_content(self, ballot_data):
 
         if ballot_data["voteType"] == "SPListElecVote":
-            # TODO add ballot validation
+            return ListBallotVerifier(self.session, self.voter).validate_ballot(
+                ballot_data
+            )
 
-            # Check
-            #
-            # - Nr of candidates in vote?
-            # - Check if candidates exist, and are in the correct list
-            # - Check precumulate status
-            # -
-            return True
-
+        # TODO move the rest of ballot verification into new BallotVerifier classes.
         ranked_candidate_ids = ballot_data["rankedCandidateIds"]
         if (
             ranked_candidate_ids
