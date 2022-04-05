@@ -51,6 +51,7 @@ class ListBallotVerifier(AbstractBallotVerifier):
         try:
             self.validate_fields(ballot_data)
             if ballot_data["isBlankVote"]:
+                logger.info("Found blank vote!")
                 self.validate_blank_vote(ballot_data)
             else:
                 selected_list = self.validate_selected_list(ballot_data)
@@ -64,7 +65,7 @@ class ListBallotVerifier(AbstractBallotVerifier):
                 self.election.id,
                 e,
             )
-            return False
+            raise e
 
         logger.info(
             "Ballot validation OK, voter: %s, election %s",
