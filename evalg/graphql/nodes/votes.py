@@ -124,7 +124,6 @@ class AddVote(graphene.Mutation):
             )
             return AddVote(ok=False)
 
-        ballot_data.__delitem__("isBlankVote")
         ballot_data["pollbookId"] = str(vote_policy.voter.pollbook.id)
         vote = vote_policy.add_vote(ballot_data)
         session.flush()
