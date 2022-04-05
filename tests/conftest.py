@@ -590,7 +590,7 @@ def list_election_generator(
             pollbook_generator(
                 db_session,
                 election,
-                weight=1000,
+                weight=100,
             )
         ]
         db_session.flush()
