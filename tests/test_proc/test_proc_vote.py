@@ -84,5 +84,4 @@ def test_vote_validation(
     candidates = election.lists[0].candidates
     ballot_data = ballot_data_generator(pollbook, candidates=candidates[:4])
     election_vote_policy = election_vote_policy_generator(voter.id)
-    with pytest.raises(BallotException):
-        election_vote_policy.add_vote(ballot_data.copy())
+    assert not election_vote_policy.verify_ballot_content(ballot_data.copy())
