@@ -162,9 +162,6 @@ class ElectionVotePolicy(object):
         if not election_public_key:
             raise Exception("Election key is missing.")
 
-        if not self.verify_ballot_content(ballot_data):
-            raise BallotException("Error in ballot data")
-
         envelope = self.make_ballot(ballot_data, election_public_key)
         self.session.add(envelope)
         self.session.flush()

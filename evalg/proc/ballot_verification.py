@@ -83,10 +83,6 @@ class ListBallotVerifier(AbstractBallotVerifier):
             "personalVotesSameParty",
         ]
 
-        logger.info("################# Validating Fields ########################")
-        logger.info(ballot_data)
-        logger.info("################# Validating Fields ########################")
-
         for field in fields:
             if field not in ballot_data:
                 raise BallotStructureException(f"Field {field} missing from ballot")
