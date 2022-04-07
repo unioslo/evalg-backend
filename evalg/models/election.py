@@ -385,8 +385,7 @@ class Election(AbstractElection):
     @property
     def candidates(self):
         if len(self.lists) > 1:
-            raise Exception('Not intended for use on election with '
-                            'with multiple candidate lists')
+            return [candidate for el_list in self.lists for candidate in el_list.candidates]
         return self.lists[0].candidates
 
     @property
