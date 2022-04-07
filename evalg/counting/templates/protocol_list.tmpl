@@ -1,0 +1,63 @@
+{% macro nb(object) -%}
+{% if object.nb is defined %}{{ object.nb }}{% else %}{{ object }}{% endif %}
+{%- endmacro -%}
+
+{% macro person_name(person_id) -%}
+{{ meta.candidates[person_id] }}
+{%- endmacro -%}
+
+{% macro list_name(list_id) -%}
+{{ nb(meta.lists[list_id]) }}
+{%- endmacro -%}
+
+{% macro person_names_list(person_ids) -%}
+{%- for person_id in person_ids %}{{ meta.candidates[person_id] }}{%- if not loop.last %}, {% endif -%}{%- endfor %}
+{%- endmacro -%}
+
+{% macro pollbook_name(pollbook_id) -%}
+{{ nb(meta.pollbook_mappings[pollbook_id]) }}
+{%- endmacro %}
+
+
+Valg-ID: {{ meta.election_id }}
+Valg-tittel: {{ nb(meta.election_name) }}
+Valg-type: {{ meta.election_type }}
+Valgperiode: {{ meta.election_start }} (CET) - {{ meta.election_end }} (CET)
+Opptellingstidspunkt: {{ meta.counted_at }} (CET)
+Opptelling startet av: {{ meta.counted_by|default('Ukjent', true) }}
+
+Antall stemmer: {{ meta.ballots_count }}
+Antall blanke stemmer: {{ meta.empty_ballots_count }}
+Antall seter: {{ meta.seats }}
+
+
+Stemmer per liste
+=================
+
+{% for list in meta.list_ids -%}
+{{ list_name(list) }}: {{ "{: 4}".format(meta.result[list].list_votes) }} ({{ "{: 6.2f}".format(meta.result[list].list_votes*100/(meta.counting_ballots_count*meta.seats)) }}% )
+{% endfor %}
+
+
+Delingstall for hver runde
+==========================
+Viser stemmer delt på delingstall for hver kandidat lista har fått pluss en.
+
+{% for list in meta.list_ids -%}
+{{ list_name(list) }}: {{ "{: 7.2f}".format(meta.result[list].list_votes) }}
+{%-  for i in range(1, meta.result[list].mandates) -%}
+  {##}, {{ "{: 7.2f}".format(meta.result[list].list_votes/(i*2 + 1)) }}
+{%-  endfor %}
+{% endfor %}
+
+
+
+Kandidater med stemmetall
+=========================
+{% for list in meta.list_ids -%}
+{{ list_name(list) }}:
+{%-   for candidate, votes in meta.result[list].sorted_candidates_with_votes %}
+  {{person_name(candidate)}}: {{votes}}, hvorav TODO er kumulering og TODO er slengere
+{%-   endfor %}
+
+{% endfor %}

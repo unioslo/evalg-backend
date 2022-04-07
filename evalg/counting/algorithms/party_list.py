@@ -1,6 +1,9 @@
+import datetime
 import logging
+import pytz
 import random
 
+from evalg.counting import base
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
 DEFAULT_LOG_LEVEL = logging.DEBUG
@@ -8,6 +11,25 @@ DEFAULT_LOG_LEVEL = logging.DEBUG
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 # TODO: logging sammen med protokoll? Kanskje en holder til en del
+
+
+class Protocol(base.Protocol):
+    """Poll Protocol"""
+
+    # TODO: enten ikke bruk dette eller lag init her som gjør get_protocol unødvendig
+
+    def render(self, template='protocol_list.tmpl'):
+        """
+        Renders the protocol using jinja2 template `template`
+
+        :param template: The template to be used
+                         (default: protocol_list.tmpl)
+        :type template: str
+
+        :return: The rendered unicode text
+        :rtype: str
+        """
+        return super().render(template=template)
 
 
 def get_list_counts(election_lists, ballots, num_choosable, pre_cumulate_weight):
@@ -42,6 +64,7 @@ def get_list_counts(election_lists, ballots, num_choosable, pre_cumulate_weight)
         for candidate in ballot.chosen_list.candidates:
             if candidate.pre_cumulated:
                 # Gjør noe sjekk her på at personen ikke er strøket? Dersom det skal ha noe å si
+                # UiO-edgecase: Forhåndskumulert og nederst på lista, skal bare ha en stemme. Er faktisk med, men skal bare ha en stemme.
                 person_votes[ballot.chosen_list.id][candidate.id] += pre_cumulate_weight
 
     return person_votes, list_votes
@@ -102,9 +125,7 @@ def count(election_lists, list_votes, num_mandates, quotient_func):
                 logger.info("all lists emptied")
                 break
 
-    # TODO: Protokoll_event, sluttinfo
-    # TODO: finne antall vara. Ofte ser det ut til å bare være samme som antall kandidater, evt pluss en konstant.
-    #       Hvor skal dette legges inn? Får man det her eller under? Trenger kanskje ikke eget objekt for det, bare bruk "mandates"
+    logger.info("Counting done")
     return mandates
 
 
@@ -135,6 +156,7 @@ def get_result(election):
         person_votes, list_votes = get_list_counts(
             election.lists, election.ballots, election.num_choosable, 0.25
         )
+        # TODO: person_votes bør ha med slengere/personstemmer
         mandates = count(
             election.lists,
             list_votes,
@@ -157,3 +179,31 @@ def get_result(election):
             }
         return result
     # TODO: finn kandidatene som har fått plasser?, evt i egen funksjon
+
+
+def get_protocol(election, result):
+    meta = {
+        'seats': election.meta["candidate_rules"]["seats"],
+        'election_id': str(election.id),
+        'election_name': election.name,
+        'election_type': election.type_str,
+        'candidate_ids': [str(cand.id) for cand in election.candidates],
+        'candidates': {str(candidate.id): candidate.name for candidate in election.candidates},
+        'list_ids': [str(el_list.id) for el_list in election.lists],
+        'lists': {str(el_list.id): el_list.name for el_list in election.lists},
+        'counted_at': datetime.datetime.now().astimezone(
+            pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
+        'counted_by': None,
+        'election_start': election.start.astimezone(
+            pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
+        'election_end': election.end.astimezone(
+            pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
+        # 'drawing': ?
+        'ballots_count': election.total_amount_ballots,
+        'counting_ballots_count': election.total_amount_counting_ballots,
+        'empty_ballots_count': election.total_amount_empty_ballots,
+        'result': result['list_result'],
+    }
+    protocol = Protocol(meta)
+    print(protocol.render())
+    return Protocol(meta)
