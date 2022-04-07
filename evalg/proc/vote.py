@@ -92,7 +92,7 @@ class ElectionVotePolicy(object):
 
         if ballot_data["voteType"] == "SPListElecVote":
             try:
-                ListBallotVerifier(self.session, self.voter).validate_ballot(
+                return ListBallotVerifier(self.session, self.voter).validate_ballot(
                     ballot_data
                 )
             except BallotVerificationException as e:
