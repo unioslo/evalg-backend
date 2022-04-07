@@ -204,6 +204,4 @@ def get_protocol(election, result):
         'empty_ballots_count': election.total_amount_empty_ballots,
         'result': result['list_result'],
     }
-    protocol = Protocol(meta)
-    print(protocol.render())
     return Protocol(meta)
