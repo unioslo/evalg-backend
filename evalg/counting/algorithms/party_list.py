@@ -1,4 +1,5 @@
 import logging
+import random
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -64,32 +65,35 @@ def quotient_ratio(quotient_func, n):
 
 
 def count(election_lists, list_votes, num_mandates, quotient_func):
-    # Inn = Stemmer og info om lister
-    # Ut = Antall kandidater (og vara?)
-    #      ble det gjort tilfeldig trekning?
-    # TODO: protokoll startinfo?
+    logger.info("Counting start")
 
     vote_number_lists = [
         (el_list, list_votes[el_list.id] * quotient_func(0))
         for el_list in election_lists
     ]
-    vote_number_lists.sort(key=lambda x: x[1])
+    vote_number_lists.sort(key=lambda x: x[1], reverse=True)
 
     mandates = {list.id: 0 for list in election_lists}
 
     for i in range(num_mandates):
-        if num_mandates - i < len(vote_number_lists):
-            if vote_number_lists[-1 - num_mandates + i][1] == vote_number_lists[-1][1]:
-                logger.error(f"random draw needed, not implemented!")  # TODO
+        if (
+            num_mandates - i < len(vote_number_lists)
+            and vote_number_lists[0][1] == vote_number_lists[num_mandates - i][1]
+        ):
+            random_num = random.choice(range(num_mandates - i))
+            election_list, vote_number = vote_number_lists.pop(random_num)
+            logger.info("random draw") # Bør komme med noe her til protokoll
+        else:
+            election_list, vote_number = vote_number_lists.pop(0)
 
-        election_list, vote_number = vote_number_lists.pop()
         mandates[election_list.id] += 1
         vote_number *= quotient_ratio(quotient_func, mandates[election_list.id])
         logger.info(f"mandate given to {election_list.id}")
 
         if mandates[election_list.id] < len(election_list.candidates):
             vote_number_lists.append((election_list, vote_number))
-            vote_number_lists.sort(key=lambda x: x[1])
+            if vote_number != 0:
+                vote_number_lists.sort(key=lambda x: x[1], reverse=True)
         else:
             if vote_number_lists:
                 logger.info(f"list {election_list.id} emptied")
