@@ -49,6 +49,9 @@ def get_list_counts(election_lists, ballots, num_choosable, pre_cumulate_weight)
         list_votes[ballot.chosen_list.id] += num_choosable - len(
             ballot.personal_votes_other
         )
+        if not ballot.chosen_list:
+            logger.info("blank vote")
+            continue
 
         for vote in ballot.personal_votes_same:
             # Kan vurdere å sjekke at antall er ok her? Hvis det ikke fikses på forhånd (det er nok best å gjøre før)
