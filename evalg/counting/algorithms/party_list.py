@@ -1,5 +1,9 @@
+import datetime
 import logging
+import pytz
+import random
 
+from evalg.counting import base
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
 DEFAULT_LOG_LEVEL = logging.DEBUG
@@ -7,6 +11,25 @@ DEFAULT_LOG_LEVEL = logging.DEBUG
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 # TODO: logging sammen med protokoll? Kanskje en holder til en del
+
+
+class Protocol(base.Protocol):
+    """Poll Protocol"""
+
+    # TODO: enten ikke bruk dette eller lag init her som gjør get_protocol unødvendig
+
+    def render(self, template='protocol_list.tmpl'):
+        """
+        Renders the protocol using jinja2 template `template`
+
+        :param template: The template to be used
+                         (default: protocol_list.tmpl)
+        :type template: str
+
+        :return: The rendered unicode text
+        :rtype: str
+        """
+        return super().render(template=template)
 
 
 def get_list_counts(election_lists, ballots, num_choosable, pre_cumulate_weight):
@@ -41,6 +64,7 @@ def get_list_counts(election_lists, ballots, num_choosable, pre_cumulate_weight)
         for candidate in ballot.chosen_list.candidates:
             if candidate.pre_cumulated:
                 # Gjør noe sjekk her på at personen ikke er strøket? Dersom det skal ha noe å si
+                # UiO-edgecase: Forhåndskumulert og nederst på lista, skal bare ha en stemme. Er faktisk med, men skal bare ha en stemme.
                 person_votes[ballot.chosen_list.id][candidate.id] += pre_cumulate_weight
 
     return person_votes, list_votes
@@ -64,32 +88,35 @@ def quotient_ratio(quotient_func, n):
 
 
 def count(election_lists, list_votes, num_mandates, quotient_func):
-    # Inn = Stemmer og info om lister
-    # Ut = Antall kandidater (og vara?)
-    #      ble det gjort tilfeldig trekning?
-    # TODO: protokoll startinfo?
+    logger.info("Counting start")
 
     vote_number_lists = [
         (el_list, list_votes[el_list.id] * quotient_func(0))
         for el_list in election_lists
     ]
-    vote_number_lists.sort(key=lambda x: x[1])
+    vote_number_lists.sort(key=lambda x: x[1], reverse=True)
 
     mandates = {list.id: 0 for list in election_lists}
 
     for i in range(num_mandates):
-        if num_mandates - i < len(vote_number_lists):
-            if vote_number_lists[-1 - num_mandates + i][1] == vote_number_lists[-1][1]:
-                logger.error(f"random draw needed, not implemented!")  # TODO
+        if (
+            num_mandates - i < len(vote_number_lists)
+            and vote_number_lists[0][1] == vote_number_lists[num_mandates - i][1]
+        ):
+            random_num = random.choice(range(num_mandates - i))
+            election_list, vote_number = vote_number_lists.pop(random_num)
+            logger.info("random draw") # Bør komme med noe her til protokoll
+        else:
+            election_list, vote_number = vote_number_lists.pop(0)
 
-        election_list, vote_number = vote_number_lists.pop()
         mandates[election_list.id] += 1
         vote_number *= quotient_ratio(quotient_func, mandates[election_list.id])
         logger.info(f"mandate given to {election_list.id}")
 
         if mandates[election_list.id] < len(election_list.candidates):
             vote_number_lists.append((election_list, vote_number))
-            vote_number_lists.sort(key=lambda x: x[1])
+            if vote_number != 0:
+                vote_number_lists.sort(key=lambda x: x[1], reverse=True)
         else:
             if vote_number_lists:
                 logger.info(f"list {election_list.id} emptied")
@@ -98,9 +125,7 @@ def count(election_lists, list_votes, num_mandates, quotient_func):
                 logger.info("all lists emptied")
                 break
 
-    # TODO: Protokoll_event, sluttinfo
-    # TODO: finne antall vara. Ofte ser det ut til å bare være samme som antall kandidater, evt pluss en konstant.
-    #       Hvor skal dette legges inn? Får man det her eller under? Trenger kanskje ikke eget objekt for det, bare bruk "mandates"
+    logger.info("Counting done")
     return mandates
 
 
@@ -131,6 +156,7 @@ def get_result(election):
         person_votes, list_votes = get_list_counts(
             election.lists, election.ballots, election.num_choosable, 0.25
         )
+        # TODO: person_votes bør ha med slengere/personstemmer
         mandates = count(
             election.lists,
             list_votes,
@@ -153,3 +179,29 @@ def get_result(election):
             }
         return result
     # TODO: finn kandidatene som har fått plasser?, evt i egen funksjon
+
+
+def get_protocol(election, result):
+    meta = {
+        'seats': election.meta["candidate_rules"]["seats"],
+        'election_id': str(election.id),
+        'election_name': election.name,
+        'election_type': election.type_str,
+        'candidate_ids': [str(cand.id) for cand in election.candidates],
+        'candidates': {str(candidate.id): candidate.name for candidate in election.candidates},
+        'list_ids': [str(el_list.id) for el_list in election.lists],
+        'lists': {str(el_list.id): el_list.name for el_list in election.lists},
+        'counted_at': datetime.datetime.now().astimezone(
+            pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
+        'counted_by': None,
+        'election_start': election.start.astimezone(
+            pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
+        'election_end': election.end.astimezone(
+            pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
+        # 'drawing': ?
+        'ballots_count': election.total_amount_ballots,
+        'counting_ballots_count': election.total_amount_counting_ballots,
+        'empty_ballots_count': election.total_amount_empty_ballots,
+        'result': result['list_result'],
+    }
+    return Protocol(meta)

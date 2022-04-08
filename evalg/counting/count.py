@@ -12,7 +12,7 @@ import secrets
 
 import pytz
 
-from evalg.counting.algorithms import ntnucv, mntv, uiostv, uiomv, poll
+from evalg.counting.algorithms import ntnucv, mntv, uiostv, uiomv, poll, party_list
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -27,6 +27,7 @@ PROTOCOL_MAPPINGS = {
     'mntv': mntv.Protocol,
     'ntnu_cv': ntnucv.Protocol,
     'poll': poll.Protocol,
+    'sainte_lague': party_list.Protocol,
 }
 RESULT_MAPPINGS = {
     'uio_stv': uiostv.Result,
