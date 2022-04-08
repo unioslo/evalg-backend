@@ -216,13 +216,11 @@ def get_result(election):
             election.num_choosable,
             sainte_lagues_quotient,
         )
-        result = {}
+        list_result = {}
         for el in election.lists:
             sorted_candidates = sort_list(el.candidates, person_votes[el.id])
 
-            # TODO: statistikk på hvor stemmer kommer fra. altså slengere+personstemmer
-            #       Kan kanskje løses fint med en enkel struct med kandidat+stemmer+slengere+personstemmer
-            result[str(el.id)] = {
+            list_result[str(el.id)] = {
                 "mandates": mandates[el.id],
                 "list_votes": list_votes[el.id].get_total_votes(),
                 "list_votes_stats": list_votes[el.id].to_dict(),
@@ -235,11 +233,17 @@ def get_result(election):
                     for candidate in sorted_candidates
                 ],
             }
-        return result
-    # TODO: finn kandidatene som har fått plasser?, evt i egen funksjon
+
+        protocol = get_protocol(election, list_result, person_votes, list_votes)
+        result = {
+            "meta": {"election_type": election.type_str},
+            "list_result": list_result,
+        }
+
+        return result, protocol
 
 
-def get_protocol(election, result):
+def get_protocol(election, result, person_votes, list_votes):
     meta = {
         'seats': election.meta["candidate_rules"]["seats"],
         'election_id': str(election.id),
@@ -260,6 +264,6 @@ def get_protocol(election, result):
         'ballots_count': election.total_amount_ballots,
         'counting_ballots_count': election.total_amount_counting_ballots,
         'empty_ballots_count': election.total_amount_empty_ballots,
-        'result': result['list_result'],
+        'result': result,
     }
     return Protocol(meta)
