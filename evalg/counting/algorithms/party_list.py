@@ -32,7 +32,57 @@ class Protocol(base.Protocol):
         return super().render(template=template)
 
 
-def get_list_counts(election_lists, ballots, num_choosable, pre_cumulate_weight):
+class PersonVotes():
+
+    def __init__(self, pre_cumulate_weight):
+        self.normal_votes = 0
+        self.cumulate_votes = 0
+        self.pre_cumulate_votes = 0
+        self.votes_from_others = 0
+        self.pre_cumulate_weight = pre_cumulate_weight
+
+    def get_total_votes(self):
+        return (
+            self.normal_votes
+            + self.cumulate_votes
+            + self.votes_from_others
+            + self.pre_cumulate_votes * self.pre_cumulate_weight
+        )
+
+    def to_dict(self):
+        return {
+            "normal_votes": self.normal_votes,
+            "cumulate_votes": self.cumulate_votes,
+            "pre_cumulate_votes": self.pre_cumulate_votes * self.pre_cumulate_weight,
+            "votes_from_others": self.votes_from_others,
+            "total_votes": self.get_total_votes(),
+        }
+
+class ListVotes():
+
+    def __init__(self, seats):
+        self.times_chosen = 0
+        self.votes_in = 0
+        self.votes_out = 0
+        self.seats = seats
+
+    def get_total_votes(self):
+        return (
+            self.times_chosen * self.seats
+            + self.votes_in
+            - self.votes_out
+        )
+
+    def to_dict(self):
+        return {
+            "times_chosen": self.times_chosen,
+            "votes_in": self.votes_in,
+            "votes_out": self.votes_out,
+            "total_votes": self.get_total_votes(),
+        }
+
+
+def get_list_counts(election_lists, ballots, seats, pre_cumulate_weight):
     """
     Get votes for people and lists
     person votes for each person chosen and list votes based on number of person votes
@@ -41,35 +91,35 @@ def get_list_counts(election_lists, ballots, num_choosable, pre_cumulate_weight)
     list_votes = {}
     for election_list in election_lists:
         person_votes[election_list.id] = {
-            candidate.id: 0 for candidate in election_list.candidates
+            candidate.id: PersonVotes(pre_cumulate_weight) for candidate in election_list.candidates
         }
-        list_votes[election_list.id] = 0
+        list_votes[election_list.id] = ListVotes(seats)
 
     for ballot in ballots:
         if not ballot.chosen_list:
             logger.info("blank vote")
             continue
+        list_votes[ballot.chosen_list.id].times_chosen += 1
 
         list_votes[ballot.chosen_list.id] += num_choosable - len(
             ballot.personal_votes_other
         )
 
         for vote in ballot.personal_votes_same:
-            # Kan vurdere å sjekke at antall er ok her? Hvis det ikke fikses på forhånd (det er nok best å gjøre før)
+            person_votes[ballot.chosen_list.id][vote["candidate"].id].normal_votes += 1
             if vote["cumulated"]:
-                person_votes[ballot.chosen_list.id][vote["candidate"].id] += 2
-            else:
-                person_votes[ballot.chosen_list.id][vote["candidate"].id] += 1
+                person_votes[ballot.chosen_list.id][vote["candidate"].id].cumulate_votes += 1
 
         for other_vote in ballot.personal_votes_other:
-            list_votes[other_vote["list"].id] += 1
-            person_votes[other_vote["list"].id][other_vote["candidate"].id] += 1
+            list_votes[ballot.chosen_list.id].votes_out += 1
+            list_votes[other_vote["list"].id].votes_in += 1
+            person_votes[other_vote["list"].id][other_vote["candidate"].id].votes_from_others += 1
 
         for candidate in ballot.chosen_list.candidates:
             if candidate.pre_cumulated:
                 # Gjør noe sjekk her på at personen ikke er strøket? Dersom det skal ha noe å si
                 # UiO-edgecase: Forhåndskumulert og nederst på lista, skal bare ha en stemme. Er faktisk med, men skal bare ha en stemme.
-                person_votes[ballot.chosen_list.id][candidate.id] += pre_cumulate_weight
+                person_votes[ballot.chosen_list.id][candidate.id].pre_cumulate_votes += 1
 
     return person_votes, list_votes
 
@@ -95,7 +145,7 @@ def count(election_lists, list_votes, num_mandates, quotient_func):
     logger.info("Counting start")
 
     vote_number_lists = [
-        (el_list, list_votes[el_list.id] * quotient_func(0))
+        (el_list, list_votes[el_list.id].get_total_votes() * quotient_func(0))
         for el_list in election_lists
     ]
     vote_number_lists.sort(key=lambda x: x[1], reverse=True)
@@ -140,7 +190,7 @@ def sort_list(list_candidates, person_votes):
     Sort first based on number of votes, then priority if equal
     Votes are made negative since python sorting goes from smallest to largest value
     """
-    return sorted(list_candidates, key=lambda c: (-person_votes[c.id], c.priority))
+    return sorted(list_candidates, key=lambda c: (-person_votes[c.id].get_total_votes(), c.priority))
 
 
 def get_result(election):
@@ -160,32 +210,40 @@ def get_result(election):
         person_votes, list_votes = get_list_counts(
             election.lists, election.ballots, election.num_choosable, 0.25
         )
-        # TODO: person_votes bør ha med slengere/personstemmer
         mandates = count(
             election.lists,
             list_votes,
             election.num_choosable,
             sainte_lagues_quotient,
         )
-        result = {}
+        list_result = {}
         for el in election.lists:
             sorted_candidates = sort_list(el.candidates, person_votes[el.id])
 
-            # TODO: statistikk på hvor stemmer kommer fra. altså slengere+personstemmer
-            #       Kan kanskje løses fint med en enkel struct med kandidat+stemmer+slengere+personstemmer
-            result[str(el.id)] = {
+            list_result[str(el.id)] = {
                 "mandates": mandates[el.id],
-                "list_votes": list_votes[el.id],
+                "list_votes": list_votes[el.id].get_total_votes(),
+                "list_votes_stats": list_votes[el.id].to_dict(),
                 "sorted_candidates_with_votes": [
-                    (str(candidate.id), person_votes[el.id][candidate.id])
+                    (str(candidate.id), person_votes[el.id][candidate.id].get_total_votes())
+                    for candidate in sorted_candidates
+                ],
+                "sorted_candidates_with_votes_stats": [
+                    (str(candidate.id), person_votes[el.id][candidate.id].to_dict())
                     for candidate in sorted_candidates
                 ],
             }
-        return result
-    # TODO: finn kandidatene som har fått plasser?, evt i egen funksjon
+
+        protocol = get_protocol(election, list_result, person_votes, list_votes)
+        result = {
+            "meta": {"election_type": election.type_str},
+            "list_result": list_result,
+        }
+
+        return result, protocol
 
 
-def get_protocol(election, result):
+def get_protocol(election, result, person_votes, list_votes):
     meta = {
         'seats': election.meta["candidate_rules"]["seats"],
         'election_id': str(election.id),
@@ -206,6 +264,6 @@ def get_protocol(election, result):
         'ballots_count': election.total_amount_ballots,
         'counting_ballots_count': election.total_amount_counting_ballots,
         'empty_ballots_count': election.total_amount_empty_ballots,
-        'result': result['list_result'],
+        'result': result,
     }
     return Protocol(meta)

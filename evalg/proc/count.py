@@ -270,13 +270,8 @@ class ElectionGroupCounter:
         for election in self.group.elections:
             if election.status == 'closed':
                 if election.type_str == 'sainte_lague':
-                    list_result = party_list.get_result(election)
-
-                    result = {
-                        "meta": {"election_type": election.type_str},
-                        "list_result": list_result,
-                    }
-                    election_protocol_dict = party_list.get_protocol(election, result).to_dict()
+                    result, protocol = party_list.get_result(election)
+                    election_protocol_dict = protocol.to_dict()
                 else:
                     counter = Counter(
                         election, election.ballots, test_mode=self.test_mode
