@@ -29,7 +29,10 @@ class ListBallot:
     def __init__(self, ballot_data, id2pollbook, id2list, id2candidate):
         self.ballot_data = ballot_data
         self.pollbook = id2pollbook[ballot_data["pollbookId"]]
-        self.chosen_list = id2list[ballot_data["chosenListId"]]
+        if ballot_data["chosenListId"]:
+            self.chosen_list = id2list[ballot_data["chosenListId"]]
+        else:
+            self.chosen_list = None
 
         self.personal_votes_same = [
             {
@@ -48,7 +51,7 @@ class ListBallot:
         ]
 
         # TODO dette er en hack for å få get_counting_ballots til åfunke
-        self.candidates = [self.chosen_list]
+        self.candidates = [1] if self.chosen_list else []
 
     @property
     def raw_string(self):
