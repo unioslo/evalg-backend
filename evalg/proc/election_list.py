@@ -88,7 +88,7 @@ def update_election_list(
         return False
     election_list.name = name
     election_list.election_id = election_id
-    election_list.desription = description
+    election_list.description = description
     election_list.information_url = information_url
     session.add(election_list)
     session.commit()
