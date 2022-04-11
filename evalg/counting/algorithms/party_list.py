@@ -101,9 +101,9 @@ def get_list_counts(election_lists, ballots, seats, pre_cumulate_weight):
             continue
         list_votes[ballot.chosen_list.id].times_chosen += 1
 
-        list_votes[ballot.chosen_list.id] += num_choosable - len(
-            ballot.personal_votes_other
-        )
+        #list_votes[ballot.chosen_list.id] += seats - len(
+        #    ballot.personal_votes_other
+        #)
 
         for vote in ballot.personal_votes_same:
             person_votes[ballot.chosen_list.id][vote["candidate"].id].normal_votes += 1
