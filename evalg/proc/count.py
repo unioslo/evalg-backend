@@ -232,7 +232,7 @@ class ElectionGroupCounter:
                         ballot_data = self.ballot_serializer.deserialize(
                             envelope.ballot_data
                         )
-                        if election.type_str == "sainte_lague":
+                        if election.type_str in ("sainte_lague", "uio_sainte_lague"):
                             ballot = ListBallot(
                                 ballot_data,
                                 self.id2pollbook,
@@ -267,8 +267,8 @@ class ElectionGroupCounter:
 
     def generate_results(self, count, counted_by=None):
         for election in self.group.elections:
-            if election.status == 'closed':
-                if election.type_str == 'sainte_lague':
+            if election.status == "closed":
+                if election.type_str in ("sainte_lague", "uio_sainte_lague"):
                     result, protocol = party_list.get_result(election)
                     election_protocol_dict = protocol.to_dict()
                 else:
