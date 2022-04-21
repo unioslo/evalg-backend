@@ -232,7 +232,6 @@ class ElectionGroupCounter:
                         ballot_data = self.ballot_serializer.deserialize(
                             envelope.ballot_data
                         )
-                        logger.error(election.type_str)
                         if election.type_str == "sainte_lague":
                             ballot = ListBallot(
                                 ballot_data,

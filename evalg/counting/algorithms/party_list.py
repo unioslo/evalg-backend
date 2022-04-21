@@ -33,6 +33,9 @@ class Protocol(base.Protocol):
 
 
 class PersonVotes():
+    """
+    Class for holding all votes given to a person and info about where the votes come from
+    """
 
     def __init__(self, pre_cumulate_weight):
         self.normal_votes = 0
@@ -59,6 +62,9 @@ class PersonVotes():
         }
 
 class ListVotes():
+    """
+    Class for holding all votes given to a list and info about where the votes come from
+    """
 
     def __init__(self, seats):
         self.times_chosen = 0
@@ -101,10 +107,6 @@ def get_list_counts(election_lists, ballots, seats, pre_cumulate_weight):
             continue
         list_votes[ballot.chosen_list.id].times_chosen += 1
 
-        #list_votes[ballot.chosen_list.id] += seats - len(
-        #    ballot.personal_votes_other
-        #)
-
         for vote in ballot.personal_votes_same:
             person_votes[ballot.chosen_list.id][vote["candidate"].id].normal_votes += 1
             if vote["cumulated"]:
@@ -143,6 +145,7 @@ def quotient_ratio(quotient_func, n):
 
 def count(election_lists, list_votes, num_mandates, quotient_func):
     logger.info("Counting start")
+    random_draw = False
 
     vote_number_lists = [
         (el_list, list_votes[el_list.id].get_total_votes() * quotient_func(0))
@@ -159,7 +162,8 @@ def count(election_lists, list_votes, num_mandates, quotient_func):
         ):
             random_num = random.choice(range(num_mandates - i))
             election_list, vote_number = vote_number_lists.pop(random_num)
-            logger.info("random draw") # Bør komme med noe her til protokoll
+            random_draw = True
+            logger.info("random draw")
         else:
             election_list, vote_number = vote_number_lists.pop(0)
 
@@ -180,7 +184,7 @@ def count(election_lists, list_votes, num_mandates, quotient_func):
                 break
 
     logger.info("Counting done")
-    return mandates
+    return mandates, random_draw
 
 
 def sort_list(list_candidates, person_votes):
@@ -210,7 +214,7 @@ def get_result(election):
         person_votes, list_votes = get_list_counts(
             election.lists, election.ballots, election.num_choosable, 0.25
         )
-        mandates = count(
+        mandates, random_draw = count(
             election.lists,
             list_votes,
             election.num_choosable,
@@ -234,7 +238,7 @@ def get_result(election):
                 ],
             }
 
-        protocol = get_protocol(election, list_result, person_votes, list_votes)
+        protocol = get_protocol(election, list_result, person_votes, list_votes, random_draw)
         result = {
             "meta": {"election_type": election.type_str},
             "list_result": list_result,
@@ -243,7 +247,7 @@ def get_result(election):
         return result, protocol
 
 
-def get_protocol(election, result, person_votes, list_votes):
+def get_protocol(election, result, person_votes, list_votes, random_draw):
     meta = {
         'seats': election.meta["candidate_rules"]["seats"],
         'election_id': str(election.id),
@@ -260,7 +264,7 @@ def get_protocol(election, result, person_votes, list_votes):
             pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
         'election_end': election.end.astimezone(
             pytz.timezone('Europe/Oslo')).strftime('%Y-%m-%d %H:%M:%S'),
-        # 'drawing': ?
+        'random_draw': random_draw,
         'ballots_count': election.total_amount_ballots,
         'counting_ballots_count': election.total_amount_counting_ballots,
         'empty_ballots_count': election.total_amount_empty_ballots,

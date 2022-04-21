@@ -31,16 +31,21 @@ Antall blanke stemmer: {{ meta.empty_ballots_count }}
 Antall utfylte stemmer: {{ meta.counting_ballots_count }}
 
 Antall seter: {{ meta.seats }}
+Tilfeldig trekning: {{ "Ja" if meta.random_draw else "Nei" }}
 
 
-Oppsummering listestemmetall:
+Oppsummering listestemmetall
 ============================
 
   Listenavn                                       Stemmer   Mandater   Slengere   Avgitte   Totalt
+{% if meta.counting_ballots_count %}
 {%- for list in meta.list_ids -%}
 {% set list_votes = meta.result[list].list_votes_stats %}
-  {{ list_name(list) }}: {{ "{:52} * {:8} + {:8} - {:7} ={:7}".format(list_votes.times_chosen, meta.seats, list_votes.votes_in, list_votes.votes_out, list_votes.total_votes)}} ({{ "{:5.2f}".format(meta.result[list].list_votes*100/(meta.counting_ballots_count*meta.seats)) }}%)
-{%- endfor %}
+  {{ "{:42} {:12} * {:8} + {:8} - {:7} ={:7}".format(list_name(list), list_votes.times_chosen, meta.seats, list_votes.votes_in, list_votes.votes_out, list_votes.total_votes)}} ({{ "{:5.2f}".format(meta.result[list].list_votes*100/(meta.counting_ballots_count*meta.seats)) }}%)
+{%- endfor -%}
+{%- else -%}
+Ingen tellende stemmer er avgitt
+{%- endif %}
 
 
 Delingstall for hver runde
@@ -49,13 +54,13 @@ Viser stemmer delt på delingstall for hver kandidat lista har fått pluss en.
 
 {{ " "*40 }}| {{ "{:7d}".format(1) }}
 {%-  for i in range(1, 10) -%}
-  {##}| {{ "{:7d}".format(i*2 + 1) }}
+| {{ "{:7d}".format(i*2 + 1) }}
 {%-  endfor %}
 {{ "-"*(40+9*10) }}
 {% for list in meta.list_ids -%}
 {{ "{:40}".format(list_name(list)) }}: {{ "{:7.2f}".format(meta.result[list].list_votes) }}
-{%-  for i in range(1, meta.result[list].mandates) -%}
-  {##}, {{ "{:7.2f}".format(meta.result[list].list_votes/(i*2 + 1)) }}
+{%-  for i in range(1, meta.result[list].mandates + 1) -%}
+, {{ "{:7.2f}".format(meta.result[list].list_votes/(i*2 + 1)) }}
 {%-  endfor %}
 {% endfor %}
 
@@ -67,11 +72,11 @@ Kandidater med stemmetall
 {{ list_name(list) }}:
   Valgt:
 {%-   for candidate, stats in meta.result[list].sorted_candidates_with_votes_stats[:meta.result[list].mandates] %}
-    {{person_name(candidate)}}: {{stats.total_votes}}, hvorav {{stats.cumulate_votes}} er kumulering, {{stats.votes_from_others}} er slengere og {{stats.pre_cumulate_votes}} er fra forhåndskumlering
+    {{person_name(candidate)}}: {{stats.total_votes}}, hvorav {{stats.cumulate_votes}} er kumulering, {{stats.votes_from_others}} er slengere og {{stats.pre_cumulate_votes}} er fra forhåndskumulering
 {%-   endfor %}
   Vara:
 {%-   for candidate, stats in meta.result[list].sorted_candidates_with_votes_stats[meta.result[list].mandates:] %}
-    {{person_name(candidate)}}: {{stats.total_votes}}, hvorav {{stats.cumulate_votes}} er kumulering, {{stats.votes_from_others}} er slengere og {{stats.pre_cumulate_votes}} er fra forhåndskumlering
+    {{person_name(candidate)}}: {{stats.total_votes}}, hvorav {{stats.cumulate_votes}} er kumulering, {{stats.votes_from_others}} er slengere og {{stats.pre_cumulate_votes}} er fra forhåndskumulering
 {%-   endfor %}
 
 {% endfor %}
