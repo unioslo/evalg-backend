@@ -192,8 +192,7 @@ def get_quotient_func(counting_rules):
     elif counting_rules["first_divisor"] == 1.4:
         return modified_sainte_lagues_quotient
     else:
-        logger.error("No quotient rule made matching counting rules")
-        raise NotImplementedError("No quotient rule made matching counting rules")
+        raise NotImplementedError(f"No quotient rule made matching counting rules, {counting_rules['first_divisor']}")
 
 
 def count(election_lists, list_votes, num_mandates, quotient_func):

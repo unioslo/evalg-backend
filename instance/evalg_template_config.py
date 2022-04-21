@@ -75,7 +75,7 @@ election_rule_sets = {
         },
         'counting_rules': {
             'method': 'sainte_lague',
-            'first_divisor': '1',
+            'first_divisor': 1,
             'precumulate': 1,
             'list_votes': 'seats',
             'other_list_candidate_votes': True
