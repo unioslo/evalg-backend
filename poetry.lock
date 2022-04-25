@@ -346,7 +346,7 @@ Six = "*"
 
 [[package]]
 name = "flask-feide-gatekeeper"
-version = "0.0.7"
+version = "0.0.8.dev3+ged5e3ab"
 description = "Flask middleware for Feide API Gatekeeper support"
 category = "main"
 optional = false
@@ -362,8 +362,8 @@ werkzeug = "*"
 [package.source]
 type = "git"
 url = "https://bitbucket.usit.uio.no/scm/int/flask-feide-gatekeeper.git"
-reference = "v0.0.7"
-resolved_reference = "ff82f5a98bfee79f81eecdfa085ad2af30e4b8ab"
+reference = "better-support-for-conditional-auth"
+resolved_reference = "ed5e3ab83ed74f918c20eb86a1a5ff9953efd18c"
 
 [[package]]
 name = "flask-fixtures"
@@ -1495,7 +1495,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8 <3.10"
-content-hash = "d0a264169c2fe6db7619c72069af90dc2c52e4a045df17dc3852cf2164593ccf"
+content-hash = "a4873a96f69edfbd633137705c52dd41f6a65977ad7a438cdd1a0d43577873f2"
 
 [metadata.files]
 alembic = [
