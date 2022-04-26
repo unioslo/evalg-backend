@@ -8,6 +8,8 @@ import flask_graphql
 import graphene
 from graphene_file_upload.flask import FileUploadGraphQLView
 
+from evalg.authentication import basic
+
 from evalg import db
 from evalg.authentication import user
 
@@ -22,7 +24,8 @@ logger = logging.getLogger(__name__)
 schema = graphene.Schema(
     query=queries.ElectionQuery,
     mutation=mutations.ElectionMutations,
-    types=[nodes.election_group.ElectionGroup])
+    types=[nodes.election_group.ElectionGroup],
+)
 
 
 class ContextGraphQLView(flask_graphql.GraphQLView):
@@ -43,9 +46,9 @@ class EvalgGraphQLView(ContextGraphQLView, FileUploadGraphQLView):
 
 def get_context():
     return {
-        'session': db.session,
-        'request': flask.request,
-        'user': user,
+        "session": db.session,
+        "request": flask.request,
+        "user": user,
     }
 
 
@@ -58,9 +61,9 @@ def get_test_context(db_session):
     db_session to the test graphql client.
     """
     return {
-        'session': db_session,
-        'request': flask.request,
-        'user': user,
+        "session": db_session,
+        "request": flask.request,
+        "user": user,
     }
 
 
@@ -71,16 +74,16 @@ def init_app(app):
         middleware.logging_middleware,
         middleware.timing_middleware,
     ]
-    if app.config.get('AUTH_ENABLED'):
+    if app.config.get("AUTH_ENABLED"):
         mw.append(middleware.auth_middleware)
 
-    app.add_url_rule(
-        '/graphql',
-        view_func=EvalgGraphQLView.as_view(
-            'graphql',
-            schema=schema,
-            batch=True,
-            context=get_context(),
-            graphiql=True,
-            middleware=mw
-        ))
+    graphql_view = EvalgGraphQLView.as_view(
+        "graphql",
+        schema=schema,
+        batch=True,
+        context=get_context(),
+        graphiql=True,
+        middleware=mw,
+    )
+
+    app.add_url_rule("/graphql", view_func=basic.require(graphql_view))

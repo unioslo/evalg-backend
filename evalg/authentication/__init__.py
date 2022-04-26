@@ -34,16 +34,16 @@ user = EvalgUser()
 
 
 def init_app(app):
-    auth_method = app.config['AUTH_METHOD']
-    if auth_method == 'feide':
+    auth_method = app.config["AUTH_METHOD"]
+    if auth_method == "feide":
         creds.init_app(app)
         basic.init_app(app)
         gk_user = gatekeeper.GatekeeperData(basic)
         feide_api = client.DataportenApi(gk_user)
-    elif auth_method == 'feide_mock':
+    elif auth_method == "feide_mock":
         gk_user = mock.gatekeeper.MockGatekeeperData(basic)
         feide_api = mock.client.MockDataportenApi(gk_user)
     else:
-        raise NotImplementedError('Unknown AUTH_METHOD {0}'.format(auth_method))
+        raise NotImplementedError("Unknown AUTH_METHOD {0}".format(auth_method))
 
     user.init_app(app, gk_user, feide_api)

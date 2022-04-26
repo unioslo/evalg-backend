@@ -58,6 +58,11 @@ class EvalgUser(object):
     def init_app(self, app, gk_user, feide_api):
         @app.before_request
         def init_authentication():
+
+            if not gk_user.is_authenticated:
+                # Do nothing if not authenticated
+                return
+
             self.gk_user = gk_user
             if request.method == "OPTIONS":
                 # If we are here, we have authenticated the Feide Gatekeeper,
