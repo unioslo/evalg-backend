@@ -73,7 +73,7 @@ def list_election_group(db_session, election_keys) -> ElectionGroup:
         },
         "counting_rules": {
             "method": "sainte_lague",
-            "first_divisor": "1",
+            "first_divisor": 1,
             "precumulate": 1,
             "list_votes": "seats",
             "other_list_candidate_votes": True,
@@ -133,7 +133,7 @@ def list_election_group(db_session, election_keys) -> ElectionGroup:
             },
             "counting_rules": {
                 "method": "sainte_lague",
-                "first_divisor": "1",
+                "first_divisor": 1,
                 "precumulate": 1,
                 "list_votes": "seats",
                 "other_list_candidate_votes": True,

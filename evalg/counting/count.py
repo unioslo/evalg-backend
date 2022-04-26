@@ -28,6 +28,7 @@ PROTOCOL_MAPPINGS = {
     'ntnu_cv': ntnucv.Protocol,
     'poll': poll.Protocol,
     'sainte_lague': party_list.Protocol,
+    'uio_sainte_lague': party_list.Protocol,
 }
 RESULT_MAPPINGS = {
     'uio_stv': uiostv.Result,
