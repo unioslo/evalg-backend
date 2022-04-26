@@ -16,15 +16,13 @@ def check_celery_health() -> bool:
     """Define the method here, to avoid circular imports in the celery worker."""
     from evalg.tasks.celery_worker import celery
 
+    # TODO, remove the extra ping when after EVALG-1065
     try:
         celery.control.inspect().ping()
     except BrokenPipeError as e:
-        logger.debug("Error in celery ping. Will try to reconnect. e=%s", e)
+        logger.debug("Error in celery ping. Try reconnect. e=%s", e)
 
-    if not celery.control.inspect().ping():
-        return False
-
-    return True
+    return bool(celery.control.inspect().ping())
 
 
 def check_feide_health() -> bool:
