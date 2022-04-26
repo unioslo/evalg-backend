@@ -15,7 +15,7 @@ Flask = "~1.0"
 itsdangerous = "2.0.1" # pinned because of no upper bound on flask dependency giving import error
 flask-allows = "0.7.1"
 flask-cors = "3.0.9"
-flask-feide-gatekeeper = {git = "https://bitbucket.usit.uio.no/scm/int/flask-feide-gatekeeper.git", rev = "v1.0.0"}
+flask-feide-gatekeeper = {git = "https://bitbucket.usit.uio.no/scm/int/flask-feide-gatekeeper.git", rev = "v1.0.1"}
 flask-graphql = "2.0.1"
 flask-migrate = "2.5.3"
 flask-shell-ipython = "0.4.1"
