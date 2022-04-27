@@ -11,54 +11,60 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 
 try:
     import pythonjsonlogger.jsonlogger
+
     has_jsonlogger = True
 except ImportError:
     has_jsonlogger = False
 
+logger = logging.getLogger(__name__)
 
 default_config = {
-    'disable_existing_loggers': False,
-    'version': 1,
-    'loggers': {
-        '': {
-            'handlers': ['stream_stderr'],
-            'level': 'DEBUG',
+    "disable_existing_loggers": False,
+    "version": 1,
+    "loggers": {
+        "": {
+            "handlers": ["stream_stderr"],
+            "level": "DEBUG",
         },
-        'evalg': {
-            'propagate': True,
-            'level': 'DEBUG',
+        "evalg": {
+            "propagate": True,
+            "level": "DEBUG",
         },
-        'watchdog': {
-            'handlers': ['stream_stderr'],
-            'level': 'WARNING',
+        "watchdog": {
+            "handlers": ["stream_stderr"],
+            "level": "WARNING",
+        },
+    },
+    "formatters": {
+        "default": {
+            "class": "{}.SafeFormatter".format(__name__),
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+            "format": (
+                "%(asctime)s - %(request_id).8s - "
+                "%(levelname)s - %(name)s - %(message)s"
+            ),
+        },
+    },
+    "handlers": {
+        "stream_stderr": {
+            "formatter": "default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+            "filters": [
+                "request_id",
+            ],
+        },
+    },
+    "filters": {
+        "request_id": {
+            "()": "evalg.request_id.RequestIdFilter",
         }
     },
-    'formatters': {
-        'default': {
-            'class': '{}.SafeFormatter'.format(__name__),
-            'datefmt': '%Y-%m-%d %H:%M:%S',
-            'format': ('%(asctime)s - %(request_id).8s - '
-                       '%(levelname)s - %(name)s - %(message)s'),
-        },
-    },
-    'handlers': {
-        'stream_stderr': {
-            'formatter': 'default',
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stderr',
-            'filters': ['request_id', ],
-        },
-    },
-    'filters': {
-        'request_id': {
-            '()': 'evalg.request_id.RequestIdFilter',
-        }
-    }
 }
 
 
 class ContextFilter(logging.Filter):
-    """ Log filter that adds a static field to a record. """
+    """Log filter that adds a static field to a record."""
 
     def __init__(self, field, value):
         self.field = field
@@ -95,14 +101,14 @@ class LogContext(object):
 
 
 class SafeRecord(logging.LogRecord, object):
-    """ A LogRecord wrapper that returns None for unset fields. """
+    """A LogRecord wrapper that returns None for unset fields."""
 
     def __init__(self, record):
         self.__dict__ = collections.defaultdict(lambda: None, record.__dict__)
 
 
 class SafeFormatter(logging.Formatter):
-    """ A Formatter that use SafeRecord to avoid failure. """
+    """A Formatter that use SafeRecord to avoid failure."""
 
     def format(self, record):
         record = SafeRecord(record)
@@ -110,10 +116,10 @@ class SafeFormatter(logging.Formatter):
 
 
 if has_jsonlogger:
-    class SafeJsonFormatter(
-            SafeFormatter,
-            pythonjsonlogger.jsonlogger.JsonFormatter):
-        """ A log formatter that formats SafeRecords as a JSON string. """
+
+    class SafeJsonFormatter(SafeFormatter, pythonjsonlogger.jsonlogger.JsonFormatter):
+        """A log formatter that formats SafeRecords as a JSON string."""
+
         pass
 
 
@@ -121,7 +127,7 @@ _lname = logging.getLevelName
 
 
 def get_default_level(app):
-    app_debug = app.config.get('DEBUG', app.debug)
+    app_debug = app.config.get("DEBUG", app.debug)
     return logging.DEBUG if app_debug else logging.INFO
 
 
@@ -131,28 +137,39 @@ def configure_logging(dict_config=None):
     logging.config.dictConfig(dict_config)
 
 
+def strip_sensitive_data(event, hint):
+    # Remove ballotdata from sentry event.
+    try:
+        if event["request"]["data"]["operationName"] == "submitVote":
+            event["request"]["data"]["variables"]["ballot"] = "<Removed>"
+            logger.debug("Striped ballotdata from sentry event")
+    except KeyError:
+        pass
+    return event
+
+
 def configure_sentry(config):
     """Configures and initializes Sentry."""
-    if not config.get('enable', False):
+    if not config.get("enable", False):
         return
-    dsn = config.get('dsn')
+    dsn = config.get("dsn")
     if not dsn:
-        raise Exception('Missing Sentry DSN')
+        raise Exception("Missing Sentry DSN")
 
     name_to_integration = {
-        'logging': LoggingIntegration,
-        'flask': FlaskIntegration,
+        "logging": LoggingIntegration,
+        "flask": FlaskIntegration,
     }
 
     integrations = []
 
-    for name, kwargs in config.get('integrations', {}).items():
-        if not kwargs.pop('enable', False):
+    for name, kwargs in config.get("integrations", {}).items():
+        if not kwargs.pop("enable", False):
             continue
         klass = name_to_integration.get(name)
         integrations.append(klass(**kwargs))
 
-    environment = config.get('environment')
+    environment = config.get("environment")
 
     if not environment:
         environment = "unknown"
@@ -162,11 +179,12 @@ def configure_sentry(config):
         environment=environment,
         integrations=integrations,
         default_integrations=True,
+        before_send=strip_sensitive_data,
     )
 
 
 def init_logging(app):
-    """ Init logging.
+    """Init logging.
 
     Loads log config from ``app.config['LOGGING']``
     """
@@ -174,13 +192,16 @@ def init_logging(app):
     root_logger = logging.getLogger()
     default_level = get_default_level(app)
 
-    configure_logging(dict_config=app.config.get('LOGGING'))
+    configure_logging(dict_config=app.config.get("LOGGING"))
 
     for logger in (app.logger, root_logger):
         if logger.level <= logging.NOTSET:
             logger.setLevel(default_level)
 
-    configure_sentry(app.config.get('SENTRY'))
-    print("Logging: flask={flask_level} root={root_level}"
-          .format(flask_level=_lname(app.logger.getEffectiveLevel()),
-                  root_level=_lname(root_logger.getEffectiveLevel())))
+    configure_sentry(app.config.get("SENTRY"))
+    print(
+        "Logging: flask={flask_level} root={root_level}".format(
+            flask_level=_lname(app.logger.getEffectiveLevel()),
+            root_level=_lname(root_logger.getEffectiveLevel()),
+        )
+    )
