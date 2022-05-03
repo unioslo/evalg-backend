@@ -48,7 +48,7 @@ def check_database_health():
 ZABBIX_HEALTH_FILE_VERSION = 3
 ZABBIX_HEALTH_COMPONENTS = (
     # <component-name>, <severity-if-down>, <func() -> True or False/Exception>
-    ("celery-worker", "high", check_celery_health),
+    # ("celery-worker", "high", check_celery_health),
     ("database", "high", check_database_health),
     ("feide", "high", check_feide_health),
 )
