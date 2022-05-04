@@ -84,6 +84,11 @@ def create_app(config=None, config_file=None, flask_class=Flask):
         instance_relative_config=True,
     )
 
+    # from werkzeug.middleware.profiler import ProfilerMiddleware
+    # app.wsgi_app = ProfilerMiddleware(
+    #    app.wsgi_app, profile_dir="/usr/src/evalg/profiles"
+    # )
+
     # Setup CLI
     cli.init_app(app)
 
@@ -112,7 +117,6 @@ def create_app(config=None, config_file=None, flask_class=Flask):
     # Setup db
     db.init_app(app)
     migrate.init_app(app, db, directory="evalg/migrations")
-
     # Feide Gatekeeper: Add localhost and trusted proxy subnets to whitelist
     from flask_feide_gk import proxyfix
 
