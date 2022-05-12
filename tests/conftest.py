@@ -24,7 +24,7 @@ from evalg.models.pollbook import Pollbook
 from evalg.proc.pollbook import ElectionVoterPolicy
 from evalg.proc.vote import ElectionVotePolicy
 
-pytest_plugins = ("pytest-flask-sqlalchemy", "celery.contrib.pytest")
+pytest_plugins = ("pytest-flask-sqlalchemy", )
 
 
 @pytest.fixture(scope="session")
