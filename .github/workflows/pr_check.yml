@@ -1,0 +1,65 @@
+name: Test Pull Request
+
+on:
+  pull_request:
+    branches: 
+      - main
+  workflow_dispatch:
+
+env:
+  http_proxy: "http://software-proxy.uio.no:3128"
+  https_proxy: "http://software-proxy.uio.no:3128"
+  no_proxy: "github.uio.no, bitbucket.usit.uio.no"
+
+jobs:
+  create_environment:
+    name: Create poetry environment
+    runs-on: [ self-hosted ]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install/upgrade Poetry
+        run: pip3.9 install poetry
+      - name: Create Poetry environment
+        run: |
+          poetry env use python3.9
+          poetry install
+
+  test:
+    name: Run tests
+    runs-on: [ self-hosted ]
+    needs: [ create_environment ]
+    steps:
+      - name: Run tests
+        run: poetry run pytest
+
+  type_check:
+    name: Check python typing
+    runs-on: [ self-hosted ]
+    needs: [ create_environment ]
+    steps:
+      - name: Run type checks
+        run: poetry run mypy -p evalg
+
+  lint:
+    name: Lint code
+    runs-on: [ self-hosted ]
+    needs: [ create_environment ]
+    steps:
+      - name: Poetry check
+        run: poetry -q check
+      - name: Pylint
+        run: poetry run pylint evalg
+        continue-on-error: true
+      - name: Black
+        run: poetry run black --check --diff evalg
+        continue-on-error: true
+
+  cleanup:
+    runs-on: [ self-hosted ]
+    if: always() # Run even if a step fails
+    needs: [ create_environment, test, type_check, lint ]
+    steps:
+      - name: Delete poetry environment
+        run: rm -rf `poetry env info -p`

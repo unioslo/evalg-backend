@@ -1,0 +1,126 @@
+name: eValg 3 build
+
+on:
+  push:
+    branches: 
+      - main
+  # Triggers a build at 10:00 every monday
+  schedule:
+    - cron: "0 10 * * 1"
+  workflow_dispatch:
+
+env:
+  CONFIG_FILE: "/etc/int/config.json"
+  http_proxy: "http://software-proxy.uio.no:3128"
+  https_proxy: "http://software-proxy.uio.no:3128"
+  no_proxy: "bitbucket.uio.no,harbor.uio.no,github.uio.no"
+
+jobs:
+  create_environment:
+    name: Create poetry environment
+    runs-on: [ self-hosted ]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install/upgrade Poetry
+        run: pip3.9 install poetry
+      - name: Create Poetry environment
+        run: |
+          poetry env use python3.9
+          poetry install
+
+  test:
+    name: Run tests
+    runs-on: [ self-hosted ]
+    needs: [ create_environment ]
+    steps:
+      - name: Run tests
+        run: poetry run pytest
+
+  type_check:
+    name: Check python typing
+    runs-on: [ self-hosted ]
+    needs: [ create_environment ]
+    steps:
+      - name: Run type checks
+        run: poetry run mypy -p evalg
+
+  lint:
+    name: Lint code
+    runs-on: [ self-hosted ]
+    needs: [ create_environment ]
+    steps:
+      - name: Poetry check
+        run: poetry -q check
+      - name: Pylint
+        run: poetry run pylint evalg
+        continue-on-error: true
+      - name: Black
+        run: poetry run black --check --diff evalg
+        continue-on-error: true
+
+  build:
+    name: Build image
+    runs-on: [ self-hosted ]
+    needs: [ test, type_check, lint ]
+    steps:
+      - name: Set lowercase repo name to variable
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      - name: Set local container tag to variable
+        run: echo "CONTAINER_TAG=${{env.REPO_NAME}}:${{ github.sha }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+      - name: Build image with buildah
+        run: >
+          buildah bud
+          -f Dockerfile
+          --isolation chroot
+          --pull
+          --layers
+          --tag "${{ env.CONTAINER_TAG }}"
+          .
+
+  push:
+    name: Push image to harbor
+    needs: [ build ]
+    runs-on: [ self-hosted ]
+    steps:
+      - name: Set lowercase repo name to variable
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      - name: Set local container tag to variable
+        run: echo "CONTAINER_TAG=${{env.REPO_NAME}}:${{ github.sha }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+      - name: Load Harbor secrets
+        id: int-harbor-secrets
+        run: |
+          host=$(jq -r '.harbor.host' $CONFIG_FILE)
+          echo "::set-output name=host::$host"
+          username=$(jq -r '.harbor.username' $CONFIG_FILE)
+          echo "::set-output name=username::$username"
+          password=$(jq -r '.harbor.password' $CONFIG_FILE)
+          echo "::add-mask::$password"
+          echo "::set-output name=password::$password"
+      - name: Login to Harbor
+        run: >
+          buildah login
+          --username "${{ steps.int-harbor-secrets.outputs.username }}"
+          --password "${{ steps.int-harbor-secrets.outputs.password }}"
+          "${{ steps.int-harbor-secrets.outputs.host }}"
+      - name: Push to Harbor
+        run: >
+          buildah 
+          push "${{ env.CONTAINER_TAG }}"
+          "${{ steps.int-harbor-secrets.outputs.host }}/it-usit-int-drift/${{ github.event.repository.name }}:${{ github.sha }}"
+      - name: Push as latest
+        run: >
+          buildah push 
+          "${{ env.CONTAINER_TAG }}"
+          "${{ steps.int-harbor-secrets.outputs.host }}/it-usit-int-drift/${{ github.event.repository.name }}:latest"
+
+  # Delete the poetry environment after use
+  cleanup_poetry:
+    name: Delete poetry environment
+    runs-on: [ self-hosted ]
+    if: always() # Run even if a step fails
+    needs: [ test, type_check, lint ]
+    steps:
+      - name: Delete poetry environment
+        run: rm -rf `poetry env info -p`
