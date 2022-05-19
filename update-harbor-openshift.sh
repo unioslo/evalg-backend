@@ -3,7 +3,7 @@ GIT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 GIT_SHA=`git rev-parse --short HEAD`
 REPO="harbor.uio.no"
 PROJECT="it-usit-int-drift"
-APP_NAME="evalg-backend-k8s"
+APP_NAME="evalg-backend"
 CONTAINER="${REPO}/${PROJECT}/${APP_NAME}"
 IMAGE_TAG="${CONTAINER}:${GIT_BRANCH}-${GIT_SHA}-${RANDOM}"
 
