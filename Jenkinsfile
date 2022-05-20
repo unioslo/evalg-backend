@@ -76,35 +76,18 @@ pipeline {
             environment {
                 REPO = 'harbor.uio.no'
                 PROJECT = 'it-usit-int-drift'
-                APP_NAME = 'valg-backend'
-                APP_NAME_K8S = 'evalg-backend-k8s'
+                APP_NAME = 'evalg-backend'
                 CONTAINER = "${REPO}/${PROJECT}/${APP_NAME}"
-                CONTAINER_K8S = "${REPO}/${PROJECT}/${APP_NAME_K8S}"
                 IMAGE_TAG = "${CONTAINER}:${VERSION}"
-                IMAGE_TAG_K8S = "${CONTAINER_K8S}:${VERSION}"
             }
             stages {
                 stage('Build docker images') {
-                    parallel {
-                        stage('Build and push docker image for old env') {
-                            steps {
-                                script {
-                                    docker_image_old = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile-old-env .')
-                                    docker_image_old.push()
-                                    docker_image_old.push('latest')
-                                    docker_image_old.push('utv')
-                                }
-                            }
-                        }
-                        stage('Build and push docker image for k8s') {
-                            steps {
-                                script {
-                                    docker_image_k8s = docker.build("${IMAGE_TAG_K8S}", '--pull --no-cache -f ./Dockerfile .')
-                                    docker_image_k8s.push()
-                                    docker_image_k8s.push('staging')
-                                    docker_image_k8s.push('latest')
-                                }
-                            }
+                    steps {
+                        script {
+                            docker_image = docker.build("${IMAGE_TAG}", '--pull --no-cache -f ./Dockerfile .')
+                            docker_image.push()
+                            docker_image.push('staging')
+                            docker_image.push('latest')
                         }
                     }
                 }
