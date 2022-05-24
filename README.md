@@ -1,5 +1,7 @@
 # evalg – electronic voting at the University of Oslo
 
+[![eValg 3 build](https://github.uio.no/IT-EVALG/evalg-backend/actions/workflows/build_main.yml/badge.svg)](https://github.uio.no/IT-EVALG/evalg-backend/actions/workflows/build_main.yml)
+
 Evalg 3 is a re-implementation of the electronic voting system used at the
 University of Oslo.
 
