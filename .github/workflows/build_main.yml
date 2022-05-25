@@ -13,7 +13,7 @@ env:
   CONFIG_FILE: "/etc/int/config.json"
   http_proxy: "http://software-proxy.uio.no:3128"
   https_proxy: "http://software-proxy.uio.no:3128"
-  no_proxy: "bitbucket.uio.no,harbor.uio.no,github.uio.no"
+  no_proxy: "bitbucket.usit.uio.no,harbor.uio.no,github.uio.no"
 
 jobs:
   create_environment:
