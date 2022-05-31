@@ -108,12 +108,12 @@ jobs:
         run: >
           buildah 
           push "${{ env.CONTAINER_TAG }}"
-          "${{ steps.int-harbor-secrets.outputs.host }}/it-usit-int-drift/${{ github.event.repository.name }}:${{ github.sha }}"
+          "${{ steps.int-harbor-secrets.outputs.host }}/it-usit-int-drift/${{ env.REPO_NAME }}:${{ github.sha }}"
       - name: Push as latest
         run: >
           buildah push 
           "${{ env.CONTAINER_TAG }}"
-          "${{ steps.int-harbor-secrets.outputs.host }}/it-usit-int-drift/${{ github.event.repository.name }}:latest"
+          "${{ steps.int-harbor-secrets.outputs.host }}/it-usit-int-drift/${{ env.REPO_NAME }}:latest"
 
   # Delete the poetry environment after use
   cleanup_poetry:
