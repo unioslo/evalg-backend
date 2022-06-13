@@ -19,7 +19,7 @@ from evalg.models.election_group_count import ElectionGroupCount
 from evalg.models.voter import Voter
 from evalg.proc.pollbook import get_verified_voters_count
 from evalg.ballot_serializer.base64_nacl import Base64NaClSerializer
-from evalg.counting.algorithms import party_list
+from evalg.counting.algorithms import party_list, uitstv
 from evalg.counting.count import Counter
 
 logger = logging.getLogger(__name__)
@@ -270,6 +270,9 @@ class ElectionGroupCounter:
             if election.status == "closed":
                 if election.type_str in ("sainte_lague", "uio_sainte_lague"):
                     result, protocol = party_list.get_result(election)
+                    election_protocol_dict = protocol.to_dict()
+                elif election.type_str == "uitstv":
+                    result, protocol = uitstv.get_result(election)
                     election_protocol_dict = protocol.to_dict()
                 else:
                     counter = Counter(
