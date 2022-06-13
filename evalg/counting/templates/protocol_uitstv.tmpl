@@ -1,0 +1,93 @@
+{% macro nb(object) -%}
+{% if object.nb is defined %}{{ object.nb }}{% else %}{{ object }}{% endif %}
+{%- endmacro %}
+{% macro person_name(person_id) -%}
+{{ meta.candidates[person_id] }}
+{%- endmacro %}
+{% macro person_names_list(person_ids) -%}
+{%- for person_id in person_ids %}{{ meta.candidates[person_id] }}{%- if not loop.last %}, {% endif -%}{%- else %}Ingen{%- endfor %}
+{%- endmacro %}
+{% macro pollbook_name(pollbook_id) -%}
+{{ nb(meta.pollbook_mappings[pollbook_id]) }}
+{%- endmacro %}
+Valg-ID: {{ meta.election_id }}
+Valg-tittel: {{ nb(meta.election_name) }}
+Valg-type: {{ meta.election_type }}
+Valgperiode: {{ meta.election_start }} (CET) - {{ meta.election_end }} (CET)
+Opptellingstidspunkt: {{ meta.counted_at }} (CET)
+Opptelling startet av: {{ meta.counted_by|default('Ukjent', true) }}
+Kandidater: {{ meta.candidates.values() |join(', ') }}
+Antall faste representanter å velge: {{ meta.num_regular }}
+Antall vararepresentanter å velge: {{ meta.num_substitutes }}
+
+Antall stemmer: {{ meta.ballots_count }}
+Antall blanke stemmer: {{ meta.empty_ballots_count }}
+
+
+Manntall
+========
+
+{% for pollbook in meta.pollbooks -%}
+Navn: {{ pollbook_name(pollbook['id']) }}
+Antall stemmer: {{ pollbook.ballots_count }}
+Antall blanke stemmer: {{ pollbook.empty_ballots_count }}
+Manntallsgruppens vekting: (vekt i %) {{ pollbook.weight }} / (ikke-blanke stemmer) {{ pollbook.counting_ballots_count }} = {{ pollbook.weight_per_vote }}
+Multiplikator: {{ meta.scale_factor }}
+Vekt per stemme: {{ pollbook.weight_per_vote }} * {{ meta.scale_factor }} = {{ pollbook.weight_per_pollbook }}
+
+{% endfor -%}
+
+Protokoll
+=========
+
+{% for round_events in meta.counting_rounds -%}
+-------------------
+Start av tellerunde
+-------------------
+{% for event in round_events -%}
+
+{%  if event.type == 'status' %}
+
+Status for gjenværende kandidater:
+{%-       for candidate in event.info %}
+  {{ candidate.name }}: {{ candidate.votes }}
+{%-        endfor -%}
+
+
+{%-     elif event.type == 'elect_all_remaining' %}
+
+Velger alle gjenværende kandidater i rekkefølge:
+{%-       for candidate in event.info %}
+  {{ candidate.name }}
+{%-        endfor -%}
+
+
+{%-     elif event.type == 'elect_single' %}
+
+Velger kandidat {{ event.name }} med {{ event.votes }} stemmer, setter stemmesedler til side for overføring
+
+
+{%-     elif event.type == 'eliminate' %}
+
+Eliminerer kandidat {{ event.name }} med {{ event.votes }} stemmer
+
+
+{%-     elif event.type == 'vote_transfer' %}
+Overfører {{ event.num_votes }} stemmer fra {{ event.transfer_from }} med vekt {{ event.weight_factor }}:
+{%-       for name, votes in event.transfered_to.items() %}
+  {{ votes }} stemmer overført til {{ name }}
+{%-        endfor -%}
+
+
+{%-     elif event.type == 'rank_candidate' %}
+
+Rangerer kandidat {{ event.name }} som nummer {{ event.rank }}
+
+{%     endif -%}
+{%   endfor -%}
+{% endfor %}
+
+Legg inn oppsummering som bare har endelig rangering
+
+(Avslutter protokoll)
+
