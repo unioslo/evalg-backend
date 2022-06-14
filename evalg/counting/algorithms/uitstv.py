@@ -105,7 +105,6 @@ def get_candidates_with_ballots(election_candidates, election_ballots):
             ballots=[],
         )
 
-    # TODO: kommer det blanke stemmer hit? I så fall håndter det
     for ballot in election_ballots:
         if ballot.candidates:
             candidate = id2candidates[ballot.candidates[0].id]
@@ -211,13 +210,13 @@ def get_result(election):
     )
     result = {
         "meta": {"election_type": election.type_str},
-        "result": ranked_candidates,
+        "ranked_candidates": ranked_candidates,
     }
-    protocol = get_protocol(election, ranking_protocol)
+    protocol = get_protocol(election, ranking_protocol, ranked_candidates)
     return result, protocol
 
 
-def get_protocol(election, counting_rounds):
+def get_protocol(election, counting_rounds, ranked_candidates):
     meta = {
         "election_id": str(election.id),
         "election_name": election.name,
@@ -239,7 +238,7 @@ def get_protocol(election, counting_rounds):
         "ballots_count": election.total_amount_ballots,
         "counting_ballots_count": election.total_amount_counting_ballots,
         "empty_ballots_count": election.total_amount_empty_ballots,
-        # "result": result,
+        "ranked_candidates": ranked_candidates,
         "counting_rounds": counting_rounds,
     }
     return Protocol(meta)

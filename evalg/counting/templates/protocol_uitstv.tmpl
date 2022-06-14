@@ -92,7 +92,10 @@ Rangerer kandidat {{ event.name }} som nummer {{ event.rank }}
 {%   endfor -%}
 {% endfor %}
 
-Legg inn oppsummering som bare har endelig rangering
+Fullstendig rangering:
+{% for candidate in meta.ranked_candidates %}
+{{ '{:3d}'.format(loop.index) }}: {{ candidate.name }}
+{%- endfor %}
 
 (Avslutter protokoll)
 
