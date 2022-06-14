@@ -47,19 +47,7 @@ class Candidate:
     def __eq__(self, other):
         return self.db_id == other.db_id
 
-    # Vil gjøre tilfeldig når det ikke trengs også, men har det noe å si?
-    # TODO bør potensielt gjøres et annet sted slik at det kan styres manuelt?
-    #      Hvordan funker dette hvis flere enn to har like mange stemmer?
-    #      Relevant siden det fort kan være flere med 0 stemmer.
-    #      Er det da lik sjanse for alle til å ryke?
     def __lt__(self, other):
-        if self.vote_number == other.vote_number:
-            logger.debug(
-                "candidates %r and %r have equal vote_number, randomly deciding order",
-                self.name,
-                other.name,
-            )
-            return random.choice([True, False])
         return self.vote_number < other.vote_number
 
     def transfer_votes(self, elect_number, eliminated=False):
@@ -133,6 +121,11 @@ def count(possible_candidates, seats, elect_number):
     protocol_events = []
     elected = []
     while len(elected) < seats:
+
+        vote_numbers = [c.vote_number for c in possible_candidates]
+        if len(vote_numbers) != len(set(vote_numbers)):
+            protocol_events.append({ "type": "random_sort" })
+            random.shuffle(possible_candidates)
 
         possible_candidates.sort(reverse=True)
         protocol_events.append(

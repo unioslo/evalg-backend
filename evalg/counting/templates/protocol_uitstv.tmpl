@@ -46,7 +46,12 @@ Start av tellerunde
 -------------------
 {% for event in round_events -%}
 
-{%  if event.type == 'status' %}
+{%  if event.type == 'random_sort' %}
+
+Minst to kandidater har samme stemmetall, de blir tilfeldig rangert mot hverandre
+
+
+{%-  elif event.type == 'status' %}
 
 Status for gjenværende kandidater:
 {%-       for candidate in event.info %}
