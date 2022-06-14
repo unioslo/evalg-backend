@@ -210,7 +210,7 @@ def get_result(election):
     )
     result = {
         "meta": {"election_type": election.type_str},
-        "ranked_candidates": ranked_candidates,
+        "ranked_candidates": [str(rc.db_id) for rc in ranked_candidates],
     }
     protocol = get_protocol(election, ranking_protocol, ranked_candidates)
     return result, protocol
