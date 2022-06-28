@@ -208,8 +208,17 @@ def get_result(election):
     ranked_candidates, ranking_protocol = rank_candidates(
         candidates, election.total_amount_counting_ballots
     )
+    pollbook_meta = []
+    for pollbook in election.pollbooks:
+        pollbook_meta.append(
+            {'id': str(pollbook.id),
+             'ballots_count': pollbook.ballots_count,
+             'empty_ballots_count': pollbook.empty_ballots_count})
     result = {
-        "meta": {"election_type": election.type_str},
+        "meta": {
+            "election_type": election.type_str,
+            "pollbooks": pollbook_meta,
+        },
         "ranked_candidates": [str(rc.db_id) for rc in ranked_candidates],
     }
     protocol = get_protocol(election, ranking_protocol, ranked_candidates)
@@ -238,7 +247,7 @@ def get_protocol(election, counting_rounds, ranked_candidates):
         "ballots_count": election.total_amount_ballots,
         "counting_ballots_count": election.total_amount_counting_ballots,
         "empty_ballots_count": election.total_amount_empty_ballots,
-        "ranked_candidates": ranked_candidates,
+        "ranked_candidates": [str(rc.db_id) for rc in ranked_candidates],
         "counting_rounds": counting_rounds,
     }
     return Protocol(meta)

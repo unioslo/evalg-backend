@@ -271,7 +271,7 @@ class ElectionGroupCounter:
                 if election.type_str in ("sainte_lague", "uio_sainte_lague"):
                     result, protocol = party_list.get_result(election)
                     election_protocol_dict = protocol.to_dict()
-                elif election.type_str == "uitstv":
+                elif election.type_str == "uit_stv":
                     result, protocol = uitstv.get_result(election)
                     election_protocol_dict = protocol.to_dict()
                 else:

@@ -12,7 +12,7 @@ import secrets
 
 import pytz
 
-from evalg.counting.algorithms import ntnucv, mntv, uiostv, uiomv, poll, party_list
+from evalg.counting.algorithms import ntnucv, mntv, uiostv, uitstv, uiomv, poll, party_list
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -23,6 +23,7 @@ logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
 PROTOCOL_MAPPINGS = {
     'uio_stv': uiostv.Protocol,
+    'uit_stv': uitstv.Protocol,
     'uio_mv': uiomv.Protocol,
     'mntv': mntv.Protocol,
     'ntnu_cv': ntnucv.Protocol,
