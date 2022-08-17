@@ -254,6 +254,8 @@ def get_protocol(election, counting_rounds, ranked_candidates):
         "ballots_count": election.total_amount_ballots,
         "counting_ballots_count": election.total_amount_counting_ballots,
         "empty_ballots_count": election.total_amount_empty_ballots,
+        "num_regular": election.num_choosable,
+        "num_substitutes": election.num_substitutes,
         "ranked_candidates": [str(rc.db_id) for rc in ranked_candidates],
         "counting_rounds": counting_rounds,
     }
