@@ -123,7 +123,7 @@ def count(possible_candidates, seats, elect_number):
 
         vote_numbers = [c.vote_number for c in possible_candidates]
         if len(vote_numbers) != len(set(vote_numbers)):
-            protocol_events.append({ "type": "random_sort" })
+            protocol_events.append({"type": "random_sort"})
             random.shuffle(possible_candidates)
 
         possible_candidates.sort(reverse=True)
@@ -208,21 +208,28 @@ def get_result(election):
     ranked_candidates, ranking_protocol = rank_candidates(
         candidates, election.total_amount_counting_ballots
     )
+    protocol = get_protocol(election, ranking_protocol, ranked_candidates)
+    result = create_result_dict(election, ranked_candidates)
+    return result, protocol
+
+
+def create_result_dict(election, ranked_candidates):
     pollbook_meta = []
     for pollbook in election.pollbooks:
         pollbook_meta.append(
-            {'id': str(pollbook.id),
-             'ballots_count': pollbook.ballots_count,
-             'empty_ballots_count': pollbook.empty_ballots_count})
-    result = {
+            {
+                "id": str(pollbook.id),
+                "ballots_count": pollbook.ballots_count,
+                "empty_ballots_count": pollbook.empty_ballots_count,
+            }
+        )
+    return {
         "meta": {
             "election_type": election.type_str,
             "pollbooks": pollbook_meta,
         },
         "ranked_candidates": [str(rc.db_id) for rc in ranked_candidates],
     }
-    protocol = get_protocol(election, ranking_protocol, ranked_candidates)
-    return result, protocol
 
 
 def get_protocol(election, counting_rounds, ranked_candidates):
