@@ -20,8 +20,6 @@ logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 class Protocol(base.Protocol):
     """Poll Protocol"""
 
-    # TODO: enten ikke bruk dette eller lag init her som gjør get_protocol unødvendig
-
     def render(self, template="protocol_uitstv.tmpl"):
         """
         Renders the protocol using jinja2 template `template`
