@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 
+from evalg.counting.algorithms import uitstv
 from evalg.counting.count import Counter, ElectionCountTree
 from evalg.counting.legacy import (EvalgLegacyElection,
                                    EvalgLegacyInvalidBallot,
@@ -40,6 +41,11 @@ def main(args=None):
         dest='count_legacy',
         default=False,
         help='Perform a legacy count')
+    parser.add_argument(
+        '--uitstv',
+        action='store_true',
+        default=False,
+        help='The election should be of type UiTSTV')
     parser.add_argument(
         '--dump',
         action='store_true',
@@ -98,6 +104,17 @@ def main(args=None):
         if args.count_legacy:
             election = EvalgLegacyElection(args.electionfile)
             logger.debug("Adding legacy election: %s", election)
+        if args.uitstv:
+            result, protocol = uitstv.get_result(election)
+            election_protocol_dict = protocol.to_dict()
+            if args.protocol_file:
+                with io.open(args.protocol_file,
+                             'w',
+                             encoding='utf-8') as protocol_file:
+                    protocol_file.write(protocol.render())
+            else:
+                print(protocol.render())
+            quit()
         if args.count_legacy or args.count:
             counter = Counter(election,
                               election.ballots,
