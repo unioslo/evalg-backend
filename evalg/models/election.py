@@ -453,6 +453,12 @@ class Election(AbstractElection):
         return bool(self.meta["counting_rules"].get("oslomet_quotas"))
 
     @property
+    def quota_names(self):
+        if self.election_group.meta["candidate_rules"].get("candidate_gender"):
+            quota_names = self.meta["counting_rules"]["affirmative_action"]
+            return quota_names
+
+    @property
     def quotas(self):
         quotas = []
         if self.election_group.meta["candidate_rules"].get("candidate_gender"):
