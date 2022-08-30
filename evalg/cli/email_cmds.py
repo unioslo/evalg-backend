@@ -119,12 +119,25 @@ def send_status_mail(to_addrs, only_active_elections):
 
         active_elections_info.append(info)
 
+    root_node = (
+        evalg.db.session.query(evalg.models.ou.OrganizationalUnit)
+        .filter(evalg.models.ou.OrganizationalUnit.tag == "root")
+        .first()
+    )
+
+    subject = subject = "Valgstatus - eValg 3"
+    if root_node:
+        name = root_node.name["nb"]
+        subject = f"Valgstatus - eValg 3 - {name}"
+    else:
+        logger.warning("Root node missing! Could not get institution name.")
+
     logger.info("Sending status mail to %s", ", ".join(to_addrs))
     evalg.mail.mailer.send_mail(
         template_name="status_report.tmpl",
         html_template_name="status_report_tmpl.html",
         to_addrs=to_addrs,
-        subject="Valgstatus - eValg 3",
+        subject=subject,
         active_elections=active_elections,
         upcoming_elections=upcoming_elections,
         active_elections_info=active_elections_info,
