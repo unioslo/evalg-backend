@@ -14,8 +14,14 @@ logger = logging.getLogger(__name__)
 
 @click.command("send_status_mail", short_help="Send the election status report mail.")
 @click.argument("to_addrs", nargs=-1)
+@click.option(
+    "--only_active_elections",
+    default=False,
+    is_flag=True,
+    help="Only send email when there is active or upcoming elections.",
+)
 @flask.cli.with_appcontext
-def send_status_mail(to_addrs):
+def send_status_mail(to_addrs, only_active_elections):
     """Send a status mail for the active elections."""
     import evalg.models
 
@@ -36,6 +42,17 @@ def send_status_mail(to_addrs):
             active_elections.append(election_group)
         if "published" in election_status:
             upcoming_elections.append(election_group)
+
+    if (
+        only_active_elections
+        and len(active_elections) == 0
+        and len(upcoming_elections) == 0
+    ):
+        logger.info("No active or upcoming elections, skipping email.")
+        return
+
+    if only_active_elections:
+        logger.info("Found active or upcoming elections, sending email.")
 
     tz = pytz.timezone("Europe/Oslo")
     active_elections_info = []
