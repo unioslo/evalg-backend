@@ -3,13 +3,16 @@ import decimal
 import logging
 import pytz
 import random
-import uuid
+from typing import Dict, List, Tuple, Any
+from uuid import UUID
 
 from copy import deepcopy
 from collections import defaultdict
 from dataclasses import dataclass
 
 from evalg.counting import base
+from evalg.models.election import Election, QuotaGroup
+from evalg.models.candidate import Candidate
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
 DEFAULT_LOG_LEVEL = logging.DEBUG
@@ -21,7 +24,7 @@ logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 class Protocol(base.Protocol):
     """Poll Protocol"""
 
-    def render(self, template="protocol_positional_voting.tmpl"):
+    def render(self, template: str = "protocol_positional_voting.tmpl"):
         """
         Renders the protocol using jinja2 template `template`
 
@@ -35,9 +38,17 @@ class Protocol(base.Protocol):
         return super().render(template=template)
 
 
-def rank_candidates(candidates, election_ballots):
+def rank_candidates(
+    candidates: List[Candidate], election_ballots: List[Any]
+) -> Tuple[List[Candidate], Dict[UUID, float], bool]:
+    """
+    Count how many votes from ballots each candidate recieved and create a ranked list.
+
+    :return: The ranked list of candidates, a dict with complete vote numbers for each candidate,
+             and whether a random draw happened
+    """
     logger.info("Counting votes and ranking candidates")
-    candidate_vote_number = {cand.id: 0 for cand in candidates}
+    candidate_vote_number = {cand.id: 0.0 for cand in candidates}
     for ballot in election_ballots:
         if len(candidates) < 3:
             if ballot.candidates:
@@ -50,7 +61,7 @@ def rank_candidates(candidates, election_ballots):
 
     random_draw = False
     ranked_candidates = candidates.copy()
-    vote_numbers = [vote_num for vote_num in candidate_vote_number.values()]
+    vote_numbers = list(candidate_vote_number.values())
     if len(vote_numbers) != len(set(vote_numbers)):
         logger.info("Shuffling candidates due to someone having an equal vote number")
         random.shuffle(ranked_candidates)
@@ -59,7 +70,7 @@ def rank_candidates(candidates, election_ballots):
     return ranked_candidates, candidate_vote_number, random_draw
 
 
-def get_other_quota_group(quotas, candidate):
+def get_other_quota_group(quotas: List[QuotaGroup], candidate: Candidate) -> QuotaGroup:
     """
     :return: The quota group `candidate` is not a member of
     :rtype: QuotaGroup
@@ -69,9 +80,10 @@ def get_other_quota_group(quotas, candidate):
     for quota in quotas:
         if candidate not in quota.members:
             return quota
+    raise Exception("Candidate has no quota group they are not a member of")
 
 
-def get_quota_group(quotas, candidate):
+def get_quota_group(quotas: List[QuotaGroup], candidate: Candidate) -> QuotaGroup:
     """
     :return: The quota group `candidate` is a member of
     :rtype: QuotaGroup
@@ -81,30 +93,45 @@ def get_quota_group(quotas, candidate):
     for quota in quotas:
         if candidate in quota.members:
             return quota
+    raise Exception("Candidate is not member of any quota group")
 
 
-def can_elect_candidate(candidate, quota_elected, to_be_elected, quotas):
+def can_elect_candidate(
+    candidate: Candidate,
+    quota_elected: Dict[str, int],
+    to_be_elected: int,
+    quotas: List[QuotaGroup],
+) -> bool:
     """
     :return: Whether the candidate can be elected when looking at quota rules
     :rtype: Boolean
     """
     other_quota = get_other_quota_group(quotas, candidate)
-    return other_quota.min_value - quota_elected[str(other_quota.name)] < to_be_elected
+    return bool(
+        other_quota.min_value - quota_elected[str(other_quota.name)] < to_be_elected
+    )
 
 
-def can_elect_substitute(candidate, quota_elected, to_be_elected, quotas):
+def can_elect_substitute(
+    candidate: Candidate,
+    quota_elected: Dict[str, int],
+    to_be_elected: int,
+    quotas: List[QuotaGroup],
+) -> bool:
     """
     :return: Whether the candidate can be elected when looking at quota rules
     :rtype: Boolean
     """
     other_quota = get_other_quota_group(quotas, candidate)
-    return (
+    return bool(
         other_quota.min_value_substitutes - quota_elected[str(other_quota.name)]
         < to_be_elected
     )
 
 
-def follow_quota_rules(election, ranked_candidates):
+def follow_quota_rules(
+    election: Election, ranked_candidates: List[Candidate]
+) -> Tuple[List[Candidate], List[Candidate]]:
     logger.info(
         "Electing candidates and substitutes in accordance to gender quota rules"
     )
@@ -139,9 +166,9 @@ def follow_quota_rules(election, ranked_candidates):
     return elected, substitutes
 
 
-def get_result(election):
+def get_result(election: Election) -> Tuple[Dict[str, Any], Protocol]:
     ranked_candidates, candidate_vote_number, random_draw = rank_candidates(
-        list(election.candidates), election.ballots
+        List(election.candidates), election.ballots
     )
 
     if election.quotas:
@@ -164,7 +191,12 @@ def get_result(election):
     return result, protocol
 
 
-def create_result_dict(election, random_draw, elected, substitutes):
+def create_result_dict(
+    election: Election,
+    random_draw: bool,
+    elected: List[Candidate],
+    substitutes: List[Candidate],
+) -> Dict[str, Any]:
     pollbook_meta = []
     for pollbook in election.pollbooks:
         pollbook_meta.append(
@@ -186,13 +218,13 @@ def create_result_dict(election, random_draw, elected, substitutes):
 
 
 def get_protocol(
-    election,
-    ranked_candidates,
-    elected,
-    substitutes,
-    candidate_vote_number,
-    random_draw,
-):
+    election: Election,
+    ranked_candidates: List[Candidate],
+    elected: List[Candidate],
+    substitutes: List[Candidate],
+    candidate_vote_number: Dict[UUID, float],
+    random_draw: bool,
+) -> Protocol:
     meta = {
         "election_id": str(election.id),
         "election_name": election.name,
