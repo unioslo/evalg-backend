@@ -125,7 +125,7 @@ def send_status_mail(to_addrs, only_active_elections):
         .first()
     )
 
-    subject = subject = "Valgstatus - eValg 3"
+    subject = "Valgstatus - eValg 3"
     if root_node:
         name = root_node.name["nb"]
         subject = f"Valgstatus - eValg 3 - {name}"
