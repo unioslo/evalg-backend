@@ -94,7 +94,7 @@ Rangerer kandidat {{ event.name }} som nummer {{ event.rank }}
 
 Fullstendig rangering:
 {% for candidate in meta.ranked_candidates %}
-{{ '{:3d}'.format(loop.index) }}: {{ candidate.name }}
+{{ '{:3d}'.format(loop.index) }}: {{ person_name(candidate) }}
 {%- endfor %}
 
 (Avslutter protokoll)
