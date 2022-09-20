@@ -12,7 +12,16 @@ import secrets
 
 import pytz
 
-from evalg.counting.algorithms import ntnucv, mntv, uiostv, uitstv, uiomv, poll, party_list
+from evalg.counting.algorithms import (
+    ntnucv,
+    mntv,
+    uiostv,
+    uiomv,
+    uitstv,
+    poll,
+    party_list,
+    positional_voting,
+)
 
 
 DEFAULT_LOG_FORMAT = "%(levelname)s: %(message)s"
@@ -22,14 +31,15 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=DEFAULT_LOG_LEVEL, format=DEFAULT_LOG_FORMAT)
 
 PROTOCOL_MAPPINGS = {
-    'uio_stv': uiostv.Protocol,
-    'uit_stv': uitstv.Protocol,
-    'uio_mv': uiomv.Protocol,
-    'mntv': mntv.Protocol,
-    'ntnu_cv': ntnucv.Protocol,
-    'poll': poll.Protocol,
-    'sainte_lague': party_list.Protocol,
-    'uio_sainte_lague': party_list.Protocol,
+    "uio_stv": uiostv.Protocol,
+    "uit_stv": uitstv.Protocol,
+    "uio_mv": uiomv.Protocol,
+    "mntv": mntv.Protocol,
+    "ntnu_cv": ntnucv.Protocol,
+    "poll": poll.Protocol,
+    "sainte_lague": party_list.Protocol,
+    "uio_sainte_lague": party_list.Protocol,
+    "positional_voting": positional_voting.Protocol,
 }
 RESULT_MAPPINGS = {
     'uio_stv': uiostv.Result,
